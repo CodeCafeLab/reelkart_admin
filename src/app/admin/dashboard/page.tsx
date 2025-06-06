@@ -1,9 +1,10 @@
+
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ExampleChart } from "@/components/dashboard/ExampleChart";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Users, ShieldCheck, Film, Truck, BrainCircuit, Activity, UserMinus, DollarSign } from "lucide-react";
+import { Users, ShieldCheck, Film, Truck, BrainCircuit, Activity, UserMinus, DollarSign, PlayCircle } from "lucide-react";
 
 const topSellers = [
   { id: "seller1", name: "Chic Boutique", itemsSold: 1204, revenue: "₹5,50,200" },
@@ -20,6 +21,7 @@ export default function DashboardPage() {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         <StatCard title="KYC Pending" value="75" icon={ShieldCheck} description="+5 from yesterday" />
         <StatCard title="Active Sellers" value="1,280" icon={Users} description="+20 this week" />
+        <StatCard title="Avg Watch Time" value="2m 35s" icon={PlayCircle} description="Per active user daily" />
         <StatCard title="Content Queue" value="212" icon={Film} description="Videos awaiting review" />
         <StatCard title="Orders Shipped" value="850" icon={Truck} description="Last 24 hours" />
       </div>
