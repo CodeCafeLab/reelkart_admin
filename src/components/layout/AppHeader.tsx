@@ -1,20 +1,25 @@
 
 "use client";
 
+import React, { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/components/ui/dropdown-menu";
-import { Bell, Settings, UserCircle, Palette, Sun, Moon, Paintbrush, Search, Languages, Check } from "lucide-react";
-import Link from "next/link";
+import { Bell, Settings, UserCircle, Palette, Sun, Moon, Paintbrush, Search, Languages, Check, X } from "lucide-react";
 import { useTheme, type Theme } from "@/contexts/ThemeContext";
-import React, { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { cn } from "@/lib/utils";
 
 type Language = "en" | "hi";
 
 export function AppHeader() {
   const { theme, setTheme } = useTheme();
   const [currentLanguage, setCurrentLanguage] = useState<Language>("en");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const themeOptions: { value: Theme; label: string; icon: React.ElementType }[] = [
     { value: "light", label: "Light", icon: Sun },
@@ -34,6 +39,27 @@ export function AppHeader() {
     console.log("Language changed to:", lang);
   };
 
+  const toggleSearch = () => {
+    setIsSearchOpen(!isSearchOpen);
+    if (isSearchOpen) { // if it was open, now it's closing
+      setSearchQuery("");
+    }
+  };
+
+  useEffect(() => {
+    if (isSearchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [isSearchOpen]);
+
+  const handleSearchSubmit = () => {
+    if (searchQuery.trim()) {
+      console.log("Performing search for:", searchQuery);
+      // Actual search functionality would be implemented here
+      // For example, redirecting to a search results page or filtering data
+    }
+  };
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6 shadow-sm">
       <div className="md:hidden">
@@ -43,10 +69,47 @@ export function AppHeader() {
         {/* Can add breadcrumbs or page title here */}
       </div>
       <div className="flex items-center gap-1 sm:gap-2">
-        <Button variant="ghost" size="icon" className="rounded-full">
-          <Search className="h-5 w-5" />
-          <span className="sr-only">Search</span>
-        </Button>
+        {/* Search Input and Button */}
+        <div className="relative flex items-center">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="rounded-full"
+            onClick={toggleSearch}
+            aria-expanded={isSearchOpen}
+            aria-label={isSearchOpen ? "Close search bar" : "Open search bar"}
+          >
+            {isSearchOpen ? <X className="h-5 w-5" /> : <Search className="h-5 w-5" />}
+          </Button>
+          <div
+            className={cn(
+              "flex items-center transition-all duration-300 ease-in-out",
+              isSearchOpen ? "w-40 sm:w-56 ml-2 opacity-100" : "w-0 ml-0 opacity-0 pointer-events-none"
+            )}
+          >
+            <Input
+              ref={searchInputRef}
+              type="search"
+              placeholder="Search..."
+              className={cn(
+                "h-9 rounded-full bg-muted/50 focus-visible:ring-primary text-sm",
+                isSearchOpen ? "px-3 py-1 border-border" : "p-0 border-none" 
+              )}
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleSearchSubmit();
+                }
+                if (e.key === 'Escape') {
+                  toggleSearch();
+                }
+              }}
+              aria-hidden={!isSearchOpen}
+              tabIndex={isSearchOpen ? 0 : -1}
+            />
+          </div>
+        </div>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -111,7 +174,7 @@ export function AppHeader() {
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-               <Link href="/admin/profile"> {/* Assuming a profile page might exist */}
+               <Link href="/admin/profile">
                 <UserCircle className="mr-2 h-4 w-4" />
                 <span>Profile</span>
               </Link>
