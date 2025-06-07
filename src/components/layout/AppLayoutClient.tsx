@@ -2,8 +2,8 @@
 "use client";
 
 import * as React from "react";
-import { usePathname, Link } from 'next-intl/navigation'; // Changed import
 import { useTranslations } from "next-intl";
+import { usePathname, Link } from '@/lib/next-intl-navigation-proxy'; // Changed import
 
 import {
   SidebarProvider,
@@ -31,7 +31,7 @@ interface AppLayoutClientProps {
 }
 
 export function AppLayoutClient({ children }: AppLayoutClientProps) {
-  const pathname = usePathname(); // Changed usage
+  const pathname = usePathname(); 
   const t = useTranslations();
 
   const renderNavItems = (items: NavItem[]) => {
@@ -44,7 +44,7 @@ export function AppLayoutClient({ children }: AppLayoutClientProps) {
 
       return (
         <SidebarMenuItem key={item.labelKey}>
-          <Link href={item.href} passHref legacyBehavior> {/* Changed usage */}
+          <Link href={item.href} passHref legacyBehavior> 
             <SidebarMenuButton
               isActive={isActive}
               tooltip={{ children: translatedLabel, className: "bg-primary text-primary-foreground" }}
@@ -59,7 +59,7 @@ export function AppLayoutClient({ children }: AppLayoutClientProps) {
                 const translatedSubLabel = t(subItem.labelKey);
                 return (
                   <SidebarMenuSubItem key={subItem.labelKey}>
-                    <Link href={subItem.href} passHref legacyBehavior> {/* Changed usage */}
+                    <Link href={subItem.href} passHref legacyBehavior> 
                       <SidebarMenuSubButton isActive={pathname === subItem.href}>
                         <subItem.icon />
                         <span>{translatedSubLabel}</span>

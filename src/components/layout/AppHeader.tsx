@@ -2,8 +2,8 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { useRouter, usePathname, Link } from "next-intl/navigation"; // Changed import
 import { useLocale, useTranslations } from "next-intl";
+import { useRouter, usePathname, Link } from "@/lib/next-intl-navigation-proxy"; // Changed import
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
@@ -38,8 +38,8 @@ export function AppHeader() {
   const t = useTranslations('AppHeader');
   const { theme, setTheme } = useTheme();
 
-  const router = useRouter(); // Changed usage
-  const pathname = usePathname(); // Changed usage
+  const router = useRouter(); 
+  const pathname = usePathname(); 
   const currentLocale = useLocale() as Language;
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -210,7 +210,7 @@ export function AppHeader() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">
               <Avatar className="h-8 w-8">
-                <AvatarImage src="https://placehold.co/100x100.png" alt="Admin" data-ai-hint="user avatar" />
+                <AvatarImage src="https://placehold.co/100x100.png" alt="Admin" data-ai-hint="user avatar"/>
                 <AvatarFallback>AD</AvatarFallback>
               </Avatar>
             </Button>
@@ -219,20 +219,20 @@ export function AppHeader() {
             <DropdownMenuLabel>{t('myAccount')}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/admin/settings"> {/* Changed usage */}
+              <Link href="/admin/settings"> 
                 <Settings className="mr-2 h-4 w-4" />
                 <span>{t('settings')}</span>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-               <Link href="/admin/profile"> {/* Changed usage */}
+               <Link href="/admin/profile"> 
                 <UserCircle className="mr-2 h-4 w-4" />
                 <span>{t('profile')}</span>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/login">{t('logout')}</Link> {/* Changed usage */}
+              <Link href="/login">{t('logout')}</Link> 
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
