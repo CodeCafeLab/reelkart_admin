@@ -7,24 +7,15 @@ export const locales = ['en', 'hi'];
 export const defaultLocale = 'en';
 
 export default getRequestConfig(async ({locale}: {locale: string}) => {
-  // Log the received locale immediately after destructuring
-  console.log(`[i18n.ts] getRequestConfig called. Destructured locale: "${locale}", Type: ${typeof locale}`);
-
-  // Validate that the locale is a string and is one of the supported locales.
-  // This check is crucial.
+  // Validate that the incoming `locale` parameter is a valid string and one of the supported locales.
+  // This is the most crucial check.
   if (typeof locale !== 'string' || !locales.includes(locale)) {
-    console.error(`[i18n.ts] Invalid or unsupported locale: "${locale}". Type: ${typeof locale}. Calling notFound().`);
-    notFound(); // This should ideally stop execution by throwing a special error Next.js handles.
-
-    // Explicitly return a fallback message structure to ensure the function exits
-    // if notFound() doesn't halt execution in this async context.
-    // This is a critical safeguard.
+    console.error(`[i18n.ts] Invalid or unsupported locale received: "${locale}" (type: ${typeof locale}). Calling notFound().`);
+    notFound();
+    // Fallback return, though notFound() should prevent this from being reached.
+    // This is to satisfy TypeScript's need for a return path if notFound() doesn't throw in a way it recognizes here.
     return {
-      messages: {
-        // Provide a minimal fallback structure or leave empty if preferred
-        ErrorMessages: { INVALID_LOCALE: "The requested locale is not supported." }
-      },
-      timeZone: 'Etc/UTC' // Provide a default timezone
+      messages: {} 
     };
   }
 
@@ -34,7 +25,7 @@ export default getRequestConfig(async ({locale}: {locale: string}) => {
   try {
     // Dynamically import the messages for the validated locale.
     // The path is relative to this file (src/i18n.ts).
-    // For JSON modules with resolveJsonModule: true, the imported module IS the JSON object.
+    // For JSON modules with resolveJsonModule: true, the imported module IS the JSON object itself.
     // No .default is needed.
     const messages = await import(`./messages/${locale}.json`);
     console.log(`[i18n.ts] SUCCESS: Imported messages for locale: "${locale}"`);
@@ -49,10 +40,7 @@ export default getRequestConfig(async ({locale}: {locale: string}) => {
     notFound();
     // Fallback return in case of import error for a valid locale.
     return {
-      messages: {
-        ErrorMessages: { IMPORT_FAILED: "Failed to load messages for the locale." }
-      },
-      timeZone: 'Etc/UTC'
+      messages: {}
     };
   }
 });
