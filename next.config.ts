@@ -1,4 +1,6 @@
 import type {NextConfig} from 'next';
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const withNextIntl = require('next-intl/plugin')('./src/i18n.ts');
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -20,4 +22,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);
