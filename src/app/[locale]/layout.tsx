@@ -3,13 +3,14 @@ import type {Metadata} from 'next';
 import {NextIntlClientProvider} from 'next-intl';
 import {getMessages} from 'next-intl/server';
 import '../globals.css'; // Adjusted path
-import { Toaster } from "@/components/ui/toaster";
-import { ThemeProvider } from "@/contexts/ThemeContext";
+// ThemeProvider and Toaster are removed as they are now in the root layout (src/app/layout.tsx)
 
-export const metadata: Metadata = {
-  title: 'ReelView Admin',
-  description: 'Admin Panel for ReelKart',
-};
+// Metadata can be defined here if locale-specific titles/descriptions are needed,
+// but the global one from src/app/layout.tsx will also apply.
+// export const metadata: Metadata = {
+// title: 'ReelView Admin', // Example, could be localized
+// description: 'Admin Panel for ReelKart',
+// };
 
 interface LocaleLayoutProps {
   children: React.ReactNode;
@@ -27,30 +28,19 @@ export default async function LocaleLayout({
 
   let messages;
   try {
-    // This call triggers getRequestConfig which might be failing
     messages = await getMessages();
   } catch (error) {
     console.error("Failed to get messages in LocaleLayout:", error);
     // Provide a fallback to prevent NextIntlClientProvider from crashing if messages are undefined
-    messages = {};
+    messages = {}; // Or handle more gracefully, e.g., redirect to a default locale or show an error page
   }
 
+  // This layout no longer renders <html>, <head>, or <body> tags.
+  // It also does not render ThemeProvider or Toaster.
+  // Its main role is to provide the NextIntlClientProvider for its children.
   return (
-    <html lang={locale} suppressHydrationWarning>
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-      </head>
-      {/* Pass the resolved locale and messages to NextIntlClientProvider */}
-      <NextIntlClientProvider messages={messages} locale={locale}>
-        <ThemeProvider>
-          <body className="font-body antialiased">
-            {children}
-            <Toaster />
-          </body>
-        </ThemeProvider>
-      </NextIntlClientProvider>
-    </html>
+    <NextIntlClientProvider messages={messages} locale={locale}>
+      {children}
+    </NextIntlClientProvider>
   );
 }
