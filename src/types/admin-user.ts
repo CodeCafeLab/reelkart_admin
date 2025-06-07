@@ -2,10 +2,27 @@
 import { z } from 'zod';
 
 // Define roles using an array for easier iteration and as an ENUM for Zod
-export const ADMIN_ROLES = ['SuperAdmin', 'KYCReviewer', 'ContentModerator', 'LogisticsManager', 'ReportsManager', 'SellerManager'] as const;
+export const ADMIN_ROLES = ['SuperAdmin', 'KYCReviewer', 'ContentModerator', 'LogisticsManager', 'ReportsManager', 'SellerManager', 'SupportExecutive'] as const;
 export type AdminRole = (typeof ADMIN_ROLES)[number];
 
 export const adminRoleEnum = z.enum(ADMIN_ROLES);
+
+// Define sample permissions
+export const PERMISSIONS = [
+  'manage_admin_users', 'view_admin_users',
+  'manage_roles_permissions', 'view_roles_permissions',
+  'manage_platform_settings',
+  'view_dashboard_analytics',
+  'manage_kyc_submissions',
+  'moderate_content',
+  'manage_order_logistics',
+  'manage_seller_packages',
+  'view_ai_usage_logs',
+  'generate_reports',
+  'handle_support_tickets',
+  'manage_seller_onboarding'
+] as const;
+export type Permission = (typeof PERMISSIONS)[number];
 
 export interface AdminUser {
   id: string;
