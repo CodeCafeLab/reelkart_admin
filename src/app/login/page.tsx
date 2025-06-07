@@ -54,11 +54,23 @@ export default function LoginPage() {
         .single();
 
       if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116: No rows returned
-        console.error("Supabase fetch admin error:", fetchError);
-        setLoginError(fetchError.message || "Error fetching admin details.");
+        console.error("Supabase fetch admin error occurred. Original error object:", fetchError);
+        // Attempt to get more details from the error object
+        const message = (fetchError as any).message || "No message property";
+        const code = (fetchError as any).code || "No code property";
+        const details = (fetchError as any).details || "No details property";
+        const hint = (fetchError as any).hint || "No hint property";
+        
+        console.error(`Detailed Error - Message: ${message}, Code: ${code}, Details: ${details}, Hint: ${hint}`);
+        if ((fetchError as any).stack) {
+            console.error("Error stack:", (fetchError as any).stack);
+        }
+        
+        const displayErrorMessage = (fetchError as any).message || "Error fetching admin details.";
+        setLoginError(displayErrorMessage);
         toast({
           title: "Login Error",
-          description: fetchError.message || "Could not fetch admin details.",
+          description: displayErrorMessage,
           variant: "destructive",
         });
         setIsLoading(false);
@@ -117,9 +129,6 @@ export default function LoginPage() {
     }
   };
   
-  // This log helps confirm if the Supabase client initialized correctly.
-  // It should print "Supabase client initialized on login page: Yes"
-  // if your .env.local is correctly set up and the server was restarted.
   console.log("Supabase client initialized on login page:", supabase ? "Yes" : "No");
 
   return (
@@ -210,4 +219,3 @@ export default function LoginPage() {
     </Card>
   );
 }
-
