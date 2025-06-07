@@ -12,12 +12,22 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from 'date-fns';
+import { SellerProfileSheet } from "@/components/admin/sellers/SellerProfileSheet"; // Import the new sheet
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
-const initialSellersData = [
+// Define Seller type matching the data structure
+interface Seller {
+  id: string;
+  name: string;
+  businessName: string;
+  status: SellerStatus;
+  joinedDate: string; 
+}
+
+const initialSellersData: Seller[] = [
   { id: "usr001-sel", name: "Rajesh Kumar", businessName: "RK Electronics", status: "Approved", joinedDate: "2024-06-01" },
   { id: "usr002-sel", name: "Anjali Desai", businessName: "Anjali's Artistry", status: "Pending", joinedDate: "2024-07-10" },
   { id: "usr003-sel", name: "Mohammed Khan", businessName: "Khan's Spices", status: "Approved", joinedDate: "2024-05-15" },
@@ -36,7 +46,7 @@ const initialSellersData = [
 ];
 
 type SellerStatus = "Pending" | "Approved" | "Rejected";
-type SortableSellerKeys = keyof typeof initialSellersData[0];
+type SortableSellerKeys = keyof Seller;
 
 const statusVariant: Record<SellerStatus, "default" | "secondary" | "destructive" | "outline"> = {
   Pending: "outline",
@@ -46,7 +56,9 @@ const statusVariant: Record<SellerStatus, "default" | "secondary" | "destructive
 
 export default function SellersPage() {
   const { toast } = useToast();
-  const [sellersData, setSellersData] = useState(initialSellersData); 
+  const [sellersData, setSellersData] = useState<Seller[]>(initialSellersData); 
+  const [isProfileSheetOpen, setIsProfileSheetOpen] = useState(false);
+  const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null);
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<SellerStatus | "All">("All");
@@ -120,12 +132,17 @@ export default function SellersPage() {
     return sortConfig.direction === 'ascending' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
   };
 
-  const formatDate = (dateString: string) => {
+  const formatDateDisplay = (dateString: string) => {
     try {
       return format(parseISO(dateString), "PP"); 
     } catch (error) {
       return format(new Date(dateString), "PP"); 
     }
+  };
+
+  const handleViewProfile = (seller: Seller) => {
+    setSelectedSeller(seller);
+    setIsProfileSheetOpen(true);
   };
   
   const handleExportCSV = () => {
@@ -137,7 +154,7 @@ export default function SellersPage() {
           seller.id,
           seller.businessName,
           seller.name,
-          formatDate(seller.joinedDate),
+          formatDateDisplay(seller.joinedDate),
           seller.status
         ].map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')
       )
@@ -163,7 +180,7 @@ export default function SellersPage() {
         "Seller ID": seller.id,
         "Business Name": seller.businessName,
         "Contact Name": seller.name,
-        "Joined Date": formatDate(seller.joinedDate),
+        "Joined Date": formatDateDisplay(seller.joinedDate),
         "Status": seller.status,
       }));
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
@@ -183,7 +200,7 @@ export default function SellersPage() {
         seller.id,
         seller.businessName,
         seller.name,
-        formatDate(seller.joinedDate),
+        formatDateDisplay(seller.joinedDate),
         seller.status,
       ];
       tableRows.push(sellerData);
@@ -282,7 +299,7 @@ export default function SellersPage() {
                       {seller.businessName}
                     </TableCell>
                     <TableCell>{seller.name}</TableCell>
-                    <TableCell>{formatDate(seller.joinedDate)}</TableCell>
+                    <TableCell>{formatDateDisplay(seller.joinedDate)}</TableCell>
                     <TableCell>
                       <Badge 
                         variant={statusVariant[seller.status as SellerStatus]}
@@ -300,7 +317,7 @@ export default function SellersPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => toast({ title: "View Profile", description: `Viewing profile for ${seller.name}`})}>
+                          <DropdownMenuItem onClick={() => handleViewProfile(seller)}>
                             <Eye className="mr-2 h-4 w-4" /> View Profile
                           </DropdownMenuItem>
                           {seller.status === "Pending" && (
@@ -394,6 +411,14 @@ export default function SellersPage() {
           </div>
         </CardContent>
       </Card>
+
+      {selectedSeller && (
+        <SellerProfileSheet
+          isOpen={isProfileSheetOpen}
+          onOpenChange={setIsProfileSheetOpen}
+          seller={selectedSeller}
+        />
+      )}
     </div>
   );
 }
