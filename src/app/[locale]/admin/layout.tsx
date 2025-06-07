@@ -1,5 +1,8 @@
+
 import { AppLayoutClient } from '@/components/layout/AppLayoutClient';
 import type { Metadata } from 'next';
+import { AppSettingsProvider } from '@/contexts/AppSettingsContext';
+
 // import { getTranslator } from 'next-intl/server'; // If you need to translate metadata
 
 // export async function generateMetadata({params: {locale}}): Promise<Metadata> {
@@ -21,5 +24,5 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <AppLayoutClient>{children}</AppLayoutClient>;
+  return (<AppSettingsProvider><AppLayoutClient>{children}</AppLayoutClient></AppSettingsProvider>);
 }
