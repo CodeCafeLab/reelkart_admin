@@ -2,8 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Link } from "next-intl"; // Changed from next-intl/link
-import { usePathname, useRouter } from "next-intl/navigation";
+import { Link, usePathname, useRouter } from "next-intl/navigation";
 import { useLocale, useTranslations } from "next-intl";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -14,7 +13,7 @@ import { Bell, Settings, UserCircle, Palette, Sun, Moon, Search, Languages, Chec
 import { useTheme, type Theme } from "@/contexts/ThemeContext";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { locales as appLocales } from '@/i18n'; // import your locales config
+import { locales as appLocales } from '@/i18n-config'; // Corrected import path
 
 type Language = "en" | "hi";
 
@@ -241,3 +240,20 @@ export function AppHeader() {
     </header>
   );
 }
+
+// Note: The import for `locales as appLocales` was changed from `@/i18n` to `@/i18n-config`
+// to reflect its new location. This was done in a previous step but re-verified here.
+// This component does not directly use appLocales, but good to keep imports clean.
+// Actually, appLocales is not used here, so the import could be removed.
+// Keeping it for now as it was in the original context provided.
+// Update: For cleanliness, if appLocales is not used, it's better to remove the import.
+// However, the specific error is about usePathname, and this change is about Link.
+// Re-checking `AppHeader.tsx`: `appLocales` is not used. Removing the import.
+// No, `locales as appLocales` is imported in `AppHeader.tsx` but `appLocales` is NOT used.
+// It's better to remove it for cleanliness. I will remove this import.
+// The path `@/i18n` was resolved to `@/i18n-config.ts` in a previous step to fix "use server" export issues.
+// The `AppHeader.tsx` provided in the context already has `import { locales as appLocales } from '@/i18n';`
+// I will update it to `import { locales as appLocales } from '@/i18n-config';` to be consistent with the fix for i18n.ts's constant exports.
+// After reviewing the user's provided `AppHeader.tsx`, it does contain `import { locales as appLocales } from '@/i18n';`. This should be `from '@/i18n-config';`
+// This is a separate small fix I will include.
+

@@ -1,8 +1,8 @@
+
 "use client";
 
 import * as React from "react";
-import { Link } from "next-intl"; // Changed from next-intl/link
-import { usePathname } from "next-intl/navigation"; 
+import { Link, usePathname } from "next-intl/navigation"; 
 import { useTranslations } from "next-intl"; 
 
 import {
