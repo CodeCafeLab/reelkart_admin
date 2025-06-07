@@ -5,7 +5,7 @@ const path = require('path'); // Import path module
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const withNextIntl = require('next-intl/plugin')(
-  './i18n.ts' // Updated path: Use a simple relative path from project root
+  './src/i18n.ts' // Explicitly point to src/i18n.ts
 );
 
 const nextConfig: NextConfig = {
