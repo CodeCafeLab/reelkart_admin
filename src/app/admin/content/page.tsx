@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react"; // Added useEffect
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -10,7 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreHorizontal, Eye, ThumbsUp, ThumbsDown, Flag, Video, FileText } from "lucide-react";
 import Image from "next/image";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ContentDetailsSheet } from "@/components/admin/content/ContentDetailsSheet"; // Import the new sheet
+import { ContentDetailsSheet } from "@/components/admin/content/ContentDetailsSheet";
 import { useToast } from "@/hooks/use-toast";
 
 export interface ContentItem {
@@ -48,25 +48,34 @@ export default function ContentPage() {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [selectedContentItem, setSelectedContentItem] = useState<ContentItem | null>(null);
 
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
   const handleViewDetails = (item: ContentItem) => {
     setSelectedContentItem(item);
     setIsSheetOpen(true);
   };
 
   const handleApproveContent = (itemId: string) => {
-    setContentItems(prev => prev.map(item => item.id === itemId ? { ...item, status: "Approved" } : item));
+    setContentItems(prev => prev.map(item => item.id === itemId ? { ...item, status: "Approved" as ContentStatus } : item));
     setSelectedContentItem(prev => prev && prev.id === itemId ? { ...prev, status: "Approved" as ContentStatus } : prev);
     toast({ title: "Content Approved", description: `Content item ${itemId} has been approved.` });
     if (selectedContentItem?.id === itemId) setIsSheetOpen(false);
   };
 
   const handleRejectContent = (itemId: string, reason: string = "Violation of guidelines") => {
-    setContentItems(prev => prev.map(item => item.id === itemId ? { ...item, status: "Rejected", reason } : item));
+    setContentItems(prev => prev.map(item => item.id === itemId ? { ...item, status: "Rejected" as ContentStatus, reason } : item));
     setSelectedContentItem(prev => prev && prev.id === itemId ? { ...prev, status: "Rejected" as ContentStatus, reason } : prev);
     toast({ title: "Content Rejected", description: `Content item ${itemId} has been rejected. Reason: ${reason}`, variant: "destructive" });
     if (selectedContentItem?.id === itemId) setIsSheetOpen(false);
   };
 
+  if (!hasMounted) {
+    return null; // Or a loading skeleton component
+  }
 
   return (
     <div className="space-y-6">
@@ -274,7 +283,6 @@ function ContentActions({ item, onViewDetails, onApprove, onReject }: ContentAct
             <DropdownMenuItem 
               className="text-red-600 focus:text-red-700 focus:bg-red-50"
               onClick={() => {
-                // Basic prompt for rejection reason. Could be replaced with a dialog.
                 const reason = prompt("Enter reason for rejection (optional):");
                 onReject(item.id, reason || "Violation of guidelines");
               }}
@@ -290,4 +298,3 @@ function ContentActions({ item, onViewDetails, onApprove, onReject }: ContentAct
     </DropdownMenu>
   );
 }
-

@@ -15,7 +15,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, XCircle, Film, FileText, User, CalendarDays, AlertTriangle } from "lucide-react";
-import type { ContentItem, ContentStatus } from "@/app/admin/content/page"; // Ensure correct path
+import type { ContentItem, ContentStatus } from "@/app/admin/content/page";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface ContentDetailsSheetProps {
   isOpen: boolean;
@@ -71,8 +72,8 @@ export function ContentDetailsSheet({
                     <Image
                         src={contentItem.thumbnailUrl}
                         alt={contentItem.title}
-                        layout="fill"
-                        objectFit="cover"
+                        fill // Changed from layout="fill" objectFit="cover" for Next 13+ Image
+                        style={{ objectFit: "cover" }} // Replaces objectFit prop
                         className="rounded-lg"
                         data-ai-hint="video thumbnail"
                     />
@@ -111,7 +112,7 @@ export function ContentDetailsSheet({
                 </div>
               </div>
               <div className="flex items-center gap-2 col-span-1 sm:col-span-2">
-                <contentItem.type === "Video" ? Film className="h-4 w-4 text-muted-foreground" /> : <FileText className="h-4 w-4 text-muted-foreground" />
+                {contentItem.type === "Video" ? <Film className="h-4 w-4 text-muted-foreground" /> : <FileText className="h-4 w-4 text-muted-foreground" />}
                  <div>
                   <p className="text-xs text-muted-foreground">Type</p>
                   <p className="font-medium">{contentItem.type}</p>
@@ -162,7 +163,3 @@ export function ContentDetailsSheet({
     </Sheet>
   );
 }
-
-// Need to import Card and CardContent if they are not already imported
-import { Card, CardContent } from "@/components/ui/card";
-
