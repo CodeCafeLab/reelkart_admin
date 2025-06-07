@@ -48,8 +48,8 @@ export default function LoginPage() {
     try {
       // Fetch admin user by email from the 'AdminUser' table
       const { data: adminUser, error: fetchError } = await supabase
-        .from('AdminUser') // Changed from 'admins' to 'AdminUser'
-        .select('email, hashed_password, is_active, role') // Added is_active and role
+        .from('AdminUser') 
+        .select('email, hashed_password, is_active, role') 
         .eq('email', data.email)
         .single();
 
@@ -88,13 +88,10 @@ export default function LoginPage() {
         
         console.log("Admin email found, PROTOTYPE login successful for:", adminUser.email, "Role:", adminUser.role);
         
-        // Here you could potentially store user role or other info in a client-side store/context
-        // For now, just a success toast and redirect.
         toast({
           title: "Login Successful (Prototype)",
           description: "Redirecting to dashboard...",
         });
-        // TODO: Implement session management (e.g., using Supabase Auth or custom JWTs)
         router.push("/admin/dashboard");
 
       } else {
@@ -120,6 +117,9 @@ export default function LoginPage() {
     }
   };
   
+  // This log helps confirm if the Supabase client initialized correctly.
+  // It should print "Supabase client initialized on login page: Yes"
+  // if your .env.local is correctly set up and the server was restarted.
   console.log("Supabase client initialized on login page:", supabase ? "Yes" : "No");
 
   return (
@@ -210,3 +210,4 @@ export default function LoginPage() {
     </Card>
   );
 }
+
