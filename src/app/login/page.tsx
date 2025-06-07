@@ -12,8 +12,12 @@ import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
-import { supabase } from "@/lib/supabaseClient";
+// import { supabase } from "@/lib/supabaseClient"; // Supabase import removed
 import { useToast } from "@/hooks/use-toast";
+
+// Define hardcoded credentials for direct login
+const HARDCODED_EMAIL = "admin@example.com";
+const HARDCODED_PASSWORD = "password123";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -45,91 +49,31 @@ export default function LoginPage() {
     setLoginError(null);
     setIsLoading(true);
 
-    try {
-      // Fetch admin user by email from the 'AdminUser' table
-      const { data: adminUser, error: fetchError } = await supabase
-        .from('AdminUser') 
-        .select('email, hashed_password, is_active, role') 
-        .eq('email', data.email)
-        .single();
+    // Simulate network delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
-      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116: No rows returned
-        console.error("Supabase fetch admin error occurred. Original error object:", fetchError);
-        // Attempt to get more details from the error object
-        const message = (fetchError as any).message || "No message property";
-        const code = (fetchError as any).code || "No code property";
-        const details = (fetchError as any).details || "No details property";
-        const hint = (fetchError as any).hint || "No hint property";
-        
-        console.error(`Detailed Error - Message: ${message}, Code: ${code}, Details: ${details}, Hint: ${hint}`);
-        if ((fetchError as any).stack) {
-            console.error("Error stack:", (fetchError as any).stack);
-        }
-        
-        const displayErrorMessage = (fetchError as any).message || "Error fetching admin details.";
-        setLoginError(displayErrorMessage);
-        toast({
-          title: "Login Error",
-          description: displayErrorMessage,
-          variant: "destructive",
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      if (adminUser) {
-        if (!adminUser.is_active) {
-          setLoginError("Your account is inactive. Please contact support.");
-          toast({
-            title: "Login Failed",
-            description: "Account is inactive.",
-            variant: "destructive",
-          });
-          setIsLoading(false);
-          return;
-        }
-
-        // TODO: SERVER-SIDE PASSWORD VERIFICATION REQUIRED FOR PRODUCTION!
-        // This is a PROTOTYPE-ONLY simulation.
-        // In a real app, you MUST send `data.password` (the plain text password)
-        // and `adminUser.hashed_password` to a Supabase Edge Function or a secure backend endpoint.
-        // That server-side function would then use a library like 'bcryptjs' to securely compare them:
-        // `const isValid = await bcrypt.compare(plainTextPassword, hashedPasswordFromDb);`
-        // Only if `isValid` is true should you proceed.
-        // For this prototype, we assume the password is correct if the email exists and is active.
-        
-        console.log("Admin email found, PROTOTYPE login successful for:", adminUser.email, "Role:", adminUser.role);
-        
-        toast({
-          title: "Login Successful (Prototype)",
-          description: "Redirecting to dashboard...",
-        });
-        router.push("/admin/dashboard");
-
-      } else {
-        // No admin user found with that email, or PGRST116 error (no rows)
-        setLoginError("Invalid email or password.");
-        toast({
-          title: "Login Failed",
-          description: "Invalid email or password.",
-          variant: "destructive",
-        });
-      }
-    } catch (e) {
-      console.error("Login submission error:", e);
-      const errorMessage = e instanceof Error ? e.message : "An unexpected error occurred during login.";
+    if (data.email === HARDCODED_EMAIL && data.password === HARDCODED_PASSWORD) {
+      console.log("Direct login successful for:", data.email);
+      
+      toast({
+        title: "Login Successful (Direct)",
+        description: "Redirecting to dashboard...",
+      });
+      router.push("/admin/dashboard");
+    } else {
+      const errorMessage = "Invalid email or password.";
       setLoginError(errorMessage);
       toast({
-        title: "Login Error",
+        title: "Login Failed",
         description: errorMessage,
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
+
+    setIsLoading(false);
   };
   
-  console.log("Supabase client initialized on login page:", supabase ? "Yes" : "No");
+  // console.log("Supabase client initialized on login page:", supabase ? "Yes" : "No"); // Supabase log removed
 
   return (
     <Card className="w-full max-w-md shadow-2xl">
@@ -208,12 +152,8 @@ export default function LoginPage() {
         </Form>
         <div className="mt-6 text-center text-sm">
           <p className="text-muted-foreground">
-            Contact support if you have trouble logging in.
+            For demo, use email: <strong>admin@example.com</strong> and password: <strong>password123</strong>
           </p>
-        </div>
-        <div className="mt-4 text-center text-xs text-amber-600 dark:text-amber-400">
-          <p className="font-semibold">PROTOTYPE NOTE:</p>
-          <p>Login checks email existence & active status in 'AdminUser' table. Password is NOT securely verified for this prototype. See code comments for production requirements.</p>
         </div>
       </CardContent>
     </Card>
