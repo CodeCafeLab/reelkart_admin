@@ -3,7 +3,7 @@ import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
   /* config options here */
-  transpilePackages: ['next-intl'], // Added this line
+  // transpilePackages: ['next-intl'], // Removed this line
   typescript: {
     ignoreBuildErrors: true,
   },
