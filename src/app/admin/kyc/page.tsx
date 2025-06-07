@@ -99,7 +99,6 @@ const kycRequestsData: KycRequest[] = [
     ],
     details: { "License Number": "KA0120200012345", "Valid Till": "2035-05-20" }
   },
-   // Add 15 more mock data entries for pagination testing
   { id: "kyc006", userId: "usr106", name: "Anika Mehra", submissionDate: "2024-07-18T10:00:00Z", status: "Pending", documentType: "Aadhaar", documentImages: [{ name: "Aadhaar", url: "https://placehold.co/600x400.png", aiHint: "document identity" }], details: { "Aadhaar Number": "XXXX-XXXX-5678" } },
   { id: "kyc007", userId: "usr107", name: "Kabir Yadav", submissionDate: "2024-07-18T11:00:00Z", status: "Approved", documentType: "PAN Card", documentImages: [{ name: "PAN", url: "https://placehold.co/600x400.png", aiHint: "document tax" }], details: { "PAN Number": "FGHIJ5678K" } },
   { id: "kyc008", userId: "usr108", name: "Diya Chopra", submissionDate: "2024-07-17T12:00:00Z", status: "Rejected", documentType: "Passport", documentImages: [{ name: "Passport", url: "https://placehold.co/600x400.png", aiHint: "document passport" }], details: { "Passport Number": "AB1234567", "Reason": "Signature mismatch" } },
@@ -140,7 +139,7 @@ export default function KycPage() {
   const [sortConfig, setSortConfig] = useState<{ key: SortableKycKeys; direction: 'ascending' | 'descending' }>({ key: 'submissionDate', direction: 'descending' });
 
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10); // Can be made configurable
+  const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const processedKycRequests = useMemo(() => {
     let filteredItems = [...kycRequests];
@@ -198,7 +197,7 @@ export default function KycPage() {
       direction = 'descending';
     }
     setSortConfig({ key, direction });
-    setCurrentPage(1); // Reset to first page on sort
+    setCurrentPage(1); 
   };
   
   const renderSortIcon = (columnKey: SortableKycKeys) => {
@@ -311,7 +310,7 @@ export default function KycPage() {
       const kycData = [
         req.id,
         req.name,
-        format(parseISO(req.submissionDate), "PP"), // Shorter date for PDF
+        format(parseISO(req.submissionDate), "PP"), 
         req.documentType,
         req.status,
         detailsString,
@@ -325,7 +324,7 @@ export default function KycPage() {
       startY: 20,
       theme: 'grid',
       headStyles: { fillColor: [75, 75, 75] },
-      columnStyles: { 5: { cellWidth: 'wrap' } } // Wrap details column
+      columnStyles: { 5: { cellWidth: 'wrap' } } 
     });
     doc.text("KYC Requests Report", 14, 15);
     doc.save("kyc_requests.pdf");
@@ -340,41 +339,51 @@ export default function KycPage() {
           <h1 className="text-3xl font-bold font-headline">KYC Management</h1>
           <p className="text-muted-foreground">Review and manage user KYC submissions.</p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2">
-            <Button onClick={handleExportCSV} variant="outline"><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
-            <Button onClick={handleExportExcel} variant="outline"><Download className="mr-2 h-4 w-4" /> Export Excel</Button>
-            <Button onClick={handleExportPDF} variant="outline"><Download className="mr-2 h-4 w-4" /> Export PDF</Button>
-        </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>KYC Submissions</CardTitle>
-          <CardDescription>
-            SuperAdmins and KYCReviewers can approve or reject submissions.
-          </CardDescription>
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="flex-grow">
+                <CardTitle>KYC Submissions</CardTitle>
+                <CardDescription>
+                    SuperAdmins and KYCReviewers can approve or reject submissions.
+                </CardDescription>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-stretch sm:items-center">
+                <Input 
+                  placeholder="Search ID, Name, User ID, Doc Type..." 
+                  value={searchTerm}
+                  onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1);}}
+                  className="max-w-full sm:max-w-xs flex-grow" 
+                />
+                <Select value={statusFilter} onValueChange={(value) => {setStatusFilter(value as KYCStatus | "All"); setCurrentPage(1);}}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Filter by status..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="All">All Statuses</SelectItem>
+                    <SelectItem value="Pending">Pending</SelectItem>
+                    <SelectItem value="Approved">Approved</SelectItem>
+                    <SelectItem value="Rejected">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="w-full sm:w-auto">
+                            <Download className="mr-2 h-4 w-4" /> Export
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={handleExportCSV}>Export CSV</DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExportExcel}>Export Excel</DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExportPDF}>Export PDF</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 mb-6 items-center">
-            <Input 
-              placeholder="Search by ID, Name, User ID, Doc Type..." 
-              value={searchTerm}
-              onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1);}}
-              className="max-w-full sm:max-w-sm flex-grow" 
-            />
-            <Select value={statusFilter} onValueChange={(value) => {setStatusFilter(value as KYCStatus | "All"); setCurrentPage(1);}}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Filter by status..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Statuses</SelectItem>
-                <SelectItem value="Pending">Pending</SelectItem>
-                <SelectItem value="Approved">Approved</SelectItem>
-                <SelectItem value="Rejected">Rejected</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           <Table>
             <TableHeader>
               <TableRow>

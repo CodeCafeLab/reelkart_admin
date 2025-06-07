@@ -46,7 +46,7 @@ const statusVariant: Record<SellerStatus, "default" | "secondary" | "destructive
 
 export default function SellersPage() {
   const { toast } = useToast();
-  const [sellersData, setSellersData] = useState(initialSellersData); // Master list
+  const [sellersData, setSellersData] = useState(initialSellersData); 
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<SellerStatus | "All">("All");
@@ -122,9 +122,9 @@ export default function SellersPage() {
 
   const formatDate = (dateString: string) => {
     try {
-      return format(parseISO(dateString), "PP"); // e.g., Jul 22, 2024
+      return format(parseISO(dateString), "PP"); 
     } catch (error) {
-      return format(new Date(dateString), "PP"); // Fallback for potentially non-ISO dates
+      return format(new Date(dateString), "PP"); 
     }
   };
   
@@ -208,39 +208,49 @@ export default function SellersPage() {
           <h1 className="text-3xl font-bold font-headline">Seller Onboarding</h1>
           <p className="text-muted-foreground">Manage seller applications and profiles.</p>
         </div>
-         <div className="flex flex-col sm:flex-row gap-2">
-            <Button onClick={handleExportCSV} variant="outline"><Download className="mr-2 h-4 w-4" /> Export CSV</Button>
-            <Button onClick={handleExportExcel} variant="outline"><Download className="mr-2 h-4 w-4" /> Export Excel</Button>
-            <Button onClick={handleExportPDF} variant="outline"><Download className="mr-2 h-4 w-4" /> Export PDF</Button>
-        </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Seller Applications & Profiles</CardTitle>
-          <CardDescription>Track and manage seller onboarding status.</CardDescription>
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div className="flex-grow">
+                <CardTitle>Seller Applications & Profiles</CardTitle>
+                <CardDescription>Track and manage seller onboarding status.</CardDescription>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-stretch sm:items-center">
+                <Input 
+                  placeholder="Search ID, Name, Business..." 
+                  value={searchTerm}
+                  onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1);}}
+                  className="max-w-full sm:max-w-xs flex-grow" 
+                />
+                <Select value={statusFilter} onValueChange={(value) => {setStatusFilter(value as SellerStatus | "All"); setCurrentPage(1);}}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Filter by status..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="All">All Statuses</SelectItem>
+                    <SelectItem value="Pending">Pending</SelectItem>
+                    <SelectItem value="Approved">Approved</SelectItem>
+                    <SelectItem value="Rejected">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="outline" className="w-full sm:w-auto">
+                            <Download className="mr-2 h-4 w-4" /> Export
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={handleExportCSV}>Export CSV</DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExportExcel}>Export Excel</DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExportPDF}>Export PDF</DropdownMenuItem>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 mb-6 items-center">
-            <Input 
-              placeholder="Search ID, Name, Business..." 
-              value={searchTerm}
-              onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1);}}
-              className="max-w-full sm:max-w-sm flex-grow" 
-            />
-            <Select value={statusFilter} onValueChange={(value) => {setStatusFilter(value as SellerStatus | "All"); setCurrentPage(1);}}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Filter by status..." />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="All">All Statuses</SelectItem>
-                <SelectItem value="Pending">Pending</SelectItem>
-                <SelectItem value="Approved">Approved</SelectItem>
-                <SelectItem value="Rejected">Rejected</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
           <Table>
             <TableHeader>
               <TableRow>
@@ -308,7 +318,7 @@ export default function SellersPage() {
                             <DropdownMenuItem 
                               className="text-red-600 focus:text-red-700 focus:bg-red-50"
                                onClick={() => {
-                                setSellersData(prev => prev.map(s => s.id === seller.id ? {...s, status: "Rejected"} : s)); // Example: Suspend could mean Rejected or a new "Suspended" status
+                                setSellersData(prev => prev.map(s => s.id === seller.id ? {...s, status: "Rejected"} : s)); 
                                 toast({ title: "Seller Role Suspended", description: `${seller.businessName} role suspended.`, variant: "destructive"});
                               }}
                             >
