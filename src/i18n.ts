@@ -1,39 +1,41 @@
 
-import {notFound} from 'next/navigation';
 import {getRequestConfig} from 'next-intl/server';
+import {notFound} from 'next/navigation';
 
 export const locales = ['en', 'hi'];
 export const defaultLocale = 'en';
 
-export default getRequestConfig(async ({locale}) => {
+export default getRequestConfig(async ({locale}: {locale: string}) => {
   // Log the received locale at the very beginning
-  console.log(`[i18n.ts] getRequestConfig called with locale: "${locale}" (type: ${typeof locale})`);
+  console.log(`[i18n.ts] Entry: getRequestConfig received locale: "${locale}" (type: ${typeof locale})`);
 
-  // Validate that the incoming `locale` parameter is a valid string and one of the supported locales
-  if (typeof locale !== 'string' || !locales.includes(locale)) {
-    console.error(`[i18n.ts] Invalid or unsupported locale: "${locale}". Calling notFound().`);
+  // Step 1: Validate locale.
+  // This check is critical. If locale is undefined, null, or not a supported string,
+  // we must call notFound() and stop further execution.
+  if (!locale || typeof locale !== 'string' || !locales.includes(locale)) {
+    console.error(`[i18n.ts] Validation FAIL: Locale "${locale}" (type: ${typeof locale}) is invalid or not supported. Supported: ${locales.join(', ')}. Calling notFound().`);
     notFound();
-    // Even though notFound() should terminate rendering, return a compliant structure.
+    // Ensure this function absolutely stops here if locale is invalid.
     return {messages: {}};
   }
 
-  // At this point, 'locale' is a validated, known string (e.g., 'en' or 'hi')
-  console.log(`[i18n.ts] Proceeding to load messages for valid locale: "${locale}"`);
+  // If we reach here, 'locale' is a validated, known string (e.g., 'en' or 'hi')
+  console.log(`[i18n.ts] Validation PASS: Proceeding with locale: "${locale}"`);
 
   try {
-    // The path is relative to this file (src/i18n.ts)
-    // Using .default as it's common in next-intl examples for messages.
-    const messages = (await import(`./messages/${locale}.json`)).default;
-    console.log(`[i18n.ts] Successfully loaded messages for locale: "${locale}"`);
+    // Dynamically import the messages for the validated locale.
+    // Path is relative to this file (src/i18n.ts).
+    // For JSON modules with resolveJsonModule: true, the imported module IS the JSON object.
+    // No .default is needed.
+    const messages = await import(`./messages/${locale}.json`);
+    console.log(`[i18n.ts] SUCCESS: Imported messages for locale: "${locale}"`);
     return {
       messages
     };
   } catch (error) {
-    console.error(`[i18n.ts] CRITICAL: Failed to import messages for validated locale "${locale}". Path: ./messages/${locale}.json. Error:`, error);
-    // If messages can't be loaded for a locale that was otherwise validated,
-    // this indicates a deeper issue (e.g., file missing, corrupt, or build misconfiguration).
+    console.error(`[i18n.ts] IMPORT FAIL: Could not import messages for locale "${locale}". Path: ./messages/${locale}.json. Error:`, error);
+    // If import fails for a validated locale, it's a critical issue (e.g., file missing).
     notFound();
-    // Fallback
-    return {messages: {}};
+    return {messages: {}}; // Fallback
   }
 });
