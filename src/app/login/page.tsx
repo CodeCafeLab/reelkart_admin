@@ -13,11 +13,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
-import { useToast } from "@/hooks/use-toast"; // Import useToast
+import { useToast } from "@/hooks/use-toast";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { toast } = useToast(); // Initialize useToast
+  const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -46,16 +46,16 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      // Fetch admin user by email from the custom 'admins' table
+      // Fetch admin user by email from the 'AdminUser' table
       const { data: adminUser, error: fetchError } = await supabase
-        .from('admins')
-        .select('email, hashed_password') // We select hashed_password to acknowledge its existence
+        .from('AdminUser') // Changed from 'admins' to 'AdminUser'
+        .select('email, hashed_password, is_active, role') // Added is_active and role
         .eq('email', data.email)
         .single();
 
-      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116: "Searched item was not found" / No rows returned
+      if (fetchError && fetchError.code !== 'PGRST116') { // PGRST116: No rows returned
         console.error("Supabase fetch admin error:", fetchError);
-        setLoginError(fetchError.message || "Error fetching admin details. Check console.");
+        setLoginError(fetchError.message || "Error fetching admin details.");
         toast({
           title: "Login Error",
           description: fetchError.message || "Could not fetch admin details.",
@@ -66,21 +66,37 @@ export default function LoginPage() {
       }
 
       if (adminUser) {
-        // IMPORTANT: Server-Side Password Verification Needed for Production!
-        // The following is a PROTOTYPE-ONLY simulation.
+        if (!adminUser.is_active) {
+          setLoginError("Your account is inactive. Please contact support.");
+          toast({
+            title: "Login Failed",
+            description: "Account is inactive.",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        // TODO: SERVER-SIDE PASSWORD VERIFICATION REQUIRED FOR PRODUCTION!
+        // This is a PROTOTYPE-ONLY simulation.
         // In a real app, you MUST send `data.password` (the plain text password)
-        // and `adminUser.hashed_password` to a Supabase Edge Function.
-        // That Edge Function would then use a library like 'bcryptjs' to securely compare them:
+        // and `adminUser.hashed_password` to a Supabase Edge Function or a secure backend endpoint.
+        // That server-side function would then use a library like 'bcryptjs' to securely compare them:
         // `const isValid = await bcrypt.compare(plainTextPassword, hashedPasswordFromDb);`
-        // Only if `isValid` is true should you proceed with creating a session or redirecting.
-        //
-        // For this prototype, we'll assume the password is correct if the email exists in 'admins' table.
-        console.log("Admin email found, PROTOTYPE login successful for:", adminUser.email);
+        // Only if `isValid` is true should you proceed.
+        // For this prototype, we assume the password is correct if the email exists and is active.
+        
+        console.log("Admin email found, PROTOTYPE login successful for:", adminUser.email, "Role:", adminUser.role);
+        
+        // Here you could potentially store user role or other info in a client-side store/context
+        // For now, just a success toast and redirect.
         toast({
           title: "Login Successful (Prototype)",
           description: "Redirecting to dashboard...",
         });
+        // TODO: Implement session management (e.g., using Supabase Auth or custom JWTs)
         router.push("/admin/dashboard");
+
       } else {
         // No admin user found with that email, or PGRST116 error (no rows)
         setLoginError("Invalid email or password.");
@@ -188,7 +204,7 @@ export default function LoginPage() {
         </div>
         <div className="mt-4 text-center text-xs text-amber-600 dark:text-amber-400">
           <p className="font-semibold">PROTOTYPE NOTE:</p>
-          <p>Login checks email existence in 'admins' table. Password is not verified for this prototype. See code comments for production requirements.</p>
+          <p>Login checks email existence & active status in 'AdminUser' table. Password is NOT securely verified for this prototype. See code comments for production requirements.</p>
         </div>
       </CardContent>
     </Card>
