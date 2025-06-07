@@ -16,30 +16,30 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 const THEME_STORAGE_KEY = "reelkart-admin-theme";
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(() => {
-    if (typeof window !== "undefined") {
-      const storedTheme = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
-      if (storedTheme && ["light", "dark"].includes(storedTheme)) {
-        return storedTheme;
-      }
-      // Default to system preference or 'light' if not available
-      return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-    }
-    return "light"; // Default for server-side rendering
-  });
+  // Initialize with a default theme that server will use for consistent initial render
+  const [theme, setThemeState] = useState<Theme>("light"); 
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const root = window.document.documentElement;
-      root.classList.remove("light", "dark", "theme-custom-purple", "theme-blue-gradient");
-      
-      // Always add the current theme class.
-      // If it's 'light', it will add 'light'. If it's 'dark', it will add 'dark'.
-      root.classList.add(theme); 
-      
-      localStorage.setItem(THEME_STORAGE_KEY, theme);
+    // This effect runs on the client after hydration
+    // Determine the actual client-side theme from localStorage or system preference
+    const storedTheme = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
+    const systemPrefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const initialClientTheme = storedTheme || (systemPrefersDark ? "dark" : "light");
+    
+    // Update the state only if the determined client theme is different from the initial server-rendered theme
+    if (initialClientTheme !== theme) {
+      setThemeState(initialClientTheme);
     }
-  }, [theme]);
+  }, []); // Empty dependency array: runs once on mount on the client
+
+  useEffect(() => {
+    // This effect applies the theme to the DOM and updates localStorage whenever the `theme` state changes.
+    // It runs on initial mount (with the default "light" or client-determined theme) and whenever `theme` is updated.
+    const root = window.document.documentElement;
+    root.classList.remove("light", "dark"); // Clean up old theme classes
+    root.classList.add(theme); // Add the current theme class
+    localStorage.setItem(THEME_STORAGE_KEY, theme);
+  }, [theme]); // Dependency array: runs when `theme` changes
 
   const setTheme = useCallback((newTheme: Theme) => {
     setThemeState(newTheme);

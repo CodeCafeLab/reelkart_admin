@@ -24,33 +24,38 @@ const AppSettingsContext = createContext<AppSettingsContextType | undefined>(und
 const APP_SETTINGS_STORAGE_KEY = "reelkart-admin-app-settings";
 
 export function AppSettingsProvider({ children }: { children: ReactNode }) {
-  const [settings, setSettingsState] = useState<AppSettings>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const storedSettings = localStorage.getItem(APP_SETTINGS_STORAGE_KEY);
-        if (storedSettings) {
-          const parsedSettings = JSON.parse(storedSettings);
-          // Basic validation to ensure essential fields are present
-          if (parsedSettings && parsedSettings.currencyCode && parsedSettings.currencySymbol) {
-            return parsedSettings;
-          }
-        }
-      } catch (error) {
-        console.error("Error loading app settings from localStorage:", error);
-      }
-    }
-    return defaultSettings; // Default for server-side or if localStorage fails
-  });
+  // Initialize with default settings for consistent server and initial client render
+  const [settings, setSettingsState] = useState<AppSettings>(defaultSettings);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem(APP_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
-      } catch (error) {
-        console.error("Error saving app settings to localStorage:", error);
+    // This effect runs on the client after hydration
+    // Load settings from localStorage
+    try {
+      const storedSettings = localStorage.getItem(APP_SETTINGS_STORAGE_KEY);
+      if (storedSettings) {
+        const parsedSettings = JSON.parse(storedSettings);
+        // Basic validation
+        if (parsedSettings && parsedSettings.currencyCode && parsedSettings.currencySymbol) {
+          // Update state only if different from initial to avoid unnecessary re-render
+          if (parsedSettings.currencyCode !== settings.currencyCode || parsedSettings.currencySymbol !== settings.currencySymbol) {
+            setSettingsState(parsedSettings);
+          }
+        }
       }
+    } catch (error) {
+      console.error("Error loading app settings from localStorage:", error);
     }
-  }, [settings]);
+  }, []); // Empty dependency array: runs once on mount on the client
+
+  useEffect(() => {
+    // This effect saves settings to localStorage whenever the `settings` state changes.
+    // It runs on initial mount (with default or loaded settings) and whenever `settings` is updated.
+    try {
+      localStorage.setItem(APP_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+    } catch (error) {
+      console.error("Error saving app settings to localStorage:", error);
+    }
+  }, [settings]); // Dependency array: runs when `settings` changes
 
   const updateSettings = useCallback((newSettings: AppSettings) => {
     setSettingsState(newSettings);
