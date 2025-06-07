@@ -4,7 +4,7 @@
 import type { ReactNode } from 'react';
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 
-export type Theme = "light" | "dark" | "custom-purple" | "blue-gradient";
+export type Theme = "light" | "dark";
 
 interface ThemeContextType {
   theme: Theme;
@@ -19,7 +19,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
     if (typeof window !== "undefined") {
       const storedTheme = localStorage.getItem(THEME_STORAGE_KEY) as Theme | null;
-      if (storedTheme && ["light", "dark", "custom-purple", "blue-gradient"].includes(storedTheme)) {
+      if (storedTheme && ["light", "dark"].includes(storedTheme)) {
         return storedTheme;
       }
       // Default to system preference or 'light' if not available
@@ -33,11 +33,10 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       const root = window.document.documentElement;
       root.classList.remove("light", "dark", "theme-custom-purple", "theme-blue-gradient");
       
-      if (theme === "light") {
-        root.classList.add("light");
-      } else {
-        root.classList.add(theme);
-      }
+      // Always add the current theme class.
+      // If it's 'light', it will add 'light'. If it's 'dark', it will add 'dark'.
+      root.classList.add(theme); 
+      
       localStorage.setItem(THEME_STORAGE_KEY, theme);
     }
   }, [theme]);

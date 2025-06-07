@@ -7,7 +7,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/components/ui/dropdown-menu";
-import { Bell, Settings, UserCircle, Palette, Sun, Moon, Paintbrush, Search, Languages, Check, X } from "lucide-react";
+import { Bell, Settings, UserCircle, Palette, Sun, Moon, Search, Languages, Check, X } from "lucide-react";
 import { useTheme, type Theme } from "@/contexts/ThemeContext";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
@@ -24,8 +24,6 @@ export function AppHeader() {
   const themeOptions: { value: Theme; label: string; icon: React.ElementType }[] = [
     { value: "light", label: "Light", icon: Sun },
     { value: "dark", label: "Black & White", icon: Moon },
-    { value: "custom-purple", label: "Deep Purple", icon: Paintbrush },
-    { value: "blue-gradient", label: "Blue Gradient", icon: Palette },
   ];
 
   const languageOptions: { value: Language; label: string }[] = [
