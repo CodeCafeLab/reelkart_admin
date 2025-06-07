@@ -13,36 +13,33 @@ export default getRequestConfig(async ({locale}) => {
   if (typeof locale !== 'string' || !locales.includes(locale)) {
     console.error(`[i18n.ts] Invalid or undefined locale: "${locale}". Calling notFound().`);
     notFound();
-    // The lines below should ideally not be reached if notFound() terminates execution.
-    console.warn('[i18n.ts] Execution continued after notFound() call for invalid locale. This is unexpected.');
-    return {messages: {}}; // Fallback in case notFound() doesn't fully halt or for type safety
+    // If notFound() doesn't immediately terminate, this return should prevent further processing.
+    console.warn('[i18n.ts] Execution might continue past notFound() for invalid locale. Returning empty messages to prevent crash.');
+    return {messages: {}};
   }
 
-  // At this point, locale is a validated string, e.g., 'en' or 'hi'
-  const validLocale = locale as 'en' | 'hi'; // Type assertion after validation
-  console.log(`[i18n.ts] Validated locale: "${validLocale}". Attempting to load messages dynamically.`);
+  // At this point, 'locale' is a validated string (e.g., 'en' or 'hi').
+  // We can safely use it to construct the import path.
+  const messagesPath = `./messages/${locale}.json`;
+
+  console.log(`[i18n.ts] Validated locale: "${locale}". Attempting to import messages dynamically from: "${messagesPath}"`);
 
   let messages;
-  const importPath = `./messages/${validLocale}.json`;
-  console.log(`[i18n.ts] Attempting to import messages from: "${importPath}"`);
-
   try {
-    // Dynamically import the messages for the validated locale
-    // For JSON modules with resolveJsonModule: true, you get the object directly.
-    messages = await import(`./messages/${validLocale}.json`);
-    console.log(`[i18n.ts] Successfully loaded messages for locale: "${validLocale}" from path: "${importPath}"`);
+    // Dynamically import the messages for the validated 'locale'
+    // For JSON modules with resolveJsonModule: true, you get the object directly, no .default needed.
+    messages = await import(`./messages/${locale}.json`);
+    console.log(`[i18n.ts] Successfully loaded messages for locale: "${locale}" from path: "${messagesPath}"`);
   } catch (error) {
-    console.error(`[i18n.ts] Failed to load messages for locale "${validLocale}" from path: "${importPath}". Error:`, error);
-    // It's important to trigger a notFound() if messages can't be loaded.
+    console.error(`[i18n.ts] Failed to load messages for locale "${locale}" (attempted path: "${messagesPath}"). Error:`, error);
     notFound();
-    console.warn('[i18n.ts] Execution continued after notFound() call due to message loading failure.');
+    console.warn('[i18n.ts] Execution might continue past notFound() after message loading failure. Returning empty messages to prevent crash.');
     return {messages: {}}; // Fallback
   }
 
+  // Safeguard in case messages are unexpectedly undefined after a successful-looking import
   if (!messages) {
-    // This case should ideally be caught by the try-catch or the initial validation,
-    // but as a safeguard:
-    console.error(`[i18n.ts] Messages object is undefined after import for locale "${validLocale}". This is unexpected. Calling notFound().`);
+    console.error(`[i18n.ts] Messages object is undefined after import for locale "${locale}" (path: "${messagesPath}"). This is unexpected. Calling notFound().`);
     notFound();
     return {messages: {}}; // Fallback
   }
