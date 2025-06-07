@@ -1,19 +1,9 @@
+
 // src/app/api/admin-users/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
 import bcrypt from 'bcryptjs';
-import { z } from 'zod';
-
-// Define roles using the same ENUM values as in your database schema
-const adminRoleEnum = z.enum(['SuperAdmin', 'KYCReviewer', 'ContentModerator', 'LogisticsManager', 'ReportsManager', 'SellerManager']);
-
-const createAdminUserSchema = z.object({
-  email: z.string().email({ message: "Invalid email address" }),
-  password: z.string().min(8, { message: "Password must be at least 8 characters long" }),
-  full_name: z.string().optional(),
-  role: adminRoleEnum,
-  is_active: z.boolean().optional().default(true),
-});
+import { createAdminUserSchema } from '@/types/admin-user';
 
 // GET /api/admin-users - List all admin users
 export async function GET(request: NextRequest) {
@@ -23,7 +13,9 @@ export async function GET(request: NextRequest) {
   try {
     const { data, error } = await supabase
       .from('AdminUser')
-      .select('id, email, full_name, role, last_login_at, is_active, created_at, updated_at'); // Exclude hashed_password
+      .select('id, email, full_name, role, last_login_at, is_active, created_at, updated_at') // Exclude hashed_password
+      .order('created_at', { ascending: false });
+
 
     if (error) {
       console.error('Supabase error fetching admin users:', error);

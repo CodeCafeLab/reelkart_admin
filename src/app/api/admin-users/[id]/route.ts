@@ -1,18 +1,8 @@
+
 // src/app/api/admin-users/[id]/route.ts
 import { NextResponse, type NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabaseClient';
-import { z } from 'zod';
-
-// Define roles using the same ENUM values as in your database schema
-const adminRoleEnum = z.enum(['SuperAdmin', 'KYCReviewer', 'ContentModerator', 'LogisticsManager', 'ReportsManager', 'SellerManager']);
-
-const updateAdminUserSchema = z.object({
-  full_name: z.string().optional(),
-  role: adminRoleEnum.optional(),
-  is_active: z.boolean().optional(),
-  // Note: Password updates should be handled via a separate, more secure endpoint (e.g., /api/admin-users/[id]/change-password)
-  // that might require current password or other verification.
-});
+import { updateAdminUserSchema } from '@/types/admin-user';
 
 // GET /api/admin-users/[id] - Get a single admin user by ID
 export async function GET(request: NextRequest, { params }: { params: { id: string } }) {

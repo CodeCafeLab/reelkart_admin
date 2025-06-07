@@ -1,6 +1,6 @@
 
 import type { LucideIcon } from 'lucide-react';
-import { LayoutDashboard, Users, ShieldCheck, Film, Truck, BrainCircuit, FilePieChart, Settings, LogOut, UserCircle } from 'lucide-react';
+import { LayoutDashboard, Users, ShieldCheck, Film, Truck, BrainCircuit, FilePieChart, Settings, LogOut, UserCircle, UserCog } from 'lucide-react';
 
 export interface NavItem {
   label: string;
@@ -21,6 +21,7 @@ export const navItems: NavItem[] = [
 ];
 
 export const bottomNavItems: NavItem[] = [
+  { label: 'Admin Users', href: '/admin/admin-users', icon: UserCog },
   { label: 'Settings', href: '/admin/settings', icon: Settings },
   { label: 'Profile', href: '/admin/profile', icon: UserCircle }, 
   { label: 'Logout', href: '/login', icon: LogOut },
