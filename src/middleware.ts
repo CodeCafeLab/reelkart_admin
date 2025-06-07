@@ -1,22 +1,17 @@
 
-import createMiddleware from 'next-intl/middleware';
-import { locales, defaultLocale } from '@/i18n'; // Use path alias
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-export default createMiddleware({
-  // A list of all locales that are supported
-  locales: locales,
-
-  // Used when no locale matches
-  defaultLocale: defaultLocale,
-
-  // If true, the locale prefix is always present in the URL (e.g., /en/about).
-  // If false, the default locale does not have a prefix (e.g., /about for defaultLocale, /es/about for Spanish).
-  localePrefix: 'as-needed', // or 'always' or 'never'
-});
+// This middleware is now a pass-through as internationalization (i18n) has been removed.
+// This file can be deleted if no other global middleware logic is needed in the future.
+export function middleware(request: NextRequest) {
+  // Simply pass the request through without any i18n logic
+  return NextResponse.next();
+}
 
 export const config = {
-  // Match only internationalized pathnames
-  // Skip all paths that should not be internationalized. This example skips paths
-  // containing a word character (e.g. /api/, /_next/, /images/, etc.) before the matched path.
+  // This matcher used to be for i18n routes.
+  // If you have other middleware logic, adjust this matcher accordingly.
+  // If this middleware is truly no longer needed, you can delete this file.
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)']
 };
