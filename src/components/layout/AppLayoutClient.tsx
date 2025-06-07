@@ -24,6 +24,7 @@ import { Logo } from "@/components/icons/Logo";
 import { AppHeader } from "./AppHeader";
 import type { NavItem } from "@/config/nav";
 import { navItems, bottomNavItems } from "@/config/nav";
+import { Shield } from "lucide-react"; // Import the icon to be used when collapsed
 
 interface AppLayoutClientProps {
   children: React.ReactNode;
@@ -43,7 +44,7 @@ export function AppLayoutClient({ children }: AppLayoutClientProps) {
           <Link href={item.href} passHref legacyBehavior> 
             <SidebarMenuButton
               isActive={isActive}
-              tooltip={{ children: item.label, className: "bg-primary text-primary-foreground" }}
+              tooltip={item.label} // Add tooltip with the item label
             >
               <item.icon />
               <span>{item.label}</span>
@@ -54,7 +55,11 @@ export function AppLayoutClient({ children }: AppLayoutClientProps) {
               {item.subItems.map((subItem) => (
                 <SidebarMenuSubItem key={subItem.label}>
                   <Link href={subItem.href} passHref legacyBehavior> 
-                    <SidebarMenuSubButton isActive={pathname === subItem.href}>
+                    <SidebarMenuSubButton 
+                      isActive={pathname === subItem.href}
+                      // Tooltips for sub-items might be less common or handled differently,
+                      // but can be added if needed: tooltip={subItem.label}
+                    >
                       <subItem.icon />
                       <span>{subItem.label}</span>
                     </SidebarMenuSubButton>
@@ -75,8 +80,8 @@ export function AppLayoutClient({ children }: AppLayoutClientProps) {
           <div className="group-data-[collapsible=icon]:hidden">
              <Logo />
           </div>
-          <div className="hidden group-data-[collapsible=icon]:block">
-            <Logo className="h-6 w-6 text-sidebar-foreground" />
+          <div className="hidden group-data-[collapsible=icon]:block text-center py-1"> {/* Adjusted padding for icon */}
+            <Shield className="h-7 w-7 text-primary inline-block" /> {/* Icon for collapsed state */}
           </div>
         </SidebarHeader>
         <SidebarContent className="flex-1 p-2">
