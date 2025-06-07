@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import * as NextIntlNavigation from "next-intl/navigation";
+import { useRouter, usePathname, Link } from "next-intl/navigation"; // Changed import
 import { useLocale, useTranslations } from "next-intl";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -38,8 +38,8 @@ export function AppHeader() {
   const t = useTranslations('AppHeader');
   const { theme, setTheme } = useTheme();
 
-  const router = NextIntlNavigation.useRouter();
-  const pathname = NextIntlNavigation.usePathname();
+  const router = useRouter(); // Changed usage
+  const pathname = usePathname(); // Changed usage
   const currentLocale = useLocale() as Language;
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -219,20 +219,20 @@ export function AppHeader() {
             <DropdownMenuLabel>{t('myAccount')}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <NextIntlNavigation.Link href="/admin/settings">
+              <Link href="/admin/settings"> {/* Changed usage */}
                 <Settings className="mr-2 h-4 w-4" />
                 <span>{t('settings')}</span>
-              </NextIntlNavigation.Link>
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-               <NextIntlNavigation.Link href="/admin/profile">
+               <Link href="/admin/profile"> {/* Changed usage */}
                 <UserCircle className="mr-2 h-4 w-4" />
                 <span>{t('profile')}</span>
-              </NextIntlNavigation.Link>
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <NextIntlNavigation.Link href="/login">{t('logout')}</NextIntlNavigation.Link>
+              <Link href="/login">{t('logout')}</Link> {/* Changed usage */}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

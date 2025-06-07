@@ -2,7 +2,7 @@
 "use client";
 
 import * as React from "react";
-import * as NextIntlNavigation from "next-intl/navigation";
+import { usePathname, Link } from 'next-intl/navigation'; // Changed import
 import { useTranslations } from "next-intl";
 
 import {
@@ -31,7 +31,7 @@ interface AppLayoutClientProps {
 }
 
 export function AppLayoutClient({ children }: AppLayoutClientProps) {
-  const pathname = NextIntlNavigation.usePathname();
+  const pathname = usePathname(); // Changed usage
   const t = useTranslations();
 
   const renderNavItems = (items: NavItem[]) => {
@@ -44,7 +44,7 @@ export function AppLayoutClient({ children }: AppLayoutClientProps) {
 
       return (
         <SidebarMenuItem key={item.labelKey}>
-          <NextIntlNavigation.Link href={item.href} passHref legacyBehavior>
+          <Link href={item.href} passHref legacyBehavior> {/* Changed usage */}
             <SidebarMenuButton
               isActive={isActive}
               tooltip={{ children: translatedLabel, className: "bg-primary text-primary-foreground" }}
@@ -52,19 +52,19 @@ export function AppLayoutClient({ children }: AppLayoutClientProps) {
               <item.icon />
               <span>{translatedLabel}</span>
             </SidebarMenuButton>
-          </NextIntlNavigation.Link>
+          </Link>
           {item.subItems && (
             <SidebarMenuSub>
               {item.subItems.map((subItem) => {
                 const translatedSubLabel = t(subItem.labelKey);
                 return (
                   <SidebarMenuSubItem key={subItem.labelKey}>
-                    <NextIntlNavigation.Link href={subItem.href} passHref legacyBehavior>
+                    <Link href={subItem.href} passHref legacyBehavior> {/* Changed usage */}
                       <SidebarMenuSubButton isActive={pathname === subItem.href}>
                         <subItem.icon />
                         <span>{translatedSubLabel}</span>
                       </SidebarMenuSubButton>
-                    </NextIntlNavigation.Link>
+                    </Link>
                   </SidebarMenuSubItem>
                 );
               })}
