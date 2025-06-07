@@ -1,20 +1,39 @@
+
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Link, usePathname, useRouter } from "next-intl/client"; // next-intl/client for Link, usePathname, useRouter
+import { Link } from "next-intl/link";
+import { usePathname, useRouter } from "next-intl/navigation";
 import { useLocale, useTranslations } from "next-intl";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/components/ui/dropdown-menu";
-import { Bell, Settings, UserCircle, Palette, Sun, Moon, Search, Languages, Check, X } from "lucide-react";
+import { Bell, Settings, UserCircle, Palette, Sun, Moon, Search, Languages, Check, X, Info, AlertTriangle, ShoppingCart, MessageSquare } from "lucide-react";
 import { useTheme, type Theme } from "@/contexts/ThemeContext";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { locales as appLocales } from '@/i18n'; // import your locales config
 
 type Language = "en" | "hi";
+
+interface NotificationItem {
+  id: string;
+  icon: React.ElementType;
+  iconColor?: string;
+  title: string;
+  time: string;
+  read?: boolean;
+}
+
+const mockNotifications: NotificationItem[] = [
+  { id: "n1", icon: ShoppingCart, title: "New order #ORD7891 received", time: "5m ago", iconColor: "text-blue-500" },
+  { id: "n2", icon: MessageSquare, title: "Message from SellerX: Stock inquiry", time: "1h ago", read: true },
+  { id: "n3", icon: AlertTriangle, title: "Payment failed for order #ORD7880", time: "3h ago", iconColor: "text-red-500" },
+  { id: "n4", icon: Info, title: "System update scheduled for 2 AM", time: "1d ago", read: true, iconColor: "text-green-500" },
+];
+
 
 export function AppHeader() {
   const t = useTranslations('AppHeader');
@@ -152,10 +171,42 @@ export function AppHeader() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <Button variant="ghost" size="icon" className="rounded-full">
-          <Bell className="h-5 w-5" />
-          <span className="sr-only">{t('notifications')}</span>
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="rounded-full relative">
+              <Bell className="h-5 w-5" />
+              {mockNotifications.filter(n => !n.read).length > 0 && (
+                 <span className="absolute top-0 right-0 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-bold leading-none text-red-100 transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+                  {mockNotifications.filter(n => !n.read).length}
+                </span>
+              )}
+              <span className="sr-only">{t('notifications')}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-80">
+            <DropdownMenuLabel>{t('notifications')}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {mockNotifications.length === 0 ? (
+              <DropdownMenuItem disabled>No new notifications</DropdownMenuItem>
+            ) : (
+              mockNotifications.map((notification) => (
+                <DropdownMenuItem key={notification.id} className={cn("flex items-start gap-3 p-3", !notification.read && "bg-accent/10")}>
+                  <notification.icon className={cn("h-5 w-5 mt-0.5 shrink-0", notification.iconColor || "text-muted-foreground")} />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium leading-tight">{notification.title}</p>
+                    <p className="text-xs text-muted-foreground">{notification.time}</p>
+                  </div>
+                  {!notification.read && <span className="h-2 w-2 rounded-full bg-primary self-center"></span>}
+                </DropdownMenuItem>
+              ))
+            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="justify-center text-sm text-primary hover:!text-primary cursor-pointer">
+              View all notifications
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+        
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">
@@ -190,3 +241,7 @@ export function AppHeader() {
     </header>
   );
 }
+
+    
+
+    
