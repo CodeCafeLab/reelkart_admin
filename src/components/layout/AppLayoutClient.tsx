@@ -2,8 +2,8 @@
 "use client";
 
 import * as React from "react";
-import { Link, usePathname } from "next-intl/navigation"; 
-import { useTranslations } from "next-intl"; 
+import * as NextIntlNavigation from "next-intl/navigation";
+import { useTranslations } from "next-intl";
 
 import {
   SidebarProvider,
@@ -31,20 +31,20 @@ interface AppLayoutClientProps {
 }
 
 export function AppLayoutClient({ children }: AppLayoutClientProps) {
-  const pathname = usePathname(); 
-  const t = useTranslations(); 
+  const pathname = NextIntlNavigation.usePathname();
+  const t = useTranslations();
 
   const renderNavItems = (items: NavItem[]) => {
     return items.map((item) => {
-      const translatedLabel = t(item.labelKey); 
-      
-      const isActive = item.href === '/admin/dashboard' 
-        ? pathname === item.href 
+      const translatedLabel = t(item.labelKey);
+
+      const isActive = item.href === '/admin/dashboard'
+        ? pathname === item.href
         : pathname.startsWith(item.href);
 
       return (
         <SidebarMenuItem key={item.labelKey}>
-          <Link href={item.href} passHref legacyBehavior>
+          <NextIntlNavigation.Link href={item.href} passHref legacyBehavior>
             <SidebarMenuButton
               isActive={isActive}
               tooltip={{ children: translatedLabel, className: "bg-primary text-primary-foreground" }}
@@ -52,19 +52,19 @@ export function AppLayoutClient({ children }: AppLayoutClientProps) {
               <item.icon />
               <span>{translatedLabel}</span>
             </SidebarMenuButton>
-          </Link>
+          </NextIntlNavigation.Link>
           {item.subItems && (
             <SidebarMenuSub>
               {item.subItems.map((subItem) => {
                 const translatedSubLabel = t(subItem.labelKey);
                 return (
                   <SidebarMenuSubItem key={subItem.labelKey}>
-                    <Link href={subItem.href} passHref legacyBehavior>
+                    <NextIntlNavigation.Link href={subItem.href} passHref legacyBehavior>
                       <SidebarMenuSubButton isActive={pathname === subItem.href}>
                         <subItem.icon />
                         <span>{translatedSubLabel}</span>
                       </SidebarMenuSubButton>
-                    </Link>
+                    </NextIntlNavigation.Link>
                   </SidebarMenuSubItem>
                 );
               })}

@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Link, usePathname, useRouter } from "next-intl/navigation";
+import * as NextIntlNavigation from "next-intl/navigation";
 import { useLocale, useTranslations } from "next-intl";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -13,7 +13,7 @@ import { Bell, Settings, UserCircle, Palette, Sun, Moon, Search, Languages, Chec
 import { useTheme, type Theme } from "@/contexts/ThemeContext";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import { locales as appLocales } from '@/i18n-config'; // Corrected import path
+import { locales as appLocales } from '@/i18n-config';
 
 type Language = "en" | "hi";
 
@@ -37,9 +37,9 @@ const mockNotifications: NotificationItem[] = [
 export function AppHeader() {
   const t = useTranslations('AppHeader');
   const { theme, setTheme } = useTheme();
-  
-  const router = useRouter();
-  const pathname = usePathname();
+
+  const router = NextIntlNavigation.useRouter();
+  const pathname = NextIntlNavigation.usePathname();
   const currentLocale = useLocale() as Language;
 
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -112,7 +112,7 @@ export function AppHeader() {
               placeholder={t('searchPlaceholder')}
               className={cn(
                 "h-9 rounded-full bg-muted/50 focus-visible:ring-primary text-sm",
-                isSearchOpen ? "px-3 py-1 border-border" : "p-0 border-none" 
+                isSearchOpen ? "px-3 py-1 border-border" : "p-0 border-none"
               )}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -205,7 +205,7 @@ export function AppHeader() {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-        
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="rounded-full">
@@ -219,20 +219,20 @@ export function AppHeader() {
             <DropdownMenuLabel>{t('myAccount')}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/admin/settings">
+              <NextIntlNavigation.Link href="/admin/settings">
                 <Settings className="mr-2 h-4 w-4" />
                 <span>{t('settings')}</span>
-              </Link>
+              </NextIntlNavigation.Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-               <Link href="/admin/profile">
+               <NextIntlNavigation.Link href="/admin/profile">
                 <UserCircle className="mr-2 h-4 w-4" />
                 <span>{t('profile')}</span>
-              </Link>
+              </NextIntlNavigation.Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/login">{t('logout')}</Link>
+              <NextIntlNavigation.Link href="/login">{t('logout')}</NextIntlNavigation.Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -240,20 +240,3 @@ export function AppHeader() {
     </header>
   );
 }
-
-// Note: The import for `locales as appLocales` was changed from `@/i18n` to `@/i18n-config`
-// to reflect its new location. This was done in a previous step but re-verified here.
-// This component does not directly use appLocales, but good to keep imports clean.
-// Actually, appLocales is not used here, so the import could be removed.
-// Keeping it for now as it was in the original context provided.
-// Update: For cleanliness, if appLocales is not used, it's better to remove the import.
-// However, the specific error is about usePathname, and this change is about Link.
-// Re-checking `AppHeader.tsx`: `appLocales` is not used. Removing the import.
-// No, `locales as appLocales` is imported in `AppHeader.tsx` but `appLocales` is NOT used.
-// It's better to remove it for cleanliness. I will remove this import.
-// The path `@/i18n` was resolved to `@/i18n-config.ts` in a previous step to fix "use server" export issues.
-// The `AppHeader.tsx` provided in the context already has `import { locales as appLocales } from '@/i18n';`
-// I will update it to `import { locales as appLocales } from '@/i18n-config';` to be consistent with the fix for i18n.ts's constant exports.
-// After reviewing the user's provided `AppHeader.tsx`, it does contain `import { locales as appLocales } from '@/i18n';`. This should be `from '@/i18n-config';`
-// This is a separate small fix I will include.
-
