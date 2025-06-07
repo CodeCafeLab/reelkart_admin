@@ -2,8 +2,18 @@
 import {notFound} from 'next/navigation';
 import {getRequestConfig} from 'next-intl/server';
 
+// Import all message files statically using path aliases
+import enMessages from '@/messages/en.json';
+import hiMessages from '@/messages/hi.json';
+
 export const locales = ['en', 'hi'];
 export const defaultLocale = 'en';
+
+// Create a map of all messages
+const allMessages = {
+  en: enMessages,
+  hi: hiMessages,
+};
 
 export default getRequestConfig(async ({locale}) => {
   // Log the received locale and its type immediately
@@ -20,26 +30,21 @@ export default getRequestConfig(async ({locale}) => {
 
   // At this point, locale is a validated string, e.g., 'en' or 'hi'
   const validLocale = locale as 'en' | 'hi'; // Type assertion after validation
-  console.log(`[i18n.ts] Validated locale: "${validLocale}". Attempting to load messages.`);
+  console.log(`[i18n.ts] Validated locale: "${validLocale}". Attempting to retrieve messages statically.`);
 
-  let messages;
-  // For logging purposes, construct the path as before
-  const importPathForLog = `./messages/${validLocale}.json`;
-  console.log(`[i18n.ts] Constructed import path for logging: "${importPathForLog}"`);
+  const messages = allMessages[validLocale];
 
-  try {
-    // Dynamically import the messages for the validated locale using a direct template literal
-    messages = (await import(`./messages/${validLocale}.json`)).default;
-    console.log(`[i18n.ts] Successfully loaded messages for locale: "${validLocale}" from path: "./messages/${validLocale}.json"`);
-  } catch (error) {
-    console.error(`[i18n.ts] Failed to load messages for locale "${validLocale}" from path: "./messages/${validLocale}.json". Error:`, error);
-    notFound(); // Trigger notFound if messages can't be loaded for a valid locale
-    // The lines below should ideally not be reached.
-    console.warn('[i18n.ts] Execution continued after notFound() call due to message loading failure. This is unexpected.');
+  if (!messages) {
+    console.error(`[i18n.ts] Messages not found for locale "${validLocale}" in statically imported map. This is unexpected.`);
+    notFound();
+    console.warn('[i18n.ts] Execution continued after notFound() call due to missing messages in map.');
     return {messages: {}}; // Fallback
   }
+
+  console.log(`[i18n.ts] Successfully retrieved messages for locale: "${validLocale}" from static map.`);
 
   return {
     messages
   };
 });
+
