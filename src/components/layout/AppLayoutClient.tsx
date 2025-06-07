@@ -3,7 +3,7 @@
 
 import * as React from "react";
 import { useTranslations } from "next-intl";
-import { usePathname, Link } from '@/lib/next-intl-navigation-proxy'; // Changed import
+import { usePathname, useRouter, Link } from 'next-intl/navigation'; // Reverted to direct import
 
 import {
   SidebarProvider,

@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { useRouter, usePathname, Link } from "@/lib/next-intl-navigation-proxy"; // Changed import
+import { useRouter, usePathname, Link } from 'next-intl/navigation'; // Reverted to direct import
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";

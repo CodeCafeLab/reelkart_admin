@@ -26,6 +26,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  transpilePackages: ['next-intl'], // Explicitly transpile next-intl
 };
 
 export default withNextIntl(nextConfig);
