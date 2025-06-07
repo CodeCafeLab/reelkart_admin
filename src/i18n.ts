@@ -23,16 +23,16 @@ export default getRequestConfig(async ({locale}) => {
   console.log(`[i18n.ts] Validated locale: "${validLocale}". Attempting to load messages.`);
 
   let messages;
-  // Construct the import path explicitly
-  const importPath = `./messages/${validLocale}.json`;
-  console.log(`[i18n.ts] Constructed import path: "${importPath}"`);
+  // For logging purposes, construct the path as before
+  const importPathForLog = `./messages/${validLocale}.json`;
+  console.log(`[i18n.ts] Constructed import path for logging: "${importPathForLog}"`);
 
   try {
-    // Dynamically import the messages for the validated locale using the constructed path
-    messages = (await import(importPath)).default;
-    console.log(`[i18n.ts] Successfully loaded messages for locale: "${validLocale}" from path: "${importPath}"`);
+    // Dynamically import the messages for the validated locale using a direct template literal
+    messages = (await import(`./messages/${validLocale}.json`)).default;
+    console.log(`[i18n.ts] Successfully loaded messages for locale: "${validLocale}" from path: "./messages/${validLocale}.json"`);
   } catch (error) {
-    console.error(`[i18n.ts] Failed to load messages for locale "${validLocale}" from path: "${importPath}". Error:`, error);
+    console.error(`[i18n.ts] Failed to load messages for locale "${validLocale}" from path: "./messages/${validLocale}.json". Error:`, error);
     notFound(); // Trigger notFound if messages can't be loaded for a valid locale
     // The lines below should ideally not be reached.
     console.warn('[i18n.ts] Execution continued after notFound() call due to message loading failure. This is unexpected.');
@@ -43,4 +43,3 @@ export default getRequestConfig(async ({locale}) => {
     messages
   };
 });
-
