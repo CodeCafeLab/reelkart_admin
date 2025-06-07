@@ -1,4 +1,3 @@
-
 "use client"
 
 import { useState } from "react";
@@ -12,6 +11,7 @@ import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff } from "lucide-react";
+import { supabase } from "@/lib/supabaseClient"; // Import Supabase client
 
 export default function LoginPage() {
   const router = useRouter();
@@ -36,10 +36,28 @@ export default function LoginPage() {
     setShowPassword(!showPassword);
   };
 
-  const onSubmit = (data: LoginFormValues) => {
+  const onSubmit = async (data: LoginFormValues) => {
     console.log("Login attempt with:", data);
+    // Example of how you might use Supabase for login:
+    // const { data: authData, error } = await supabase.auth.signInWithPassword({
+    //   email: data.email,
+    //   password: data.password,
+    // });
+
+    // if (error) {
+    //   console.error("Supabase login error:", error.message);
+    //   // Handle error (e.g., show a toast notification)
+    //   return;
+    // }
+
+    // console.log("Supabase login successful:", authData);
+    
+    // For now, we'll keep the direct navigation
     router.push("/admin/dashboard"); 
   };
+  
+  // You can test if the Supabase client is available
+  console.log("Supabase client initialized:", supabase ? "Yes" : "No");
 
   return (
     <Card className="w-full max-w-md shadow-2xl">
