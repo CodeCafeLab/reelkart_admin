@@ -1,0 +1,59 @@
+{
+  "AppHeader": {
+    "selectLanguage": "Select Language",
+    "english": "English",
+    "hindi": "हिन्दी (Hindi)",
+    "searchPlaceholder": "Search...",
+    "notifications": "Notifications",
+    "myAccount": "My Account",
+    "settings": "Settings",
+    "profile": "Profile",
+    "logout": "Logout",
+    "selectTheme": "Select Theme",
+    "lightTheme": "Light",
+    "darkTheme": "Black & White",
+    "openSearch": "Open search bar",
+    "closeSearch": "Close search bar"
+  },
+  "LoginPage": {
+    "title": "Admin Login",
+    "description": "Enter your credentials to access the admin panel.",
+    "emailLabel": "Email",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "Password",
+    "loginButton": "Login",
+    "contactSupport": "Contact support if you have trouble logging in."
+  },
+  "DashboardPage": {
+    "title": "Dashboard",
+    "kycPending": "KYC Pending",
+    "activeSellers": "Active Sellers",
+    "avgWatchTime": "Avg Watch Time",
+    "contentQueue": "Content Queue",
+    "ordersShipped": "Orders Shipped",
+    "platformAnalyticsTitle": "Platform Analytics",
+    "platformAnalyticsDescription": "Key performance indicators",
+    "totalGMV": "Total GMV",
+    "bounceRate": "Bounce Rate",
+    "aiLogEvents": "AI Log Events",
+    "activeUsers": "Active Users",
+    "topSellersTitle": "Top Sellers",
+    "topSellersDescription": "Sellers with highest performance this month."
+  },
+  "NavItems": {
+    "dashboard": "Dashboard",
+    "kycManagement": "KYC Management",
+    "sellerOnboarding": "Seller Onboarding",
+    "contentModeration": "Content Moderation",
+    "orderLogistics": "Order Logistics",
+    "aiUsageLogs": "AI Usage Logs",
+    "reportsIssues": "Reports & Issues",
+    "settings": "Settings",
+    "logout": "Logout",
+    "profile": "Profile"
+  },
+  "ErrorMessages": {
+    "invalidEmail": "Invalid email address.",
+    "passwordMinLength": "Password must be at least 6 characters."
+  }
+}

@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, usePathname } from "next-intl/client"; // Use next-intl Link and usePathname
+import { useTranslations } from "next-intl"; // For translating nav items
+
 import {
   SidebarProvider,
   Sidebar,
@@ -29,36 +30,50 @@ interface AppLayoutClientProps {
 }
 
 export function AppLayoutClient({ children }: AppLayoutClientProps) {
-  const pathname = usePathname();
+  const pathname = usePathname(); // This will be locale-prefixed path
+  const t = useTranslations(); // General translator, or specific like t('NavItems')
 
   const renderNavItems = (items: NavItem[]) => {
-    return items.map((item) => (
-      <SidebarMenuItem key={item.label}>
-        <Link href={item.href} passHref legacyBehavior>
-          <SidebarMenuButton
-            isActive={pathname === item.href || (item.href !== "/admin/dashboard" && pathname.startsWith(item.href))}
-            tooltip={{ children: item.label, className: "bg-primary text-primary-foreground" }}
-          >
-            <item.icon />
-            <span>{item.label}</span>
-          </SidebarMenuButton>
-        </Link>
-        {item.subItems && (
-          <SidebarMenuSub>
-            {item.subItems.map((subItem) => (
-              <SidebarMenuSubItem key={subItem.label}>
-                <Link href={subItem.href} passHref legacyBehavior>
-                  <SidebarMenuSubButton isActive={pathname === subItem.href}>
-                    <subItem.icon />
-                    <span>{subItem.label}</span>
-                  </SidebarMenuSubButton>
-                </Link>
-              </SidebarMenuSubItem>
-            ))}
-          </SidebarMenuSub>
-        )}
-      </SidebarMenuItem>
-    ));
+    return items.map((item) => {
+      const translatedLabel = t(item.labelKey); // Translate label using the key
+      // Check if the current path starts with the item's href.
+      // For dashboard, exact match. For others, startsWith.
+      // The item.href does not include locale, pathname from next-intl/client does.
+      const isActive = item.href === '/admin/dashboard' 
+        ? pathname === item.href 
+        : pathname.startsWith(item.href);
+
+      return (
+        <SidebarMenuItem key={item.labelKey}>
+          <Link href={item.href} passHref legacyBehavior>
+            <SidebarMenuButton
+              isActive={isActive}
+              tooltip={{ children: translatedLabel, className: "bg-primary text-primary-foreground" }}
+            >
+              <item.icon />
+              <span>{translatedLabel}</span>
+            </SidebarMenuButton>
+          </Link>
+          {item.subItems && (
+            <SidebarMenuSub>
+              {item.subItems.map((subItem) => {
+                const translatedSubLabel = t(subItem.labelKey);
+                return (
+                  <SidebarMenuSubItem key={subItem.labelKey}>
+                    <Link href={subItem.href} passHref legacyBehavior>
+                      <SidebarMenuSubButton isActive={pathname === subItem.href}>
+                        <subItem.icon />
+                        <span>{translatedSubLabel}</span>
+                      </SidebarMenuSubButton>
+                    </Link>
+                  </SidebarMenuSubItem>
+                );
+              })}
+            </SidebarMenuSub>
+          )}
+        </SidebarMenuItem>
+      );
+    });
   };
 
   return (

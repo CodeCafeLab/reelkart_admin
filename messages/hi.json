@@ -1,0 +1,59 @@
+{
+  "AppHeader": {
+    "selectLanguage": "भाषा चुनें",
+    "english": "अंग्रेज़ी",
+    "hindi": "हिन्दी",
+    "searchPlaceholder": "खोजें...",
+    "notifications": "सूचनाएं",
+    "myAccount": "मेरा खाता",
+    "settings": "सेटिंग्स",
+    "profile": "प्रोफ़ाइल",
+    "logout": "लॉग आउट",
+    "selectTheme": "थीम चुनें",
+    "lightTheme": "लाइट",
+    "darkTheme": "ब्लैक & व्हाइट",
+    "openSearch": "खोज बार खोलें",
+    "closeSearch": "खोज बार बंद करें"
+  },
+  "LoginPage": {
+    "title": "एडमिन लॉगिन",
+    "description": "एडमिन पैनल तक पहुंचने के लिए अपनी क्रेडेंशियल दर्ज करें।",
+    "emailLabel": "ईमेल",
+    "emailPlaceholder": "admin@example.com",
+    "passwordLabel": "पासवर्ड",
+    "loginButton": "लॉग इन करें",
+    "contactSupport": "लॉग इन करने में समस्या होने पर सहायता से संपर्क करें।"
+  },
+  "DashboardPage": {
+    "title": "डैशबोर्ड",
+    "kycPending": "केवाईसी लंबित",
+    "activeSellers": "सक्रिय विक्रेता",
+    "avgWatchTime": "औसत देखने का समय",
+    "contentQueue": "सामग्री कतार",
+    "ordersShipped": "भेजे गए ऑर्डर",
+    "platformAnalyticsTitle": "प्लेटफ़ॉर्म एनालिटिक्स",
+    "platformAnalyticsDescription": "मुख्य प्रदर्शन संकेतक",
+    "totalGMV": "कुल जीएमवी",
+    "bounceRate": "बाउंस दर",
+    "aiLogEvents": "एआई लॉग इवेंट्स",
+    "activeUsers": "सक्रिय उपयोगकर्ता",
+    "topSellersTitle": "शीर्ष विक्रेता",
+    "topSellersDescription": "इस महीने सर्वोच्च प्रदर्शन वाले विक्रेता।"
+  },
+  "NavItems": {
+    "dashboard": "डैशबोर्ड",
+    "kycManagement": "केवाईसी प्रबंधन",
+    "sellerOnboarding": "विक्रेता ऑनबोर्डिंग",
+    "contentModeration": "सामग्री मॉडरेशन",
+    "orderLogistics": "ऑर्डर लॉजिस्टिक्स",
+    "aiUsageLogs": "एआई उपयोग लॉग",
+    "reportsIssues": "रिपोर्ट और मुद्दे",
+    "settings": "सेटिंग्स",
+    "logout": "लॉगआउट",
+    "profile": "प्रोफ़ाइल"
+  },
+  "ErrorMessages": {
+    "invalidEmail": "अमान्य ईमेल पता।",
+    "passwordMinLength": "पासवर्ड कम से कम 6 अक्षरों का होना चाहिए।"
+  }
+}
