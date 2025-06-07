@@ -1,6 +1,7 @@
 
 import { AppLayoutClient } from '@/components/layout/AppLayoutClient';
 import type { Metadata } from 'next';
+import { AppSettingsProvider } from '@/contexts/AppSettingsContext';
 
 export const metadata: Metadata = {
     title: 'ReelKart Admin Panel',
@@ -12,5 +13,9 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <AppLayoutClient>{children}</AppLayoutClient>;
+  return (
+    <AppSettingsProvider>
+      <AppLayoutClient>{children}</AppLayoutClient>
+    </AppSettingsProvider>
+  );
 }
