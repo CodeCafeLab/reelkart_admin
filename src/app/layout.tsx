@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 
 export const metadata: Metadata = {
-  title: 'ReelView Admin',
+  title: 'ReelKart Admin',
   description: 'Admin Panel for ReelKart',
 };
 

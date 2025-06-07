@@ -13,7 +13,7 @@ import React from "react";
 
 export default function SettingsPage() {
   // Mock states for settings - in a real app, these would come from a backend/context
-  const [platformName, setPlatformName] = React.useState("ReelView Admin");
+  const [platformName, setPlatformName] = React.useState("ReelKart Admin");
   const [logoUrl, setLogoUrl] = React.useState("");
   const [autoApproveSellers, setAutoApproveSellers] = React.useState(false);
   const [defaultCommission, setDefaultCommission] = React.useState("15");

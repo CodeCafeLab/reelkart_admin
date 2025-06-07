@@ -3,7 +3,7 @@ import { AppLayoutClient } from '@/components/layout/AppLayoutClient';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'ReelView Admin Panel',
+    title: 'ReelKart Admin Panel',
     description: 'Manage ReelKart operations.',
 };
 
