@@ -1,11 +1,11 @@
 
 import type {NextConfig} from 'next';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const path = require('path'); // Import path module
+const path = require('path'); // Still needed if other parts of your config use it, but not for the plugin path itself.
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const withNextIntl = require('next-intl/plugin')(
-  './src/i18n.ts' // Explicitly point to src/i18n.ts
+  './src/i18n.ts' // Simplified path relative to project root
 );
 
 const nextConfig: NextConfig = {
@@ -26,7 +26,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  transpilePackages: ['next-intl'], // Explicitly transpile next-intl
 };
 
 export default withNextIntl(nextConfig);
