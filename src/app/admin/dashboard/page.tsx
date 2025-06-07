@@ -1,9 +1,10 @@
 
+"use client";
+    
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ExampleChart } from "@/components/dashboard/ExampleChart";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Users, ShieldCheck, Film, Truck, BrainCircuit, Activity, UserMinus, DollarSign, PlayCircle } from "lucide-react";
 
 const topSellers = [
@@ -27,7 +28,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <ExampleChart /> {/* GMV Analytics */}
+        <ExampleChart />
         
         <Card>
           <CardHeader>

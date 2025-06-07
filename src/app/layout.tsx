@@ -1,16 +1,35 @@
-// This is a placeholder root layout.
-// The actual main layout structure (<html>, <body>) is handled by src/app/[locale]/layout.tsx
-// to support internationalized routing with next-intl. This file primarily ensures
-// global styles are loaded.
 
-import './globals.css'; // Keep global styles accessible
+import type {Metadata} from 'next';
+import './globals.css';
+import { Toaster } from "@/components/ui/toaster";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
-export default function RootLayout({
-  children,
-}: Readonly<{
+export const metadata: Metadata = {
+  title: 'ReelView Admin',
+  description: 'Admin Panel for ReelKart',
+};
+
+interface RootLayoutProps {
   children: React.ReactNode;
-}>) {
-  // This layout should just return children, as the <html> and <body> tags
-  // are provided by src/app/[locale]/layout.tsx.
-  return <>{children}</>;
+}
+
+export default async function RootLayout({
+  children,
+}: Readonly<RootLayoutProps>) {
+
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+      </head>
+      <ThemeProvider>
+        <body className="font-body antialiased">
+          {children}
+          <Toaster />
+        </body>
+      </ThemeProvider>
+    </html>
+  );
 }

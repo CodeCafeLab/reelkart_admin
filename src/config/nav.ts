@@ -1,9 +1,9 @@
+
 import type { LucideIcon } from 'lucide-react';
 import { LayoutDashboard, Users, ShieldCheck, Film, Truck, BrainCircuit, FilePieChart, Settings, LogOut, UserCircle } from 'lucide-react';
 
-// NavItem labels are now keys for translation
 export interface NavItem {
-  labelKey: string; // Changed from 'label' to 'labelKey'
+  label: string;
   href: string;
   icon: LucideIcon;
   isChained?: boolean;
@@ -11,18 +11,17 @@ export interface NavItem {
 }
 
 export const navItems: NavItem[] = [
-  { labelKey: 'NavItems.dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-  { labelKey: 'NavItems.kycManagement', href: '/admin/kyc', icon: ShieldCheck },
-  { labelKey: 'NavItems.sellerOnboarding', href: '/admin/sellers', icon: Users },
-  { labelKey: 'NavItems.contentModeration', href: '/admin/content', icon: Film },
-  { labelKey: 'NavItems.orderLogistics', href: '/admin/logistics', icon: Truck },
-  { labelKey: 'NavItems.aiUsageLogs', href: '/admin/ai-logs', icon: BrainCircuit },
-  { labelKey: 'NavItems.reportsIssues', href: '/admin/reports', icon: FilePieChart },
+  { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
+  { label: 'KYC Management', href: '/admin/kyc', icon: ShieldCheck },
+  { label: 'Seller Onboarding', href: '/admin/sellers', icon: Users },
+  { label: 'Content Moderation', href: '/admin/content', icon: Film },
+  { label: 'Order Logistics', href: '/admin/logistics', icon: Truck },
+  { label: 'AI Usage Logs', href: '/admin/ai-logs', icon: BrainCircuit },
+  { label: 'Reports & Issues', href: '/admin/reports', icon: FilePieChart },
 ];
 
 export const bottomNavItems: NavItem[] = [
-  { labelKey: 'NavItems.settings', href: '/admin/settings', icon: Settings },
-  // Profile nav item can be added here if needed, or kept in user dropdown
-  // { labelKey: 'NavItems.profile', href: '/admin/profile', icon: UserCircle }, 
-  { labelKey: 'NavItems.logout', href: '/login', icon: LogOut },
+  { label: 'Settings', href: '/admin/settings', icon: Settings },
+  { label: 'Profile', href: '/admin/profile', icon: UserCircle }, 
+  { label: 'Logout', href: '/login', icon: LogOut },
 ];

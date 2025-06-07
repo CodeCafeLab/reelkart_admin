@@ -2,8 +2,8 @@
 "use client";
 
 import * as React from "react";
-import { useTranslations } from "next-intl";
-import { usePathname, useRouter, Link } from 'next-intl/navigation'; // Reverted to direct import
+import { usePathname } from 'next/navigation'; // Using next/navigation
+import Link from 'next/link'; // Using next/link
 
 import {
   SidebarProvider,
@@ -24,7 +24,6 @@ import { Logo } from "@/components/icons/Logo";
 import { AppHeader } from "./AppHeader";
 import type { NavItem } from "@/config/nav";
 import { navItems, bottomNavItems } from "@/config/nav";
-import { cn } from "@/lib/utils";
 
 interface AppLayoutClientProps {
   children: React.ReactNode;
@@ -32,42 +31,36 @@ interface AppLayoutClientProps {
 
 export function AppLayoutClient({ children }: AppLayoutClientProps) {
   const pathname = usePathname(); 
-  const t = useTranslations();
 
   const renderNavItems = (items: NavItem[]) => {
     return items.map((item) => {
-      const translatedLabel = t(item.labelKey);
-
       const isActive = item.href === '/admin/dashboard'
         ? pathname === item.href
         : pathname.startsWith(item.href);
 
       return (
-        <SidebarMenuItem key={item.labelKey}>
+        <SidebarMenuItem key={item.label}>
           <Link href={item.href} passHref legacyBehavior> 
             <SidebarMenuButton
               isActive={isActive}
-              tooltip={{ children: translatedLabel, className: "bg-primary text-primary-foreground" }}
+              tooltip={{ children: item.label, className: "bg-primary text-primary-foreground" }}
             >
               <item.icon />
-              <span>{translatedLabel}</span>
+              <span>{item.label}</span>
             </SidebarMenuButton>
           </Link>
           {item.subItems && (
             <SidebarMenuSub>
-              {item.subItems.map((subItem) => {
-                const translatedSubLabel = t(subItem.labelKey);
-                return (
-                  <SidebarMenuSubItem key={subItem.labelKey}>
-                    <Link href={subItem.href} passHref legacyBehavior> 
-                      <SidebarMenuSubButton isActive={pathname === subItem.href}>
-                        <subItem.icon />
-                        <span>{translatedSubLabel}</span>
-                      </SidebarMenuSubButton>
-                    </Link>
-                  </SidebarMenuSubItem>
-                );
-              })}
+              {item.subItems.map((subItem) => (
+                <SidebarMenuSubItem key={subItem.label}>
+                  <Link href={subItem.href} passHref legacyBehavior> 
+                    <SidebarMenuSubButton isActive={pathname === subItem.href}>
+                      <subItem.icon />
+                      <span>{subItem.label}</span>
+                    </SidebarMenuSubButton>
+                  </Link>
+                </SidebarMenuSubItem>
+              ))}
             </SidebarMenuSub>
           )}
         </SidebarMenuItem>

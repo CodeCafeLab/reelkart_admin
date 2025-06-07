@@ -1,5 +1,3 @@
-// This file stores basic i18n configuration constants.
-// It is NOT marked with 'use server' and can be imported by both server and client components if needed.
 
-export const locales = ['en', 'hi'];
-export const defaultLocale = 'en';
+// This file is no longer needed as i18n functionality has been removed.
+// You can safely delete this file.

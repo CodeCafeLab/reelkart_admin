@@ -2,7 +2,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Login - ReelView Admin',
+  title: 'Login - ReelView Admin', 
 };
 
 export default function LoginLayout({

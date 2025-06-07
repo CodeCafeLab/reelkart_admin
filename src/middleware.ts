@@ -1,16 +1,12 @@
 
-import createMiddleware from 'next-intl/middleware';
-import {locales, defaultLocale} from './i18n-config'; // Import from the new config file
+import { type NextRequest, NextResponse } from 'next/server';
 
-export default createMiddleware({
-  locales,
-  defaultLocale,
-  localePrefix: 'always'
-});
+export function middleware(request: NextRequest) {
+  // Basic middleware, can be expanded later if needed for non-i18n purposes
+  return NextResponse.next();
+}
 
 export const config = {
-  // Match only internationalized pathnames
-  // Skip middleware for Next.js assets and API routes
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)']
+  // Match all routes except for static assets and API routes
+  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 };
-
