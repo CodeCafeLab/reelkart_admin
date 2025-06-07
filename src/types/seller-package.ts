@@ -17,7 +17,7 @@ export interface SellerPackage {
   name: string;
   description?: string;
   price: number;
-  currency: string; // e.g., "INR", "USD"
+  currency: string; // e.g., "INR", "USD" - This will now reflect the globally set currency code
   billing_interval: "monthly" | "annually" | "one-time";
   features: string[];
   applicable_seller_roles: SellerRole[];

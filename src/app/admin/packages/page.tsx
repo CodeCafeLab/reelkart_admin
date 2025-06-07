@@ -8,16 +8,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, PlusCircle, Edit, Trash2, ToggleLeft, ToggleRight, Package } from "lucide-react";
-import type { SellerPackage, SellerRole } from "@/types/seller-package"; // Assuming types are defined here
+import type { SellerPackage, SellerRole } from "@/types/seller-package";
 import { useToast } from "@/hooks/use-toast";
+import { useAppSettings } from "@/contexts/AppSettingsContext";
 
-const mockPackages: SellerPackage[] = [
+const mockPackagesData: Omit<SellerPackage, 'currency'>[] = [ // currency field will be derived from global settings
   {
     id: "pkg_001",
     name: "Basic Seller Kit",
     description: "Essential tools for new sellers.",
     price: 499,
-    currency: "INR",
+    // currency: "INR", // Removed, will use global context
     billing_interval: "monthly",
     features: ["Basic Storefront", "50 Product Listings", "Email Support"],
     applicable_seller_roles: ["IndividualMerchant", "OnlineSeller"],
@@ -30,7 +31,6 @@ const mockPackages: SellerPackage[] = [
     name: "Influencer Pro",
     description: "Advanced features for content creators and influencers.",
     price: 1999,
-    currency: "INR",
     billing_interval: "monthly",
     features: ["Customizable Profile", "Analytics Dashboard", "Affiliate Tools", "Priority Support"],
     applicable_seller_roles: ["Influencer", "Celebrity"],
@@ -43,7 +43,6 @@ const mockPackages: SellerPackage[] = [
     name: "Wholesale Partner",
     description: "Package for bulk sellers and wholesalers.",
     price: 4999,
-    currency: "INR",
     billing_interval: "annually",
     features: ["Unlimited Listings", "Volume Discounts Setup", "Dedicated Account Manager", "API Access"],
     applicable_seller_roles: ["Wholesaler", "ECommerceSeller"],
@@ -56,8 +55,7 @@ const mockPackages: SellerPackage[] = [
     name: "Affiliate Starter",
     description: "Tools for affiliate marketers to promote products.",
     price: 0,
-    currency: "INR",
-    billing_interval: "one-time", // Could be free or a one-time setup
+    billing_interval: "one-time", 
     features: ["Link Generation", "Commission Tracking", "Promotional Materials"],
     applicable_seller_roles: ["Affiliator"],
     is_active: true,
@@ -69,7 +67,19 @@ const mockPackages: SellerPackage[] = [
 
 export default function PackagesPage() {
   const { toast } = useToast();
-  const [packages, setPackages] = React.useState<SellerPackage[]>(mockPackages);
+  const { settings: appSettings } = useAppSettings();
+  
+  const [packages, setPackages] = React.useState<SellerPackage[]>(
+    mockPackagesData.map(pkg => ({ ...pkg, currency: appSettings.currencyCode }))
+  );
+
+  // Update packages if global currency code changes
+  React.useEffect(() => {
+    setPackages(prevPackages => 
+      prevPackages.map(pkg => ({ ...pkg, currency: appSettings.currencyCode }))
+    );
+  }, [appSettings.currencyCode]);
+
 
   const handleToggleActive = (packageId: string) => {
     setPackages(prevPackages =>
@@ -89,7 +99,6 @@ export default function PackagesPage() {
   };
 
   const handleDelete = (packageId: string) => {
-    // In a real app, show a confirmation dialog
     setPackages(prevPackages => prevPackages.filter(pkg => pkg.id !== packageId));
     toast({ title: "Package Deleted (Placeholder)", description: `Package ID: ${packageId} removed from list. (Mock action)`, variant: "destructive" });
   };
@@ -97,6 +106,27 @@ export default function PackagesPage() {
   const handleAddNewPackage = () => {
     toast({ title: "Add New Package (Placeholder)", description: "Would open a form to create a new package." });
   };
+
+  const formatPrice = (price: number, billing_interval: SellerPackage['billing_interval']) => {
+    const formattedPrice = new Intl.NumberFormat('en-IN', { 
+        style: 'currency', 
+        currency: appSettings.currencyCode, // Use global currency code
+        currencyDisplay: 'symbol', // Ensure symbol is used
+        minimumFractionDigits: price === 0 ? 0 : 2, // Show decimals unless price is 0
+        maximumFractionDigits: 2
+    }).format(price).replace(appSettings.currencyCode, appSettings.currencySymbol); // Replace code with symbol if formatter uses code
+
+    // Adjust display of currency symbol if Intl.NumberFormat puts it differently than desired
+    // This is a common adjustment for INR (₹)
+    const symbolAdjustedPrice = formattedPrice.includes(appSettings.currencySymbol) ? formattedPrice : `${appSettings.currencySymbol}${new Intl.NumberFormat('en-IN', {minimumFractionDigits: price === 0 ? 0 : 2, maximumFractionDigits: 2}).format(price)}`;
+
+
+    if (billing_interval !== 'one-time') {
+      return `${symbolAdjustedPrice}/${billing_interval.replace('ly', '')}`;
+    }
+    return symbolAdjustedPrice;
+  };
+
 
   return (
     <div className="space-y-6">
@@ -119,7 +149,7 @@ export default function PackagesPage() {
         <CardHeader>
           <CardTitle>Available Seller Packages</CardTitle>
           <CardDescription>
-            Define features, pricing, and target roles for each package.
+            Define features, pricing, and target roles for each package. Prices shown in configured currency: {appSettings.currencySymbol} ({appSettings.currencyCode})
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -127,7 +157,7 @@ export default function PackagesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Package Name</TableHead>
-                <TableHead>Price</TableHead>
+                <TableHead>Price ({appSettings.currencySymbol})</TableHead>
                 <TableHead>Targeted Seller Roles</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -145,8 +175,7 @@ export default function PackagesPage() {
                   <TableRow key={pkg.id}>
                     <TableCell className="font-medium">{pkg.name}</TableCell>
                     <TableCell>
-                      {new Intl.NumberFormat('en-IN', { style: 'currency', currency: pkg.currency }).format(pkg.price)}
-                      {pkg.billing_interval !== 'one-time' ? `/${pkg.billing_interval.replace('ly', '')}` : ''}
+                      {formatPrice(pkg.price, pkg.billing_interval)}
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">

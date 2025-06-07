@@ -3,6 +3,7 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { AppSettingsProvider } from "@/contexts/AppSettingsContext"; // Added
 
 export const metadata: Metadata = {
   title: 'ReelKart Admin',
@@ -25,10 +26,12 @@ export default async function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
       </head>
       <ThemeProvider>
-        <body className="font-body antialiased">
-          {children}
-          <Toaster />
-        </body>
+        <AppSettingsProvider> {/* Added */}
+          <body className="font-body antialiased">
+            {children}
+            <Toaster />
+          </body>
+        </AppSettingsProvider> {/* Added */}
       </ThemeProvider>
     </html>
   );

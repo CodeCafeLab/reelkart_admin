@@ -8,49 +8,83 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DollarSign, Cog, Puzzle, Truck, Share2, AlertTriangle, Save, Users } from "lucide-react";
+import { DollarSign, Cog, Puzzle, Truck, Share2, AlertTriangle, Save, Users, Settings as SettingsIcon } from "lucide-react";
 import React from "react";
+import { useAppSettings } from "@/contexts/AppSettingsContext";
+import { useToast } from "@/hooks/use-toast";
+
 
 export default function SettingsPage() {
-  // Mock states for settings - in a real app, these would come from a backend/context
+  const { settings: appSettings, setSettings: setAppSettings } = useAppSettings();
+  const { toast } = useToast();
+
+  // General Settings
   const [platformName, setPlatformName] = React.useState("ReelKart Admin");
   const [logoUrl, setLogoUrl] = React.useState("");
   const [autoApproveSellers, setAutoApproveSellers] = React.useState(false);
+  const [currencyCode, setCurrencyCode] = React.useState(appSettings.currencyCode);
+  const [currencySymbol, setCurrencySymbol] = React.useState(appSettings.currencySymbol);
+  
+  // Commissions Settings
   const [defaultCommission, setDefaultCommission] = React.useState("15");
   
+  // Integrations Settings
   const [openaiApiKey, setOpenaiApiKey] = React.useState("");
   const [runwayMlApiKey, setRunwayMlApiKey] = React.useState("");
   const [smsApiKey, setSmsApiKey] = React.useState("");
   const [smsSenderId, setSmsSenderId] = React.useState("");
 
+  // Delivery Settings
   const [defaultDeliveryPartner, setDefaultDeliveryPartner] = React.useState("");
   const [deliveryPartnerApiKey, setDeliveryPartnerApiKey] = React.useState("");
 
+  // Social Links Settings
   const [facebookUrl, setFacebookUrl] = React.useState("");
   const [instagramUrl, setInstagramUrl] = React.useState("");
   const [twitterUrl, setTwitterUrl] = React.useState("");
   const [youtubeUrl, setYoutubeUrl] = React.useState("");
   
+  // Maintenance Settings
   const [maintenanceMode, setMaintenanceMode] = React.useState(false);
 
+  React.useEffect(() => {
+    setCurrencyCode(appSettings.currencyCode);
+    setCurrencySymbol(appSettings.currencySymbol);
+  }, [appSettings]);
+
   const handleSaveSettings = (category: string) => {
-    // Placeholder save function
-    console.log(`Saving settings for ${category}:`, {
-      ...(category === "General" && { platformName, logoUrl, autoApproveSellers }),
-      ...(category === "Commissions" && { defaultCommission }),
-      ...(category === "Integrations" && { openaiApiKey, runwayMlApiKey, smsApiKey, smsSenderId }),
-      ...(category === "Delivery" && { defaultDeliveryPartner, deliveryPartnerApiKey }),
-      ...(category === "Social Links" && { facebookUrl, instagramUrl, twitterUrl, youtubeUrl }),
-      ...(category === "Maintenance" && { maintenanceMode }),
-      ...(category === "User Management" && { /* no actual state to save yet */ }),
+    let settingsToSave: any = {};
+    let toastMessage = `${category} settings saved!`;
+
+    if (category === "General") {
+      settingsToSave = { platformName, logoUrl, autoApproveSellers, currencyCode, currencySymbol };
+      setAppSettings({ currencyCode, currencySymbol });
+      toastMessage = "General settings (including currency) saved!";
+    } else if (category === "Commissions") {
+      settingsToSave = { defaultCommission };
+    } else if (category === "Integrations") {
+      settingsToSave = { openaiApiKey, runwayMlApiKey, smsApiKey, smsSenderId };
+    } else if (category === "Delivery") {
+      settingsToSave = { defaultDeliveryPartner, deliveryPartnerApiKey };
+    } else if (category === "Social Links") {
+      settingsToSave = { facebookUrl, instagramUrl, twitterUrl, youtubeUrl };
+    } else if (category === "Maintenance") {
+      settingsToSave = { maintenanceMode };
+    } else if (category === "User Management") {
+      // Placeholder for user management settings
+      settingsToSave = { note: "User Management settings are conceptual here." };
+    }
+    
+    console.log(`Saving settings for ${category}:`, settingsToSave);
+    toast({
+        title: "Settings Updated",
+        description: toastMessage,
     });
-    // Here you would typically make an API call to save the settings
-    alert(`${category} settings saved (mock)! Check console for values.`);
   };
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold font-headline">Platform Settings</h1>
+      <h1 className="text-3xl font-bold font-headline flex items-center"><SettingsIcon className="mr-3 h-8 w-8"/>Platform Settings</h1>
       <p className="text-muted-foreground">
         Manage various configurations for your admin panel and platform.
       </p>
@@ -70,7 +104,7 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>General Settings</CardTitle>
-              <CardDescription>Basic platform configurations.</CardDescription>
+              <CardDescription>Basic platform and currency configurations.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
@@ -80,6 +114,16 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <Label htmlFor="logo-url">Platform Logo URL</Label>
                 <Input id="logo-url" value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} placeholder="https://example.com/logo.png" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="currency-code">Default Currency Code (e.g., INR, USD)</Label>
+                  <Input id="currency-code" value={currencyCode} onChange={(e) => setCurrencyCode(e.target.value.toUpperCase())} placeholder="INR" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="currency-symbol">Currency Display Symbol (e.g., ₹, $)</Label>
+                  <Input id="currency-symbol" value={currencySymbol} onChange={(e) => setCurrencySymbol(e.target.value)} placeholder="₹" />
+                </div>
               </div>
               <div className="flex items-center justify-between rounded-lg border p-4">
                 <div>
@@ -130,7 +174,7 @@ export default function SettingsPage() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="sms-sender-id">SMS Provider Sender ID</Label>
-                <Input id="sms-sender-id" value={smsSenderId} onChange={(e) => setSmsSenderId(e.target.value)} placeholder="e.g., REELVW" />
+                <Input id="sms-sender-id" value={smsSenderId} onChange={(e) => setSmsSenderId(e.target.value)} placeholder="e.g., REELKART" />
               </div>
               <Button onClick={() => handleSaveSettings("Integrations")}><Save className="mr-2 h-4 w-4" />Save Integration Settings</Button>
             </CardContent>

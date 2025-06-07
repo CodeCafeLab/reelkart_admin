@@ -1,3 +1,4 @@
+
 "use client"
 
 import { TrendingUp } from "lucide-react"
@@ -32,7 +33,12 @@ const chartConfig = {
   },
 } satisfies ChartConfig
 
-export function ExampleChart() {
+interface ExampleChartProps {
+    currencySymbol: string;
+    currencyCode: string; // e.g. "USD", "INR"
+}
+
+export function ExampleChart({ currencySymbol, currencyCode }: ExampleChartProps) {
   return (
     <Card>
       <CardHeader>
@@ -51,9 +57,38 @@ export function ExampleChart() {
               tickFormatter={(value) => value.slice(0, 3)}
             />
             <YAxis 
-              tickFormatter={(value) => `$${value / 1000}k`}
+              tickFormatter={(value) => {
+                const numericValue = Number(value);
+                if (isNaN(numericValue)) return `${currencySymbol}0`;
+                if (currencyCode === "INR") { // Special handling for INR to show in thousands or lakhs
+                    if (numericValue >= 100000) return `${currencySymbol}${(numericValue / 100000).toFixed(1)}L`;
+                    return `${currencySymbol}${(numericValue / 1000).toFixed(0)}k`;
+                }
+                return `${currencySymbol}${(numericValue / 1000).toFixed(0)}k`;
+              }}
             />
-            <RechartsTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
+            <RechartsTooltip 
+                cursor={false} 
+                content={
+                    <ChartTooltipContent 
+                        hideLabel 
+                        formatter={(value, name, props) => {
+                            const numericValue = Number(value);
+                            if (name === "gmv") {
+                                return (
+                                    <div className="flex flex-col">
+                                        <span className="text-xs text-muted-foreground">{props.payload.month}</span>
+                                        <span className="font-bold">
+                                            {new Intl.NumberFormat('en-IN', { style: 'currency', currency: currencyCode, minimumFractionDigits: 0 }).format(numericValue)}
+                                        </span>
+                                    </div>
+                                )
+                            }
+                            return value;
+                        }}
+                    />
+                }
+            />
             <Bar dataKey="gmv" fill="var(--color-gmv)" radius={8} />
           </BarChart>
         </ChartContainer>
