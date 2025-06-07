@@ -2,7 +2,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Link } from "next-intl/link";
+import { Link } from "next-intl"; // Changed from next-intl/link
 import { usePathname, useRouter } from "next-intl/navigation";
 import { useLocale, useTranslations } from "next-intl";
 
@@ -241,7 +241,3 @@ export function AppHeader() {
     </header>
   );
 }
-
-    
-
-    

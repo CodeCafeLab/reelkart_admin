@@ -1,8 +1,9 @@
 "use client";
 
 import * as React from "react";
-import { Link, usePathname } from "next-intl/client"; // Use next-intl Link and usePathname
-import { useTranslations } from "next-intl"; // For translating nav items
+import { Link } from "next-intl"; // Changed from next-intl/link
+import { usePathname } from "next-intl/navigation"; 
+import { useTranslations } from "next-intl"; 
 
 import {
   SidebarProvider,
@@ -30,15 +31,13 @@ interface AppLayoutClientProps {
 }
 
 export function AppLayoutClient({ children }: AppLayoutClientProps) {
-  const pathname = usePathname(); // This will be locale-prefixed path
-  const t = useTranslations(); // General translator, or specific like t('NavItems')
+  const pathname = usePathname(); 
+  const t = useTranslations(); 
 
   const renderNavItems = (items: NavItem[]) => {
     return items.map((item) => {
-      const translatedLabel = t(item.labelKey); // Translate label using the key
-      // Check if the current path starts with the item's href.
-      // For dashboard, exact match. For others, startsWith.
-      // The item.href does not include locale, pathname from next-intl/client does.
+      const translatedLabel = t(item.labelKey); 
+      
       const isActive = item.href === '/admin/dashboard' 
         ? pathname === item.href 
         : pathname.startsWith(item.href);
