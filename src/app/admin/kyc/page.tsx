@@ -11,6 +11,7 @@ import { MoreHorizontal, FileText, CheckCircle, XCircle, Eye } from "lucide-reac
 import { Input } from "@/components/ui/input";
 import { KycDetailsSheet } from "@/components/admin/kyc/KycDetailsSheet";
 import { ImagePopup } from "@/components/admin/kyc/ImagePopup";
+import { useToast } from "@/hooks/use-toast";
 
 interface KycDocumentImage {
   name: string;
@@ -104,6 +105,8 @@ const statusVariant: Record<KYCStatus, "default" | "secondary" | "destructive" |
 
 
 export default function KycPage() {
+  const { toast } = useToast();
+  const [kycRequests, setKycRequests] = useState<KycRequest[]>(kycRequestsData);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [selectedKycRequest, setSelectedKycRequest] = useState<KycRequest | null>(null);
   const [isImagePopupOpen, setIsImagePopupOpen] = useState(false);
@@ -125,19 +128,37 @@ export default function KycPage() {
   };
   
   const handleApproveKyc = (kycId: string) => {
-    // Placeholder: Implement actual approval logic
     console.log("Approving KYC:", kycId);
-    // Example: Update local state or refetch data
-    alert(`KYC ${kycId} approved (placeholder).`);
-    setIsSheetOpen(false); // Close sheet after action
+    // Placeholder: Implement actual approval logic (e.g., API call)
+    // For demo, update local state:
+    setKycRequests(prevRequests => 
+      prevRequests.map(req => req.id === kycId ? {...req, status: "Approved"} : req)
+    );
+    setSelectedKycRequest(prev => prev && prev.id === kycId ? {...prev, status: "Approved"} : prev);
+
+    toast({
+      title: "KYC Approved",
+      description: `KYC request ${kycId} has been successfully approved.`,
+      variant: "default", // Typically green or default success style
+    });
+    setIsSheetOpen(false);
   };
 
   const handleRejectKyc = (kycId: string) => {
-    // Placeholder: Implement actual rejection logic
     console.log("Rejecting KYC:", kycId);
-    // Example: Update local state or refetch data
-    alert(`KYC ${kycId} rejected (placeholder).`);
-    setIsSheetOpen(false); // Close sheet after action
+    // Placeholder: Implement actual rejection logic (e.g., API call)
+    // For demo, update local state:
+     setKycRequests(prevRequests => 
+      prevRequests.map(req => req.id === kycId ? {...req, status: "Rejected"} : req)
+    );
+    setSelectedKycRequest(prev => prev && prev.id === kycId ? {...prev, status: "Rejected"} : prev);
+    
+    toast({
+      title: "KYC Rejected",
+      description: `KYC request ${kycId} has been rejected.`,
+      variant: "destructive", // Red toast
+    });
+    setIsSheetOpen(false);
   };
 
   return (
@@ -172,7 +193,7 @@ export default function KycPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {kycRequestsData.map((request) => (
+              {kycRequests.map((request) => (
                 <TableRow key={request.id}>
                   <TableCell className="font-medium">{request.id}</TableCell>
                   <TableCell>{request.name}</TableCell>
