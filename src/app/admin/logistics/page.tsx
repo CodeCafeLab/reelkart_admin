@@ -30,8 +30,8 @@ const statusVariant: Record<OrderStatus, "default" | "secondary" | "destructive"
 
 export default function LogisticsPage() {
   const [hasMounted, setHasMounted] = useState(false);
-  const [currentStatus, setCurrentStatus] = React.useState<OrderStatus>("Processing");
-  const [orders, setOrders] = useState(ordersData); // If orders could be modified
+  // const [currentStatus, setCurrentStatus] = React.useState<OrderStatus>("Processing"); // This seems to be unused if each row updates its own order status
+  const [orders, setOrders] = useState(ordersData); 
 
   useEffect(() => {
     setHasMounted(true);
@@ -41,7 +41,7 @@ export default function LogisticsPage() {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="ml-2 text-muted-foreground">Loading logistics...</p>
+        <p className="ml-2 text-muted-foreground">Loading orders management...</p>
       </div>
     );
   }
@@ -50,8 +50,8 @@ export default function LogisticsPage() {
     <div className="space-y-6">
        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline">Order Logistics</h1>
-          <p className="text-muted-foreground">Track and manage order fulfillment.</p>
+          <h1 className="text-3xl font-bold font-headline">Orders Management</h1>
+          <p className="text-muted-foreground">Track and manage order fulfillment and statuses.</p>
         </div>
         <div className="w-full sm:w-auto">
           <Input placeholder="Search by Order ID or Customer..." className="max-w-xs" />
@@ -106,7 +106,7 @@ export default function LogisticsPage() {
                         <DropdownMenuSeparator />
                         <DropdownMenuLabel>Update Status</DropdownMenuLabel>
                         <DropdownMenuRadioGroup 
-                            value={order.status} // Bind to individual order status
+                            value={order.status} 
                             onValueChange={(newStatus) => {
                                 setOrders(prevOrders => 
                                     prevOrders.map(o => 
