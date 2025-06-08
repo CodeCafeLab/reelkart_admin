@@ -258,7 +258,6 @@ export default function KycPage() {
 
   const promptAndReject = (kycId: string) => {
     const reason = window.prompt("Please enter the reason for rejection (optional):");
-    // If user clicks "Cancel", prompt returns null. If they click "OK" with empty input, it's an empty string.
     if (reason !== null) {
       handleRejectKyc(kycId, reason);
     }
@@ -441,7 +440,15 @@ export default function KycPage() {
               {hasMounted && paginatedKycRequests.length > 0 ? (
                 paginatedKycRequests.map((request) => (
                   <TableRow key={request.id}>
-                    <TableCell className="font-medium">{request.id}</TableCell>
+                    <TableCell className="font-medium">
+                      <Button 
+                        variant="link" 
+                        className="p-0 h-auto text-primary hover:underline"
+                        onClick={() => handleViewDetails(request)}
+                      >
+                        {request.id}
+                      </Button>
+                    </TableCell>
                     <TableCell>{request.name}</TableCell>
                     <TableCell>{format(parseISO(request.submissionDate), "PPpp")}</TableCell>
                     <TableCell className="flex items-center gap-2">
