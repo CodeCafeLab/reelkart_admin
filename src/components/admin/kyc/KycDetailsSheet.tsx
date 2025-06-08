@@ -5,9 +5,9 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter, SheetClose } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
-import type { KycRequest } from "@/app/admin/kyc/page";
+import type { KycRequest } from "@/app/admin/kyc/page"; // Ensure UserType is also exported or defined here if needed
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, XCircle, FileText } from "lucide-react";
+import { CheckCircle, XCircle, FileText, User } from "lucide-react";
 import { format, parseISO } from 'date-fns';
 
 interface KycDetailsSheetProps {
@@ -53,6 +53,11 @@ export function KycDetailsSheet({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm">
               <p><span className="font-medium text-muted-foreground">User ID:</span> {kycRequest.userId}</p>
               <p><span className="font-medium text-muted-foreground">Name:</span> {kycRequest.name}</p>
+              <p className="flex items-center gap-1">
+                <User className="h-4 w-4 text-muted-foreground" />
+                <span className="font-medium text-muted-foreground">User Type:</span> 
+                <Badge variant="outline">{kycRequest.userType}</Badge>
+              </p>
               <p><span className="font-medium text-muted-foreground">Submission Date:</span> {format(parseISO(kycRequest.submissionDate), "PPpp")}</p>
               <p><span className="font-medium text-muted-foreground">Document Type:</span> {kycRequest.documentType}</p>
               <div className="col-span-1 sm:col-span-2 flex items-center">
@@ -141,3 +146,5 @@ export function KycDetailsSheet({
     </Sheet>
   );
 }
+
+    
