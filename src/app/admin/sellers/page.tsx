@@ -222,8 +222,8 @@ export default function SellersPage() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold font-headline">Seller Onboarding</h1>
-          <p className="text-muted-foreground">Manage seller applications and profiles.</p>
+          <h1 className="text-3xl font-bold font-headline">Sellers Management</h1>
+          <p className="text-muted-foreground">Manage seller accounts, profiles, and statuses.</p>
         </div>
       </div>
 
@@ -231,8 +231,8 @@ export default function SellersPage() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="flex-grow">
-                <CardTitle>Seller Applications & Profiles</CardTitle>
-                <CardDescription>Track and manage seller onboarding status.</CardDescription>
+                <CardTitle>Seller Accounts & Profiles</CardTitle>
+                <CardDescription>Track and manage seller statuses and applications.</CardDescription>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-stretch sm:items-center">
                 <Input 
@@ -422,3 +422,4 @@ export default function SellersPage() {
     </div>
   );
 }
+
