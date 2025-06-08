@@ -44,9 +44,10 @@ export default function DashboardPage() {
     <div className="space-y-6">
       <h1 className="text-3xl font-bold font-headline">Dashboard</h1>
       
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        <StatCard title="KYC Pending" value="75" icon={ShieldCheck} description="+5 from yesterday" />
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <StatCard title="Active Sellers" value="1,280" icon={Users} description="+20 this week" />
+        <StatCard title="Active Buyers" value="3,450" icon={Users} description="+50 today" />
+        <StatCard title="KYC Pending" value="75" icon={ShieldCheck} description="+5 from yesterday" />
         <StatCard title="Avg Watch Time" value="2m 35s" icon={PlayCircle} description="Per active user daily" />
         <StatCard title="Content Queue" value="212" icon={Film} description="Videos awaiting review" />
         <StatCard title="Orders Shipped" value="850" icon={Truck} description="Last 24 hours" />
