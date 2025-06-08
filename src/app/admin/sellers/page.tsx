@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, UserCheck, UserX, Eye, Store, Download, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { MoreHorizontal, UserCheck, UserX, Eye, Store, Download, ArrowUpDown, ArrowUp, ArrowDown, FileText, FileSpreadsheet, Printer } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -259,9 +259,15 @@ export default function SellersPage() {
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={handleExportCSV}>Export CSV</DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleExportExcel}>Export Excel</DropdownMenuItem>
-                        <DropdownMenuItem onClick={handleExportPDF}>Export PDF</DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExportCSV}>
+                            <FileText className="mr-2 h-4 w-4" /> Export CSV
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExportExcel}>
+                            <FileSpreadsheet className="mr-2 h-4 w-4" /> Export Excel
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleExportPDF}>
+                            <Printer className="mr-2 h-4 w-4" /> Export PDF
+                        </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
