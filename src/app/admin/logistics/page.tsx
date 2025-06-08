@@ -1,12 +1,16 @@
+
+"use client";
+
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, PackageCheck, PackageSearch, Truck, Edit } from "lucide-react";
+import { MoreHorizontal, Eye, PackageCheck, PackageSearch, Truck, Edit, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
-const orders = [
+const ordersData = [
   { id: "ord001", customer: "Ananya Sharma", seller: "RK Electronics", date: "2024-07-18", status: "Shipped", trackingId: "TRK12345678" },
   { id: "ord002", customer: "Rohan Verma", seller: "Anjali's Artistry", date: "2024-07-17", status: "Processing", trackingId: null },
   { id: "ord003", customer: "Priya Mehta", seller: "Khan's Spices", date: "2024-07-16", status: "Delivered", trackingId: "TRK98765432" },
@@ -19,18 +23,28 @@ type OrderStatus = "Pending Payment" | "Processing" | "Shipped" | "Delivered" | 
 const statusVariant: Record<OrderStatus, "default" | "secondary" | "destructive" | "outline"> = {
   "Pending Payment": "outline",
   Processing: "secondary",
-  Shipped: "default", // Blue-ish with primary color
-  Delivered: "default", // Will make this specifically green if possible, default is fine for now
+  Shipped: "default", 
+  Delivered: "default", 
   Cancelled: "destructive",
 };
 
-// To make 'Delivered' badge green, a custom variant or inline style might be needed.
-// For now, using 'default' which will take primary color.
-// A specific green variant like 'success' could be added to badgeVariants.
-
 export default function LogisticsPage() {
-  // State for status filter or dropdown menu
+  const [hasMounted, setHasMounted] = useState(false);
   const [currentStatus, setCurrentStatus] = React.useState<OrderStatus>("Processing");
+  const [orders, setOrders] = useState(ordersData); // If orders could be modified
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  if (!hasMounted) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="ml-2 text-muted-foreground">Loading logistics...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -91,7 +105,16 @@ export default function LogisticsPage() {
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuLabel>Update Status</DropdownMenuLabel>
-                        <DropdownMenuRadioGroup value={currentStatus} onValueChange={(value) => setCurrentStatus(value as OrderStatus)}>
+                        <DropdownMenuRadioGroup 
+                            value={order.status} // Bind to individual order status
+                            onValueChange={(newStatus) => {
+                                setOrders(prevOrders => 
+                                    prevOrders.map(o => 
+                                        o.id === order.id ? {...o, status: newStatus as OrderStatus} : o
+                                    )
+                                );
+                            }}
+                        >
                           <DropdownMenuRadioItem value="Processing">
                             <PackageSearch className="mr-2 h-4 w-4" /> Processing
                           </DropdownMenuRadioItem>
@@ -118,7 +141,3 @@ export default function LogisticsPage() {
     </div>
   );
 }
-
-// Dummy React import to satisfy linter if useState is not used.
-// In this case, useState is used.
-import React from "react";
