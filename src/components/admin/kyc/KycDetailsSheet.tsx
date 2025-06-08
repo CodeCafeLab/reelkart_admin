@@ -143,4 +143,3 @@ export function KycDetailsSheet({
     </Sheet>
   );
 }
-
