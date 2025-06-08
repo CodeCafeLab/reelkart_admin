@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, FileText, CheckCircle, XCircle, Eye, ArrowUpDown, ArrowUp, ArrowDown, Download, FileSpreadsheet, Printer } from "lucide-react";
+import { MoreHorizontal, FileText, CheckCircle, XCircle, Eye, ArrowUpDown, ArrowUp, ArrowDown, Download, FileSpreadsheet, Printer, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { KycDetailsSheet } from "@/components/admin/kyc/KycDetailsSheet";
@@ -142,6 +142,11 @@ export default function KycPage() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   const processedKycRequests = useMemo(() => {
     let filteredItems = [...kycRequests];
@@ -426,7 +431,14 @@ export default function KycPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paginatedKycRequests.length > 0 ? (
+              {!hasMounted && (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
+                    <Loader2 className="h-6 w-6 animate-spin inline-block mr-2" /> Loading KYC data...
+                  </TableCell>
+                </TableRow>
+              )}
+              {hasMounted && paginatedKycRequests.length > 0 ? (
                 paginatedKycRequests.map((request) => (
                   <TableRow key={request.id}>
                     <TableCell className="font-medium">{request.id}</TableCell>
@@ -480,13 +492,13 @@ export default function KycPage() {
                     </TableCell>
                   </TableRow>
                 ))
-              ) : (
+              ) : hasMounted && paginatedKycRequests.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
                     No KYC requests found matching your criteria.
                   </TableCell>
                 </TableRow>
-              )}
+              ) : null}
             </TableBody>
           </Table>
           <div className="flex items-center justify-between mt-6">
