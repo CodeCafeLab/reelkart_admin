@@ -116,28 +116,26 @@ export function KycDetailsSheet({
           <SheetClose asChild>
             <Button variant="outline">Close</Button>
           </SheetClose>
-          {kycRequest.status === "Pending" && (
-            <div className="flex gap-2">
-              <Button
-                variant="destructive"
-                onClick={() => {
-                  const reason = window.prompt("Please enter the reason for rejection (optional):");
-                  if (reason !== null) { // User didn't cancel
-                    onReject(kycRequest.id, reason);
-                  }
-                }}
-                className="bg-red-600 hover:bg-red-700 text-white"
-              >
-                <XCircle className="mr-2 h-4 w-4" /> Reject
-              </Button>
-              <Button
-                onClick={() => onApprove(kycRequest.id)}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                <CheckCircle className="mr-2 h-4 w-4" /> Approve
-              </Button>
-            </div>
-          )}
+          <div className="flex gap-2">
+            <Button
+              variant="destructive"
+              onClick={() => {
+                const reason = window.prompt("Please enter the reason for rejection (optional):");
+                if (reason !== null) { // User didn't cancel
+                  onReject(kycRequest.id, reason);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              <XCircle className="mr-2 h-4 w-4" /> Reject
+            </Button>
+            <Button
+              onClick={() => onApprove(kycRequest.id)}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              <CheckCircle className="mr-2 h-4 w-4" /> Approve
+            </Button>
+          </div>
         </SheetFooter>
       </SheetContent>
     </Sheet>

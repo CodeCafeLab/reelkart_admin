@@ -471,22 +471,18 @@ export default function KycPage() {
                           <DropdownMenuItem onClick={() => handleViewDetails(request)}>
                             <Eye className="mr-2 h-4 w-4" /> View Details
                           </DropdownMenuItem>
-                          {request.status === "Pending" && (
-                            <>
-                              <DropdownMenuItem
-                                className="text-green-600 focus:text-green-700 focus:bg-green-50"
-                                onClick={() => handleApproveKyc(request.id)}
-                              >
-                                <CheckCircle className="mr-2 h-4 w-4" /> Approve
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="text-red-600 focus:text-red-700 focus:bg-red-50"
-                                onClick={() => promptAndReject(request.id)}
-                              >
-                                <XCircle className="mr-2 h-4 w-4" /> Reject
-                              </DropdownMenuItem>
-                            </>
-                          )}
+                          <DropdownMenuItem
+                            className="text-green-600 focus:text-green-700 focus:bg-green-50"
+                            onClick={() => handleApproveKyc(request.id)}
+                          >
+                            <CheckCircle className="mr-2 h-4 w-4" /> Approve
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-red-600 focus:text-red-700 focus:bg-red-50"
+                            onClick={() => promptAndReject(request.id)}
+                          >
+                            <XCircle className="mr-2 h-4 w-4" /> Reject
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
@@ -553,7 +549,7 @@ export default function KycPage() {
           kycRequest={selectedKycRequest}
           onOpenImagePopup={handleOpenImagePopup}
           onApprove={handleApproveKyc}
-          onReject={handleRejectKyc} // Pass handleRejectKyc which now expects reason
+          onReject={handleRejectKyc} 
         />
       )}
 
