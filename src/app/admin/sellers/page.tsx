@@ -206,7 +206,7 @@ export default function SellersPage() {
       tableRows.push(sellerData);
     });
 
-    (doc as any).autoTable({
+    autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
       startY: 20,

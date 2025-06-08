@@ -353,7 +353,7 @@ export default function KycPage() {
       tableRows.push(kycData);
     });
 
-    (doc as any).autoTable({
+    autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
       startY: 20,
