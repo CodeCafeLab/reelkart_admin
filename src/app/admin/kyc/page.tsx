@@ -34,15 +34,16 @@ export interface KycRequest {
   documentType: string;
   documentImages: KycDocumentImage[];
   details?: Record<string, string>;
+  rejectionReason?: string;
 }
 
 const kycRequestsData: KycRequest[] = [
-  { 
-    id: "kyc001", 
-    userId: "usr101", 
-    name: "Aarav Sharma", 
-    submissionDate: "2024-07-15T10:30:00Z", 
-    status: "Pending", 
+  {
+    id: "kyc001",
+    userId: "usr101",
+    name: "Aarav Sharma",
+    submissionDate: "2024-07-15T10:30:00Z",
+    status: "Pending",
     documentType: "Aadhaar",
     documentImages: [
       { name: "Aadhaar Front", url: "https://placehold.co/600x400.png?text=Aadhaar+Front", aiHint: "document identity" },
@@ -50,49 +51,50 @@ const kycRequestsData: KycRequest[] = [
     ],
     details: { "Aadhaar Number": "XXXX-XXXX-1234", "Date of Birth": "1990-01-01" }
   },
-  { 
-    id: "kyc002", 
-    userId: "usr102", 
-    name: "Priya Patel", 
-    submissionDate: "2024-07-14T11:00:00Z", 
-    status: "Approved", 
+  {
+    id: "kyc002",
+    userId: "usr102",
+    name: "Priya Patel",
+    submissionDate: "2024-07-14T11:00:00Z",
+    status: "Approved",
     documentType: "PAN Card",
     documentImages: [
       { name: "PAN Card", url: "https://placehold.co/600x400.png?text=PAN+Card", aiHint: "document tax" },
     ],
     details: { "PAN Number": "ABCDE1234F", "Father's Name": "Ramesh Patel" }
   },
-  { 
-    id: "kyc003", 
-    userId: "usr103", 
-    name: "Rohan Das", 
-    submissionDate: "2024-07-13T09:15:00Z", 
-    status: "Rejected", 
+  {
+    id: "kyc003",
+    userId: "usr103",
+    name: "Rohan Das",
+    submissionDate: "2024-07-13T09:15:00Z",
+    status: "Rejected",
     documentType: "Passport",
     documentImages: [
       { name: "Passport Front", url: "https://placehold.co/600x400.png?text=Passport+Front", aiHint: "document passport" },
       { name: "Passport Back", url: "https://placehold.co/600x400.png?text=Passport+Back", aiHint: "document passport" },
     ],
-    details: { "Passport Number": "Z1234567", "Expiry Date": "2030-12-31", "Reason for Rejection": "Image unclear" }
+    details: { "Passport Number": "Z1234567", "Expiry Date": "2030-12-31" },
+    rejectionReason: "Image unclear"
   },
-  { 
-    id: "kyc004", 
-    userId: "usr104", 
-    name: "Sneha Reddy", 
-    submissionDate: "2024-07-16T14:00:00Z", 
-    status: "Pending", 
+  {
+    id: "kyc004",
+    userId: "usr104",
+    name: "Sneha Reddy",
+    submissionDate: "2024-07-16T14:00:00Z",
+    status: "Pending",
     documentType: "Voter ID",
     documentImages: [
       { name: "Voter ID Front", url: "https://placehold.co/600x400.png?text=Voter+ID+Front", aiHint: "document voting" },
     ],
     details: { "Voter ID Number": "XYZ1234567", "Constituency": "South Bangalore"}
   },
-  { 
-    id: "kyc005", 
-    userId: "usr105", 
-    name: "Vikram Singh", 
-    submissionDate: "2024-07-12T16:45:00Z", 
-    status: "Approved", 
+  {
+    id: "kyc005",
+    userId: "usr105",
+    name: "Vikram Singh",
+    submissionDate: "2024-07-12T16:45:00Z",
+    status: "Approved",
     documentType: "Driving License",
     documentImages: [
       { name: "Driving License Front", url: "https://placehold.co/600x400.png?text=DL+Front", aiHint: "document license" },
@@ -101,17 +103,17 @@ const kycRequestsData: KycRequest[] = [
   },
   { id: "kyc006", userId: "usr106", name: "Anika Mehra", submissionDate: "2024-07-18T10:00:00Z", status: "Pending", documentType: "Aadhaar", documentImages: [{ name: "Aadhaar", url: "https://placehold.co/600x400.png", aiHint: "document identity" }], details: { "Aadhaar Number": "XXXX-XXXX-5678" } },
   { id: "kyc007", userId: "usr107", name: "Kabir Yadav", submissionDate: "2024-07-18T11:00:00Z", status: "Approved", documentType: "PAN Card", documentImages: [{ name: "PAN", url: "https://placehold.co/600x400.png", aiHint: "document tax" }], details: { "PAN Number": "FGHIJ5678K" } },
-  { id: "kyc008", userId: "usr108", name: "Diya Chopra", submissionDate: "2024-07-17T12:00:00Z", status: "Rejected", documentType: "Passport", documentImages: [{ name: "Passport", url: "https://placehold.co/600x400.png", aiHint: "document passport" }], details: { "Passport Number": "AB1234567", "Reason": "Signature mismatch" } },
+  { id: "kyc008", userId: "usr108", name: "Diya Chopra", submissionDate: "2024-07-17T12:00:00Z", status: "Rejected", documentType: "Passport", documentImages: [{ name: "Passport", url: "https://placehold.co/600x400.png", aiHint: "document passport" }], details: { "Passport Number": "AB1234567" }, rejectionReason: "Signature mismatch" },
   { id: "kyc009", userId: "usr109", name: "Ishaan Gupta", submissionDate: "2024-07-17T13:00:00Z", status: "Pending", documentType: "Voter ID", documentImages: [{ name: "Voter ID", url: "https://placehold.co/600x400.png", aiHint: "document voting" }], details: { "Voter ID Number": "LMN6789012" } },
   { id: "kyc010", userId: "usr110", name: "Myra Bhat", submissionDate: "2024-07-16T14:00:00Z", status: "Approved", documentType: "Driving License", documentImages: [{ name: "License", url: "https://placehold.co/600x400.png", aiHint: "document license" }], details: { "License Number": "MH0220230012345" } },
   { id: "kyc011", userId: "usr111", name: "Arjun Reddy", submissionDate: "2024-07-16T15:00:00Z", status: "Pending", documentType: "Aadhaar", documentImages: [{ name: "Aadhaar", url: "https://placehold.co/600x400.png", aiHint: "document identity" }], details: { "Aadhaar Number": "XXXX-XXXX-1122" } },
   { id: "kyc012", userId: "usr112", name: "Kiara Agarwal", submissionDate: "2024-07-15T16:00:00Z", status: "Approved", documentType: "PAN Card", documentImages: [{ name: "PAN", url: "https://placehold.co/600x400.png", aiHint: "document tax" }], details: { "PAN Number": "PQRST1122U" } },
-  { id: "kyc013", userId: "usr113", name: "Vivaan Joshi", submissionDate: "2024-07-15T17:00:00Z", status: "Rejected", documentType: "Passport", documentImages: [{ name: "Passport", url: "https://placehold.co/600x400.png", aiHint: "document passport" }], details: { "Passport Number": "CD3456789", "Reason": "Photo not clear" } },
+  { id: "kyc013", userId: "usr113", name: "Vivaan Joshi", submissionDate: "2024-07-15T17:00:00Z", status: "Rejected", documentType: "Passport", documentImages: [{ name: "Passport", url: "https://placehold.co/600x400.png", aiHint: "document passport" }], details: { "Passport Number": "CD3456789" }, rejectionReason: "Photo not clear" },
   { id: "kyc014", userId: "usr114", name: "Sara Khan", submissionDate: "2024-07-14T18:00:00Z", status: "Pending", documentType: "Voter ID", documentImages: [{ name: "Voter ID", url: "https://placehold.co/600x400.png", aiHint: "document voting" }], details: { "Voter ID Number": "VWX3456789" } },
   { id: "kyc015", userId: "usr115", name: "Reyansh Kumar", submissionDate: "2024-07-14T19:00:00Z", status: "Approved", documentType: "Driving License", documentImages: [{ name: "License", url: "https://placehold.co/600x400.png", aiHint: "document license" }], details: { "License Number": "UP3220220054321" } },
   { id: "kyc016", userId: "usr116", name: "Aisha Verma", submissionDate: "2024-07-13T20:00:00Z", status: "Pending", documentType: "Aadhaar", documentImages: [{ name: "Aadhaar", url: "https://placehold.co/600x400.png", aiHint: "document identity" }], details: { "Aadhaar Number": "XXXX-XXXX-3344" } },
   { id: "kyc017", userId: "usr117", name: "Dev Singhania", submissionDate: "2024-07-13T21:00:00Z", status: "Approved", documentType: "PAN Card", documentImages: [{ name: "PAN", url: "https://placehold.co/600x400.png", aiHint: "document tax" }], details: { "PAN Number": "YZABC3344D" } },
-  { id: "kyc018", userId: "usr118", name: "Zara Ali", submissionDate: "2024-07-12T22:00:00Z", status: "Rejected", documentType: "Passport", documentImages: [{ name: "Passport", url: "https://placehold.co/600x400.png", aiHint: "document passport" }], details: { "Passport Number": "EF5678901", "Reason": "Document expired" } },
+  { id: "kyc018", userId: "usr118", name: "Zara Ali", submissionDate: "2024-07-12T22:00:00Z", status: "Rejected", documentType: "Passport", documentImages: [{ name: "Passport", url: "https://placehold.co/600x400.png", aiHint: "document passport" }], details: { "Passport Number": "EF5678901" }, rejectionReason: "Document expired" },
   { id: "kyc019", userId: "usr119", name: "Rudra Shah", submissionDate: "2024-07-12T23:00:00Z", status: "Pending", documentType: "Voter ID", documentImages: [{ name: "Voter ID", url: "https://placehold.co/600x400.png", aiHint: "document voting" }], details: { "Voter ID Number": "QRS6789012" } },
   { id: "kyc020", userId: "usr120", name: "Anya Iyer", submissionDate: "2024-07-11T10:00:00Z", status: "Approved", documentType: "Driving License", documentImages: [{ name: "License", url: "https://placehold.co/600x400.png", aiHint: "document license" }], details: { "License Number": "TN0520210067890" } },
 ];
@@ -121,7 +123,7 @@ type SortableKycKeys = keyof Pick<KycRequest, 'id' | 'name' | 'submissionDate' |
 
 const statusVariant: Record<KYCStatus, "default" | "secondary" | "destructive" | "outline"> = {
   Pending: "outline",
-  Approved: "default", 
+  Approved: "default",
   Rejected: "destructive",
 };
 
@@ -182,7 +184,7 @@ export default function KycPage() {
     }
     return filteredItems;
   }, [kycRequests, searchTerm, statusFilter, sortConfig]);
-  
+
   const paginatedKycRequests = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -197,9 +199,9 @@ export default function KycPage() {
       direction = 'descending';
     }
     setSortConfig({ key, direction });
-    setCurrentPage(1); 
+    setCurrentPage(1);
   };
-  
+
   const renderSortIcon = (columnKey: SortableKycKeys) => {
     if (sortConfig.key !== columnKey) {
       return <ArrowUpDown className="h-4 w-4 opacity-30 group-hover:opacity-100" />;
@@ -221,35 +223,44 @@ export default function KycPage() {
     setIsImagePopupOpen(false);
     setSelectedImageUrl(null);
   };
-  
+
   const handleApproveKyc = (kycId: string) => {
-    setKycRequests(prevRequests => 
-      prevRequests.map(req => req.id === kycId ? {...req, status: "Approved"} : req)
+    setKycRequests(prevRequests =>
+      prevRequests.map(req => req.id === kycId ? {...req, status: "Approved", rejectionReason: undefined } : req)
     );
-    setSelectedKycRequest(prev => prev && prev.id === kycId ? {...prev, status: "Approved"} : prev);
+    setSelectedKycRequest(prev => prev && prev.id === kycId ? {...prev, status: "Approved", rejectionReason: undefined } : prev);
     toast({
       title: "KYC Approved",
       description: `KYC request ${kycId} has been successfully approved.`,
       variant: "default",
     });
-    if(selectedKycRequest?.id === kycId) setIsSheetOpen(false);
+    if(selectedKycRequest?.id === kycId && isSheetOpen) setIsSheetOpen(false);
   };
 
-  const handleRejectKyc = (kycId: string) => {
-     setKycRequests(prevRequests => 
-      prevRequests.map(req => req.id === kycId ? {...req, status: "Rejected"} : req)
+  const handleRejectKyc = (kycId: string, reason?: string) => {
+     const finalReason = reason?.trim() === "" || !reason ? "Reason not specified" : reason;
+     setKycRequests(prevRequests =>
+      prevRequests.map(req => req.id === kycId ? {...req, status: "Rejected", rejectionReason: finalReason } : req)
     );
-    setSelectedKycRequest(prev => prev && prev.id === kycId ? {...prev, status: "Rejected"} : prev);
+    setSelectedKycRequest(prev => prev && prev.id === kycId ? {...prev, status: "Rejected", rejectionReason: finalReason } : prev);
     toast({
       title: "KYC Rejected",
-      description: `KYC request ${kycId} has been rejected.`,
+      description: `KYC request ${kycId} has been rejected. Reason: ${finalReason}`,
       variant: "destructive",
     });
-    if(selectedKycRequest?.id === kycId) setIsSheetOpen(false);
+    if(selectedKycRequest?.id === kycId && isSheetOpen) setIsSheetOpen(false);
+  };
+
+  const promptAndReject = (kycId: string) => {
+    const reason = window.prompt("Please enter the reason for rejection (optional):");
+    // If user clicks "Cancel", prompt returns null. If they click "OK" with empty input, it's an empty string.
+    if (reason !== null) {
+      handleRejectKyc(kycId, reason);
+    }
   };
 
   const handleExportCSV = () => {
-    const headers = ["Request ID", "User Name", "Submission Date", "Document Type", "Status", "Details"];
+    const headers = ["Request ID", "User Name", "Submission Date", "Document Type", "Status", "Details", "Rejection Reason"];
     const csvRows = [
       headers.join(','),
       ...processedKycRequests.map(req => {
@@ -260,7 +271,8 @@ export default function KycPage() {
           format(parseISO(req.submissionDate), "yyyy-MM-dd HH:mm:ss"),
           req.documentType,
           req.status,
-          detailsString
+          detailsString,
+          req.rejectionReason || ''
         ].map(value => `"${String(value).replace(/"/g, '""')}"`).join(',');
       })
     ];
@@ -290,7 +302,8 @@ export default function KycPage() {
         "Submission Date": format(parseISO(req.submissionDate), "yyyy-MM-dd HH:mm:ss"),
         "Document Type": req.documentType,
         "Status": req.status,
-        ...flattenedDetails
+        ...flattenedDetails,
+        "Rejection Reason": req.rejectionReason || ''
       };
     });
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
@@ -302,7 +315,7 @@ export default function KycPage() {
 
   const handleExportPDF = () => {
     const doc = new jsPDF();
-    const tableColumn = ["ID", "Name", "Date", "Doc Type", "Status", "Details"];
+    const tableColumn = ["ID", "Name", "Date", "Doc Type", "Status", "Details", "Reason"];
     const tableRows: (string | number)[][] = [];
 
     processedKycRequests.forEach(req => {
@@ -310,10 +323,11 @@ export default function KycPage() {
       const kycData = [
         req.id,
         req.name,
-        format(parseISO(req.submissionDate), "PP"), 
+        format(parseISO(req.submissionDate), "PP"),
         req.documentType,
         req.status,
         detailsString,
+        req.rejectionReason || ''
       ];
       tableRows.push(kycData);
     });
@@ -324,7 +338,7 @@ export default function KycPage() {
       startY: 20,
       theme: 'grid',
       headStyles: { fillColor: [75, 75, 75] },
-      columnStyles: { 5: { cellWidth: 'wrap' } } 
+      columnStyles: { 5: { cellWidth: 'auto' }, 6: { cellWidth: 'auto' } }
     });
     doc.text("KYC Requests Report", 14, 15);
     doc.save("kyc_requests.pdf");
@@ -351,11 +365,11 @@ export default function KycPage() {
                 </CardDescription>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-stretch sm:items-center">
-                <Input 
-                  placeholder="Search ID, Name, User ID, Doc Type..." 
+                <Input
+                  placeholder="Search ID, Name, User ID, Doc Type..."
                   value={searchTerm}
                   onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1);}}
-                  className="max-w-full sm:max-w-xs flex-grow" 
+                  className="max-w-full sm:max-w-xs flex-grow"
                 />
                 <Select value={statusFilter} onValueChange={(value) => {setStatusFilter(value as KYCStatus | "All"); setCurrentPage(1);}}>
                   <SelectTrigger className="w-full sm:w-[180px]">
@@ -427,13 +441,18 @@ export default function KycPage() {
                              className={request.status === 'Approved' ? 'bg-green-500 hover:bg-green-600 text-white' : ''}>
                         {request.status}
                       </Badge>
+                      {request.status === "Rejected" && request.rejectionReason && (
+                        <p className="text-xs text-muted-foreground mt-1 max-w-[150px] truncate" title={request.rejectionReason}>
+                          Reason: {request.rejectionReason}
+                        </p>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon">
                             <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Actions</span>
+                            <span className="sr-only">Actions for {request.name}</span>
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
@@ -442,15 +461,15 @@ export default function KycPage() {
                           </DropdownMenuItem>
                           {request.status === "Pending" && (
                             <>
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 className="text-green-600 focus:text-green-700 focus:bg-green-50"
                                 onClick={() => handleApproveKyc(request.id)}
                               >
                                 <CheckCircle className="mr-2 h-4 w-4" /> Approve
                               </DropdownMenuItem>
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 className="text-red-600 focus:text-red-700 focus:bg-red-50"
-                                onClick={() => handleRejectKyc(request.id)}
+                                onClick={() => promptAndReject(request.id)}
                               >
                                 <XCircle className="mr-2 h-4 w-4" /> Reject
                               </DropdownMenuItem>
@@ -472,7 +491,7 @@ export default function KycPage() {
           </Table>
           <div className="flex items-center justify-between mt-6">
             <span className="text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages > 0 ? totalPages : 1}
+              Page {currentPage} of {totalPages > 0 ? totalPages : 1} ({processedKycRequests.length} total requests)
             </span>
              <div className="flex items-center gap-2">
                 <Select
@@ -522,7 +541,7 @@ export default function KycPage() {
           kycRequest={selectedKycRequest}
           onOpenImagePopup={handleOpenImagePopup}
           onApprove={handleApproveKyc}
-          onReject={handleRejectKyc}
+          onReject={handleRejectKyc} // Pass handleRejectKyc which now expects reason
         />
       )}
 
