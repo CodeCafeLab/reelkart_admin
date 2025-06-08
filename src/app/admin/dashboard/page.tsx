@@ -6,10 +6,13 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import { ExampleChart } from "@/components/dashboard/ExampleChart";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Users, ShieldCheck, Film, Truck, BrainCircuit, Activity, UserMinus, DollarSign, PlayCircle, Search as SearchIcon } from "lucide-react";
+import { Users, ShieldCheck, Film, Truck, BrainCircuit, Activity, UserMinus, DollarSign, PlayCircle, Search as SearchIcon, MoreHorizontal, Eye, UserX } from "lucide-react";
 import { useAppSettings } from "@/contexts/AppSettingsContext";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { useToast } from "@/hooks/use-toast";
 
 const topSellersData = [
   { id: "seller1", name: "Chic Boutique", itemsSold: 1204, revenueAmount: 550200 },
@@ -43,6 +46,7 @@ export default function DashboardPage() {
   const { settings: appSettings } = useAppSettings();
   const [searchTerm, setSearchTerm] = useState("");
   const [itemsSoldFilter, setItemsSoldFilter] = useState<ItemsSoldFilter>("all");
+  const { toast } = useToast();
 
   const totalGMVAmount = 12500000; // 1.25 Cr
 
@@ -73,6 +77,24 @@ export default function DashboardPage() {
     }
     return sellers;
   }, [searchTerm, itemsSoldFilter, appSettings.currencySymbol, appSettings.currencyCode]);
+
+  const handleViewProfile = (sellerId: string, sellerName: string) => {
+    toast({
+      title: "View Profile",
+      description: `Viewing profile for ${sellerName} (ID: ${sellerId}). (Placeholder)`,
+    });
+    // Future: router.push(`/admin/sellers/${sellerId}`); or open a modal
+  };
+
+  const handleBlacklistProfile = (sellerId: string, sellerName: string) => {
+    toast({
+      title: "Blacklist Profile",
+      description: `Blacklisting ${sellerName} (ID: ${sellerId}). (Placeholder)`,
+      variant: "destructive",
+    });
+    // Future: API call to blacklist seller
+  };
+
 
   return (
     <div className="space-y-6">
@@ -148,6 +170,7 @@ export default function DashboardPage() {
                 <TableHead>Seller Name</TableHead>
                 <TableHead className="text-right">Items Sold</TableHead>
                 <TableHead className="text-right">Revenue</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -157,11 +180,35 @@ export default function DashboardPage() {
                     <TableCell className="font-medium">{seller.name}</TableCell>
                     <TableCell className="text-right">{seller.itemsSold}</TableCell>
                     <TableCell className="text-right">{seller.revenue}</TableCell>
+                    <TableCell className="text-right">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Actions for {seller.name}</span>
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleViewProfile(seller.id, seller.name)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            View Profile
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onClick={() => handleBlacklistProfile(seller.id, seller.name)}
+                            className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                          >
+                            <UserX className="mr-2 h-4 w-4" />
+                            Blacklist Profile
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={3} className="text-center h-24 text-muted-foreground">
+                  <TableCell colSpan={4} className="text-center h-24 text-muted-foreground">
                     No sellers found matching your criteria.
                   </TableCell>
                 </TableRow>
@@ -173,4 +220,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
