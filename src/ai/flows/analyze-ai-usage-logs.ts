@@ -1,8 +1,9 @@
+
 'use server';
 /**
- * @fileOverview Analyzes AI usage logs to identify patterns, issues, and optimization areas.
+ * @fileOverview Analyzes third party usage logs to identify patterns, issues, and optimization areas.
  *
- * - analyzeAiUsageLogs - A function that analyzes AI usage logs and provides a summary.
+ * - analyzeAiUsageLogs - A function that analyzes third party usage logs and provides a summary.
  * - AnalyzeAiUsageLogsInput - The input type for the analyzeAiUsageLogs function.
  * - AnalyzeAiUsageLogsOutput - The return type for the analyzeAiUsageLogs function.
  */
@@ -13,12 +14,12 @@ import {z} from 'genkit';
 const AnalyzeAiUsageLogsInputSchema = z.object({
   logs: z
     .string()
-    .describe('AI usage logs in JSON format.'),
+    .describe('Third party usage logs in JSON format.'),
 });
 export type AnalyzeAiUsageLogsInput = z.infer<typeof AnalyzeAiUsageLogsInputSchema>;
 
 const AnalyzeAiUsageLogsOutputSchema = z.object({
-  summary: z.string().describe('A summary of AI usage patterns, issues, and optimization areas.'),
+  summary: z.string().describe('A summary of third party usage patterns, issues, and optimization areas.'),
 });
 export type AnalyzeAiUsageLogsOutput = z.infer<typeof AnalyzeAiUsageLogsOutputSchema>;
 
@@ -27,10 +28,10 @@ export async function analyzeAiUsageLogs(input: AnalyzeAiUsageLogsInput): Promis
 }
 
 const prompt = ai.definePrompt({
-  name: 'analyzeAiUsageLogsPrompt',
+  name: 'analyzeThirdPartyUsageLogsPrompt',
   input: {schema: AnalyzeAiUsageLogsInputSchema},
   output: {schema: AnalyzeAiUsageLogsOutputSchema},
-  prompt: `You are an AI log analyzer. Analyze the following AI usage logs and provide a summary of usage patterns, potential issues, and areas for optimization.\n\nLogs: {{{logs}}}`,
+  prompt: `You are a log analysis expert. Analyze the following third party usage logs and provide a summary of usage patterns, potential issues, and areas for optimization.\n\nLogs: {{{logs}}}`,
 });
 
 const analyzeAiUsageLogsFlow = ai.defineFlow(
@@ -44,3 +45,4 @@ const analyzeAiUsageLogsFlow = ai.defineFlow(
     return output!;
   }
 );
+

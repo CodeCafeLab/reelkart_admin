@@ -17,7 +17,7 @@ export const navItems: NavItem[] = [
   { label: 'Content Moderation', href: '/admin/content', icon: Film },
   { label: 'Orders Management', href: '/admin/logistics', icon: Truck },
   { label: 'Package Management', href: '/admin/packages', icon: Package },
-  { label: 'AI Usage Logs', href: '/admin/ai-logs', icon: BrainCircuit },
+  { label: 'Third Party Usage Logs', href: '/admin/ai-logs', icon: BrainCircuit },
   { label: 'Reports & Issues', href: '/admin/reports', icon: FilePieChart },
 ];
 
@@ -27,3 +27,4 @@ export const bottomNavItems: NavItem[] = [
   { label: 'Profile', href: '/admin/profile', icon: UserCircle },
   { label: 'Logout', href: '/login', icon: LogOut },
 ];
+

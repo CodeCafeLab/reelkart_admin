@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from "react";
@@ -20,7 +21,7 @@ export function AiLogAnalysisClient() {
     if (!logsInput.trim()) {
       toast({
         title: "Input Required",
-        description: "Please paste AI usage logs to analyze.",
+        description: "Please paste third party usage logs to analyze.",
         variant: "destructive",
       });
       return;
@@ -36,10 +37,10 @@ export function AiLogAnalysisClient() {
       setAnalysisResult(result);
       toast({
         title: "Analysis Complete",
-        description: "AI usage logs have been analyzed successfully.",
+        description: "Third party usage logs have been analyzed successfully.",
       });
     } catch (e) {
-      console.error("Error analyzing AI logs:", e);
+      console.error("Error analyzing third party logs:", e);
       const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
       setError(`Failed to analyze logs: ${errorMessage}`);
       toast({
@@ -56,9 +57,9 @@ export function AiLogAnalysisClient() {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Analyze AI Usage Logs</CardTitle>
+          <CardTitle>Analyze Third Party Usage Logs</CardTitle>
           <CardDescription>
-            Paste your AI usage logs in JSON format below to get an analysis summary.
+            Paste your third party usage logs in JSON format below to get an analysis summary.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -111,3 +112,4 @@ export function AiLogAnalysisClient() {
     </div>
   );
 }
+
