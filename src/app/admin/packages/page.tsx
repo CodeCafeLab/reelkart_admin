@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, parseISO } from 'date-fns';
 import { AddPackageSheet, type NewPackageData } from "@/components/admin/packages/AddPackageSheet";
+import { EditPackageSheet, type UpdatedPackageData } from "@/components/admin/packages/EditPackageSheet";
 
 
 import jsPDF from 'jspdf';
@@ -96,6 +97,9 @@ export default function PackagesPage() {
   );
 
   const [isAddSheetOpen, setIsAddSheetOpen] = React.useState(false);
+  const [isEditSheetOpen, setIsEditSheetOpen] = React.useState(false);
+  const [editingPackage, setEditingPackage] = React.useState<SellerPackage | null>(null);
+
   const [searchTerm, setSearchTerm] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<PackageStatusFilter>("All");
   const [sortConfig, setSortConfig] = React.useState<{ key: SortablePackageKeys; direction: 'ascending' | 'descending' }>({ key: 'name', direction: 'ascending' });
@@ -203,17 +207,21 @@ export default function PackagesPage() {
     const pkg = packages.find(p => p.id === packageId);
     toast({
       title: "Status Updated",
-      description: `${pkg?.name} is now ${!pkg?.is_active ? "Active" : "Inactive"}. (Mock action)`,
+      description: `${pkg?.name} is now ${!pkg?.is_active ? "Active" : "Inactive"}.`,
     });
   };
 
-  const handleEdit = (packageId: string) => {
-    toast({ title: "Edit Package (Placeholder)", description: `Would open form to edit package ID: ${packageId}` });
+  const handleEditClick = (pkg: SellerPackage) => {
+    setEditingPackage(pkg);
+    setIsEditSheetOpen(true);
   };
 
   const handleDelete = (packageId: string) => {
-    setPackagesState(prevPackages => prevPackages.filter(pkg => pkg.id !== packageId));
-    toast({ title: "Package Deleted (Placeholder)", description: `Package ID: ${packageId} removed from list. (Mock action)`, variant: "destructive" });
+    // Confirm before deleting (optional but good practice)
+    if (window.confirm("Are you sure you want to delete this package? This action cannot be undone.")) {
+        setPackagesState(prevPackages => prevPackages.filter(pkg => pkg.id !== packageId));
+        toast({ title: "Package Deleted", description: `Package ID: ${packageId} has been deleted.`, variant: "destructive" });
+    }
   };
   
   const handleAddNewPackage = () => {
@@ -223,16 +231,32 @@ export default function PackagesPage() {
   const handlePackageAdded = (formData: NewPackageData) => {
     const newPackage: SellerPackage = {
       ...formData,
-      id: `pkg_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 5)}`, // More unique mock ID
+      id: `pkg_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 5)}`,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       currency: appSettings.currencyCode,
     };
     setPackagesState(prevPackages => [newPackage, ...prevPackages]);
-    setIsAddSheetOpen(false); // This was missing, good catch.
+    setIsAddSheetOpen(false); 
     toast({
       title: "Package Created",
       description: `Package "${newPackage.name}" has been successfully created.`,
+    });
+  };
+
+  const handlePackageUpdated = (updatedData: UpdatedPackageData) => {
+    setPackagesState(prevPackages => 
+      prevPackages.map(pkg => 
+        pkg.id === updatedData.id 
+          ? { ...pkg, ...updatedData, updated_at: new Date().toISOString(), currency: appSettings.currencyCode } 
+          : pkg
+      )
+    );
+    setIsEditSheetOpen(false);
+    setEditingPackage(null);
+    toast({
+      title: "Package Updated",
+      description: `Package "${updatedData.name}" has been successfully updated.`,
     });
   };
 
@@ -408,7 +432,7 @@ export default function PackagesPage() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEdit(pkg.id)}>
+                          <DropdownMenuItem onClick={() => handleEditClick(pkg)}>
                             <Edit className="mr-2 h-4 w-4" /> Edit Package
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleToggleActive(pkg.id)}>
@@ -456,6 +480,13 @@ export default function PackagesPage() {
         isOpen={isAddSheetOpen}
         onOpenChange={setIsAddSheetOpen}
         onPackageAdded={handlePackageAdded}
+      />
+
+      <EditPackageSheet
+        isOpen={isEditSheetOpen}
+        onOpenChange={setIsEditSheetOpen}
+        packageToEdit={editingPackage}
+        onPackageUpdated={handlePackageUpdated}
       />
     </div>
   );
