@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DollarSign, Cog, Puzzle, Truck, Share2, AlertTriangle, Save, Settings as SettingsIcon } from "lucide-react";
+import { DollarSign, Cog, Puzzle, Truck, Share2, AlertTriangle, Save, Settings as SettingsIcon, ShieldCheck } from "lucide-react";
 import React from "react";
 import { useAppSettings } from "@/contexts/AppSettingsContext";
 import { useToast } from "@/hooks/use-toast";
@@ -22,6 +22,7 @@ export default function SettingsPage() {
   const [platformName, setPlatformName] = React.useState("ReelKart Admin");
   const [logoUrl, setLogoUrl] = React.useState("");
   const [autoApproveSellers, setAutoApproveSellers] = React.useState(false);
+  const [autoApproveKYC, setAutoApproveKYC] = React.useState(false); // New state for KYC approval
   const [currencyCode, setCurrencyCode] = React.useState(appSettings.currencyCode);
   const [currencySymbol, setCurrencySymbol] = React.useState(appSettings.currencySymbol);
   
@@ -57,9 +58,9 @@ export default function SettingsPage() {
     let toastMessage = `${category} settings saved!`;
 
     if (category === "General") {
-      settingsToSave = { platformName, logoUrl, autoApproveSellers, currencyCode, currencySymbol };
+      settingsToSave = { platformName, logoUrl, autoApproveSellers, autoApproveKYC, currencyCode, currencySymbol };
       setAppSettings({ currencyCode, currencySymbol });
-      toastMessage = "General settings (including currency) saved!";
+      toastMessage = "General settings (including currency & approvals) saved!";
     } else if (category === "Commissions") {
       settingsToSave = { defaultCommission };
     } else if (category === "Integrations") {
@@ -100,7 +101,7 @@ export default function SettingsPage() {
           <Card>
             <CardHeader>
               <CardTitle>General Settings</CardTitle>
-              <CardDescription>Basic platform and currency configurations.</CardDescription>
+              <CardDescription>Basic platform, currency, and approval configurations.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
@@ -127,6 +128,15 @@ export default function SettingsPage() {
                   <p className="text-sm text-muted-foreground">Automatically approve new seller registrations.</p>
                 </div>
                 <Switch id="auto-approve-sellers" checked={autoApproveSellers} onCheckedChange={setAutoApproveSellers} />
+              </div>
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div>
+                  <Label htmlFor="auto-approve-kyc" className="font-medium flex items-center">
+                    <ShieldCheck className="mr-2 h-4 w-4 text-primary" /> Automatic KYC Approval
+                  </Label>
+                  <p className="text-sm text-muted-foreground">Automatically approve new KYC submissions.</p>
+                </div>
+                <Switch id="auto-approve-kyc" checked={autoApproveKYC} onCheckedChange={setAutoApproveKYC} />
               </div>
               <Button onClick={() => handleSaveSettings("General")}><Save className="mr-2 h-4 w-4" />Save General Settings</Button>
             </CardContent>
