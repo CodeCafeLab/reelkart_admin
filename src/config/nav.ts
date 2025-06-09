@@ -14,7 +14,7 @@ export const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
   { label: 'KYC Management', href: '/admin/kyc', icon: ShieldCheck },
   { label: 'Sellers Management', href: '/admin/sellers', icon: Users },
-  { label: 'Content Moderation', href: '/admin/content', icon: Film },
+  { label: 'Content Management', href: '/admin/content', icon: Film },
   { label: 'Orders Management', href: '/admin/logistics', icon: Truck },
   { label: 'Package Management', href: '/admin/packages', icon: Package },
   { label: 'Third Party Usage Logs', href: '/admin/ai-logs', icon: BrainCircuit },

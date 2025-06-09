@@ -210,8 +210,8 @@ export default function ContentPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold font-headline">Content Moderation</h1>
-      <p className="text-muted-foreground">Review and moderate user-generated video content.</p>
+      <h1 className="text-3xl font-bold font-headline">Content Management</h1>
+      <p className="text-muted-foreground">Manage user-generated video content and related assets.</p>
 
       <Card>
         <CardHeader>
