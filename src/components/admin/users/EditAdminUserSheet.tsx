@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label"; // Keep if used standalone, FormLabel is preferred inside FormField
+// Label removed as FormLabel is used
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
@@ -33,18 +33,19 @@ interface EditAdminUserSheetProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   user: AdminUser | null;
-  onUserUpdated: () => void;
+  // Changed to pass the updated data back for local state management
+  onUserUpdated: (updatedData: Partial<AdminUser> & { id: string }) => void; 
 }
 
 export function EditAdminUserSheet({ isOpen, onOpenChange, user, onUserUpdated }: EditAdminUserSheetProps) {
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(false); //isLoading state is now local to this sheet
 
   const form = useForm<EditAdminUserFormValues>({
     resolver: zodResolver(updateAdminUserSchema),
     defaultValues: {
       full_name: "",
-      role: undefined, // Ensure role matches AdminRole or is undefined
+      role: undefined, 
       is_active: true,
     },
   });
@@ -66,53 +67,70 @@ export function EditAdminUserSheet({ isOpen, onOpenChange, user, onUserUpdated }
     }
     setIsLoading(true);
 
-    // Construct payload by taking only changed values
-    const payload: UpdateAdminUserPayload = {};
-    if (values.full_name !== (user.full_name || "")) payload.full_name = values.full_name;
-    if (values.role && values.role !== user.role) payload.role = values.role;
-    if (values.is_active !== user.is_active) payload.is_active = values.is_active;
+    const payload: Partial<AdminUser> & { id: string } = { id: user.id };
+    let changesMade = false;
 
-    if (Object.keys(payload).length === 0) {
+    if (values.full_name !== (user.full_name || "")) {
+        payload.full_name = values.full_name;
+        changesMade = true;
+    }
+    if (values.role && values.role !== user.role) {
+        payload.role = values.role;
+        changesMade = true;
+    }
+    // Ensure is_active is included if it changed, even if to false
+    if (values.is_active !== user.is_active) {
+        payload.is_active = values.is_active;
+        changesMade = true;
+    }
+    
+    if (!changesMade) {
       toast({ title: "No Changes", description: "No changes detected to save." });
       setIsLoading(false);
-      onOpenChange(false); // Close sheet if no changes
+      onOpenChange(false); 
       return;
     }
 
+    // Simulate local update
+    onUserUpdated(payload);
+    
+    // The API call is removed for local data management
+    // try {
+    //   const response = await fetch(`/api/admin-users/${user.id}`, {
+    //     method: "PUT",
+    //     headers: { "Content-Type": "application/json" },
+    //     body: JSON.stringify(payload),
+    //   });
 
-    try {
-      const response = await fetch(`/api/admin-users/${user.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+    //   if (!response.ok) {
+    //     const errorData = await response.json();
+    //     throw new Error(errorData.message || `Failed to update user: ${response.statusText}`);
+    //   }
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to update user: ${response.statusText}`);
-      }
-
-      toast({
-        title: "User Updated",
-        description: `${user.email} has been successfully updated.`,
-      });
-      onUserUpdated(); // This should refresh the user list and close the sheet
-    } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
-      console.error("Error updating admin user:", errorMessage);
-      toast({
-        title: "Update Failed",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
+    //   toast({
+    //     title: "User Updated",
+    //     description: `${user.email} has been successfully updated.`,
+    //   });
+    //   onUserUpdated(); // Prop onUserUpdated now handles data refresh and sheet closing
+    // } catch (e) {
+    //   const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
+    //   console.error("Error updating admin user:", errorMessage);
+    //   toast({
+    //     title: "Update Failed",
+    //     description: errorMessage,
+    //     variant: "destructive",
+    //   });
+    // } finally {
+    //   setIsLoading(false);
+    // }
+    setIsLoading(false); // Remove if API call is re-enabled
   };
   
   const handleClose = () => {
-    form.reset(); // Reset form when sheet is closed
-    onOpenChange(false);
+    if (!isLoading) { // Prevent closing while a submission is in progress
+        form.reset(); 
+        onOpenChange(false);
+    }
   };
 
 
@@ -122,10 +140,10 @@ export function EditAdminUserSheet({ isOpen, onOpenChange, user, onUserUpdated }
         <SheetHeader className="p-6 pb-4 border-b">
           <SheetTitle className="text-2xl font-semibold flex items-center gap-2">
             <Edit className="h-6 w-6 text-primary" />
-            Edit Admin User
+            Edit Admin User (Local Data)
           </SheetTitle>
           <SheetDescription>
-            Modify details for <span className="font-medium">{user?.email || "user"}</span>.
+            Modify details for <span className="font-medium">{user?.email || "user"}</span>. Changes are local.
           </SheetDescription>
         </SheetHeader>
 

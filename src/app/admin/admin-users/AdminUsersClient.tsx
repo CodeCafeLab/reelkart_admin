@@ -11,27 +11,68 @@ import { MoreHorizontal, UserPlus, Edit, Trash2, ToggleLeft, ToggleRight, Loader
 import { useToast } from "@/hooks/use-toast";
 import type { AdminUser, UpdateAdminUserPayload, AdminRole, Permission } from "@/types/admin-user";
 import { ADMIN_ROLES, PERMISSIONS } from "@/types/admin-user";
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { EditAdminUserSheet } from "@/components/admin/users/EditAdminUserSheet";
 
-// Placeholder for AddAdminUserDialog - to be implemented later
-// import { AddAdminUserDialog } from "./AddAdminUserDialog";
+// Mock data for admin users
+const initialMockAdminUsers: AdminUser[] = [
+  {
+    id: "user_1",
+    email: "superadmin@example.com",
+    full_name: "Super Admin",
+    role: "SuperAdmin",
+    last_login_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+    is_active: true,
+    created_at: new Date(Date.now() - 86400000 * 30).toISOString(), // 30 days ago
+    updated_at: new Date().toISOString(),
+  },
+  {
+    id: "user_2",
+    email: "kycreviewer@example.com",
+    full_name: "KYC Reviewer Person",
+    role: "KYCReviewer",
+    last_login_at: new Date(Date.now() - 86400000 * 2).toISOString(), // 2 days ago
+    is_active: true,
+    created_at: new Date(Date.now() - 86400000 * 15).toISOString(), // 15 days ago
+    updated_at: new Date(Date.now() - 86400000).toISOString(),
+  },
+  {
+    id: "user_3",
+    email: "contentmod@example.com",
+    full_name: "Content Mod",
+    role: "ContentModerator",
+    last_login_at: null,
+    is_active: false,
+    created_at: new Date(Date.now() - 86400000 * 5).toISOString(), // 5 days ago
+    updated_at: new Date(Date.now() - 86400000 * 3).toISOString(),
+  },
+  {
+    id: "user_4",
+    email: "logisticmanager@example.com",
+    full_name: "Logistics Head",
+    role: "LogisticsManager",
+    last_login_at: new Date().toISOString(),
+    is_active: true,
+    created_at: new Date(Date.now() - 86400000 * 60).toISOString(),
+    updated_at: new Date().toISOString(),
+  },
+];
 
 
 export function AdminUsersClient() {
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
+  const [users, setUsers] = useState<AdminUser[]>(initialMockAdminUsers);
+  const [isLoading, setIsLoading] = useState<boolean>(false); // No initial loading from API
+  const [error, setError] = useState<string | null>(null); // API errors not applicable for local data
   const { toast } = useToast();
 
-  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false); // Placeholder for future Add dialog
+  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false); // Placeholder
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
-  const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null); // Placeholder for future Delete dialog
+  const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null); // Placeholder
 
   const [selectedRoleForPermissions, setSelectedRoleForPermissions] = useState<AdminRole | "">("");
   const [rolePermissions, setRolePermissions] = useState<Record<Permission, boolean>>(() => {
@@ -40,70 +81,19 @@ export function AdminUsersClient() {
     return initial;
   });
 
-  const fetchUsers = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await fetch("/api/admin-users");
-      if (!response.ok) {
-        let apiErrorMessage = `Failed to fetch users: ${response.statusText} (status: ${response.status})`;
-        try {
-          const errorData = await response.json();
-          apiErrorMessage = errorData.error || errorData.message || apiErrorMessage;
-        } catch (jsonError) {
-          console.warn("Could not parse error response as JSON:", jsonError);
-        }
-        throw new Error(apiErrorMessage);
-      }
-      const data = await response.json();
-      setUsers(data);
-    } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
-      console.error("Error fetching admin users:", errorMessage);
-      setError(errorMessage);
-      toast({
-        title: "Error Fetching Users",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [toast]);
+  // No fetchUsers or useEffect for API calls needed for local data
 
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
-
-  const handleToggleActive = async (user: AdminUser) => {
-    const newStatus = !user.is_active;
-    try {
-      const payload: UpdateAdminUserPayload = { is_active: newStatus };
-      const response = await fetch(`/api/admin-users/${user.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to update user status: ${response.statusText}`);
-      }
-      
-      toast({
-        title: "Status Updated",
-        description: `${user.full_name || user.email}'s status changed to ${newStatus ? 'Active' : 'Inactive'}.`,
-      });
-      fetchUsers(); 
-    } catch (e) {
-      const errorMessage = e instanceof Error ? e.message : "An unknown error occurred.";
-      console.error("Error toggling user status:", errorMessage);
-      toast({
-        title: "Error Updating Status",
-        description: errorMessage,
-        variant: "destructive",
-      });
-    }
+  const handleToggleActive = (userToToggle: AdminUser) => {
+    const newStatus = !userToToggle.is_active;
+    setUsers(prevUsers => 
+      prevUsers.map(user => 
+        user.id === userToToggle.id ? { ...user, is_active: newStatus, updated_at: new Date().toISOString() } : user
+      )
+    );
+    toast({
+      title: "Status Updated",
+      description: `${userToToggle.full_name || userToToggle.email}'s status changed to ${newStatus ? 'Active' : 'Inactive'}.`,
+    });
   };
   
   const handleEditUserClick = (user: AdminUser) => {
@@ -111,14 +101,31 @@ export function AdminUsersClient() {
     setIsEditSheetOpen(true);
   };
 
+  const handleUserUpdatedInSheet = (updatedUserPartial: Partial<AdminUser> & { id: string }) => {
+    setUsers(prevUsers =>
+      prevUsers.map(user =>
+        user.id === updatedUserPartial.id
+          ? { ...user, ...updatedUserPartial, updated_at: new Date().toISOString() }
+          : user
+      )
+    );
+    setIsEditSheetOpen(false);
+    toast({
+        title: "User Updated Locally",
+        description: `User ${updatedUserPartial.full_name || updatedUserPartial.email} has been updated.`,
+    });
+  };
+
+
   const handleDeleteUser = (user: AdminUser) => {
-    // Placeholder - implement confirmation and API call
-    console.log("Delete user (placeholder):", user);
-    toast({ title: "Delete Action (Placeholder)", description: `Would delete ${user.email}`, variant: "destructive"});
+    // Placeholder for local data - implement actual deletion if needed
+    // For now, it just shows a toast
+    console.log("Delete user (local placeholder):", user);
+    // setUsers(prevUsers => prevUsers.filter(u => u.id !== user.id)); // Example of local deletion
+    toast({ title: "Delete Action (Local Placeholder)", description: `Would delete ${user.email}. Data is local.`, variant: "destructive"});
   };
 
   const handleAddNewRole = () => {
-    // Placeholder
     toast({ title: "Add New Role (Placeholder)", description: "Functionality to create new roles to be implemented."});
   };
 
@@ -131,9 +138,8 @@ export function AdminUsersClient() {
       toast({ title: "No Role Selected", description: "Please select a role to save permissions.", variant: "destructive"});
       return;
     }
-    // Placeholder
     console.log(`Saving permissions for role ${selectedRoleForPermissions}:`, rolePermissions);
-    toast({ title: "Save Permissions (Placeholder)", description: `Permissions for ${selectedRoleForPermissions} would be saved.`});
+    toast({ title: "Save Permissions (Local Placeholder)", description: `Permissions for ${selectedRoleForPermissions} would be saved. Data is local.`});
   };
 
   useEffect(() => {
@@ -145,7 +151,10 @@ export function AdminUsersClient() {
         } else if (selectedRoleForPermissions === 'KYCReviewer' && (p === 'manage_kyc_submissions' || p.startsWith('view_'))) {
            newPerms[p] = true;
         } else {
-          newPerms[p] = index % 3 === 0; 
+          // Mock some permissions based on role for demo
+          if (selectedRoleForPermissions === 'ContentModerator') newPerms[p] = p === 'moderate_content' || p.startsWith('view_');
+          else if (selectedRoleForPermissions === 'LogisticsManager') newPerms[p] = p === 'manage_order_logistics' || p.startsWith('view_');
+          else newPerms[p] = index % 3 === 0; // Default mock
         }
       });
       setRolePermissions(newPerms);
@@ -157,28 +166,12 @@ export function AdminUsersClient() {
   }, [selectedRoleForPermissions]);
 
 
-  if (isLoading && users.length === 0) {
+  if (isLoading && users.length === 0) { // Should not happen with local data unless explicitly set
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="ml-2 text-muted-foreground">Loading admin users...</p>
       </div>
-    );
-  }
-
-  if (error && users.length === 0) {
-    return (
-      <Card className="border-destructive">
-        <CardHeader>
-          <CardTitle className="flex items-center text-destructive">
-            <AlertCircle className="mr-2 h-5 w-5" /> Error Loading Users
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-destructive-foreground">{error}</p>
-          <Button onClick={fetchUsers} variant="outline" className="mt-4">Try Again</Button>
-        </CardContent>
-      </Card>
     );
   }
 
@@ -188,22 +181,17 @@ export function AdminUsersClient() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
             <div>
-              <CardTitle>Admin Users List</CardTitle>
+              <CardTitle>Admin Users List (Local Data)</CardTitle>
               <CardDescription>
-                Manage all users who have access to this admin panel.
+                Manage all users who have access to this admin panel. Data is currently local.
               </CardDescription>
             </div>
-            <Button onClick={() => { toast({title: "Add User (Placeholder)"}) } }>
+            <Button onClick={() => { toast({title: "Add User (Local Placeholder)"}) } }>
               <UserPlus className="mr-2 h-4 w-4" /> Add New Admin User
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          {error && users.length > 0 && ( 
-             <div className="mb-4 p-3 rounded-md border border-destructive/50 bg-destructive/10 text-destructive flex items-center gap-2">
-                <AlertCircle className="h-5 w-5"/> <p>{error}</p>
-             </div>
-          )}
           <Table>
             <TableHeader>
               <TableRow>
@@ -216,12 +204,10 @@ export function AdminUsersClient() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isLoading && users.length === 0 ? (
-                 <TableRow><TableCell colSpan={6} className="text-center py-8"><Loader2 className="h-6 w-6 animate-spin inline-block text-muted-foreground" /></TableCell></TableRow>
-              ) : users.length === 0 ? (
+              {users.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                    No admin users found.
+                    No admin users found (local data).
                   </TableCell>
                 </TableRow>
               ) : (
@@ -240,14 +226,14 @@ export function AdminUsersClient() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                        {user.last_login_at ? format(new Date(user.last_login_at), "PPpp") : 'Never'}
+                        {user.last_login_at ? format(parseISO(user.last_login_at), "PPpp") : 'Never'}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon">
                             <MoreHorizontal className="h-4 w-4" />
-                            <span className="sr-only">Actions</span>
+                            <span className="sr-only">Actions for {user.email}</span>
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
@@ -280,8 +266,8 @@ export function AdminUsersClient() {
         <CardHeader>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
                 <div>
-                    <CardTitle>Role & Permission Management</CardTitle>
-                    <CardDescription>Define admin roles and their access permissions.</CardDescription>
+                    <CardTitle>Role & Permission Management (Mock UI)</CardTitle>
+                    <CardDescription>Define admin roles and their access permissions. (This is a mock UI with local state)</CardDescription>
                 </div>
                  <Button onClick={handleAddNewRole} variant="outline">
                     <ShieldPlus className="mr-2 h-4 w-4" /> Add New Role
@@ -349,8 +335,9 @@ export function AdminUsersClient() {
           onOpenChange={setIsEditSheetOpen}
           user={editingUser}
           onUserUpdated={() => {
-            fetchUsers(); // Refresh the list after update
-            setIsEditSheetOpen(false); // Close the sheet
+            // This will be called by EditAdminUserSheet, but we handle update in handleUserUpdatedInSheet
+            // This callback can be used for more complex logic if needed, or simplified in EditAdminUserSheet
+            // For now, handleUserUpdatedInSheet takes care of updating local state.
           }}
         />
       )}
@@ -361,10 +348,11 @@ export function AdminUsersClient() {
         <AddAdminUserDialog
           isOpen={isAddUserDialogOpen}
           onClose={() => setIsAddUserDialogOpen(false)}
-          onUserAdded={fetchUsers} 
+          onUserAdded={() => {}} // Would add to local state
         />
       )}
       */}
     </div>
   );
 }
+
