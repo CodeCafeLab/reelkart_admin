@@ -1,35 +1,29 @@
 
 "use client";
 
-import Image from "next/image";
+import NextImage from "next/image"; // Renamed to avoid conflict with local Image
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter, SheetClose } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Mail, Phone, MapPin, Package, BarChart2, DollarSign, Star, AlertTriangle, Tag } from "lucide-react";
+import { Mail, Phone, MapPin, Package, BarChart2, DollarSign, Star, AlertTriangle, Tag, FileText, Globe, Banknote, UserCheck, XCircle, UserX } from "lucide-react";
 import { format, parseISO } from 'date-fns';
-import type { SellerRole } from "@/types/seller-package"; // Import SellerRole
-
-// Define the Seller type based on the data structure in sellers/page.tsx
-type SellerStatus = "Pending" | "Approved" | "Rejected";
-interface Seller {
-  id: string;
-  name: string;
-  businessName: string;
-  sellerType: SellerRole; // Added SellerType
-  status: SellerStatus;
-  joinedDate: string; // "YYYY-MM-DD"
-  rejectionReason?: string; 
-}
+import type { SellerRole } from "@/types/seller-package";
+import type { Seller as SellerData } from "@/app/admin/sellers/page"; // Import Seller type from page
 
 interface SellerProfileSheetProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
-  seller: Seller | null;
+  seller: SellerData | null;
+  onOpenImagePopup: (imageUrl: string) => void;
+  onApprove: (sellerId: string) => void;
+  onReject: (sellerId: string) => void; // Rejection implies prompting for reason is handled by caller
+  onSuspend: (sellerId: string) => void; // Suspension implies prompting for reason is handled by caller
+  onReactivate: (sellerId: string) => void;
 }
 
-const statusVariant: Record<SellerStatus, "default" | "secondary" | "destructive" | "outline"> = {
+const statusVariant: Record<SellerData['status'], "default" | "secondary" | "destructive" | "outline"> = {
   Pending: "outline",
   Approved: "default",
   Rejected: "destructive",
@@ -39,6 +33,11 @@ export function SellerProfileSheet({
   isOpen,
   onOpenChange,
   seller,
+  onOpenImagePopup,
+  onApprove,
+  onReject,
+  onSuspend,
+  onReactivate
 }: SellerProfileSheetProps) {
   if (!seller) {
     return null;
@@ -46,52 +45,69 @@ export function SellerProfileSheet({
 
   const formatDate = (dateString: string) => {
     try {
-      return format(parseISO(dateString), "PP"); 
+      return format(parseISO(dateString), "PP");
     } catch (error) {
       return format(new Date(dateString), "PP");
     }
   };
-  
+
   const currentStatusVariant = statusVariant[seller.status];
 
-  // Helper to format SellerRole for display
   const formatSellerType = (type: SellerRole) => {
     return type.replace(/([A-Z])/g, ' $1').trim();
   };
 
+  const getSocialIcon = (platform: SellerData['socialMediaProfiles'][0]['platform']) => {
+    switch (platform) {
+      case 'Instagram': return <NextImage src="/icons/instagram.svg" alt="Instagram" width={16} height={16} data-ai-hint="instagram logo"/>; // Placeholder, use actual icons
+      case 'Facebook': return <NextImage src="/icons/facebook.svg" alt="Facebook" width={16} height={16} data-ai-hint="facebook logo"/>;
+      case 'Twitter': return <NextImage src="/icons/twitter.svg" alt="Twitter" width={16} height={16} data-ai-hint="twitter logo"/>;
+      case 'YouTube': return <NextImage src="/icons/youtube.svg" alt="YouTube" width={16} height={16} data-ai-hint="youtube logo"/>;
+      case 'LinkedIn': return <NextImage src="/icons/linkedin.svg" alt="LinkedIn" width={16} height={16} data-ai-hint="linkedin logo"/>;
+      default: return <Globe className="h-4 w-4 text-muted-foreground" />;
+    }
+  };
+
+
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-lg w-[90vw] overflow-y-auto">
-        <SheetHeader className="mb-6 text-left">
-          <div className="flex items-center gap-4 mb-4">
-            <Avatar className="h-16 w-16 border">
-              <AvatarImage src={`https://placehold.co/128x128.png?text=${seller.businessName.charAt(0)}`} alt={seller.businessName} data-ai-hint="store logo"/>
-              <AvatarFallback>{seller.businessName.slice(0, 2).toUpperCase()}</AvatarFallback>
+      <SheetContent className="sm:max-w-xl w-[95vw] overflow-y-auto p-0">
+        <SheetHeader className="p-6 pb-4 border-b">
+          <div className="flex items-center gap-4 mb-2">
+            <Avatar className="h-20 w-20 border-2 border-primary">
+              <AvatarImage src={`https://placehold.co/128x128.png?text=${seller.businessName.charAt(0)}`} alt={seller.businessName} data-ai-hint="company logo" />
+              <AvatarFallback className="text-2xl">{seller.businessName.slice(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div>
               <SheetTitle className="text-2xl font-semibold">{seller.businessName}</SheetTitle>
               <SheetDescription>
-                Contact: {seller.name}
+                Contact Person: {seller.name}
               </SheetDescription>
+              <p className="text-sm text-muted-foreground">Seller ID: {seller.id}</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">Status:</span>
-            <Badge 
-                variant={currentStatusVariant}
-                className={seller.status === 'Approved' ? 'bg-green-500 hover:bg-green-600 text-white' : ''}
-            >
-                {seller.status}
-            </Badge>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+            <div className="flex items-center gap-1">
+                <span className="text-muted-foreground">Status:</span>
+                <Badge
+                    variant={currentStatusVariant}
+                    className={seller.status === 'Approved' ? 'bg-green-500 hover:bg-green-600 text-white' : ''}
+                >
+                    {seller.status}
+                </Badge>
+            </div>
+            <div className="flex items-center gap-1">
+                <Tag className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Type:</span>
+                <Badge variant="outline">{formatSellerType(seller.sellerType)}</Badge>
+            </div>
+             <div className="flex items-center gap-1">
+                <span className="text-muted-foreground">Joined:</span>
+                <span>{formatDate(seller.joinedDate)}</span>
+            </div>
           </div>
-           <p className="text-sm text-muted-foreground">Seller ID: {seller.id}</p>
-           <div className="flex items-center gap-1 text-sm text-muted-foreground">
-             <Tag className="h-4 w-4" />
-             <span>Type: </span>
-             <Badge variant="outline">{formatSellerType(seller.sellerType)}</Badge>
-           </div>
            {seller.status === "Rejected" && seller.rejectionReason && (
-             <div className="mt-2 flex items-start gap-2 text-sm text-destructive">
+             <div className="mt-2 flex items-start gap-2 text-sm text-destructive bg-destructive/10 p-2 rounded-md">
                 <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                 <div>
                     <p className="font-medium">Reason for Rejection/Suspension:</p>
@@ -100,10 +116,10 @@ export function SellerProfileSheet({
              </div>
            )}
         </SheetHeader>
-        
-        <div className="space-y-6">
+
+        <div className="p-6 space-y-6">
           <div>
-            <h3 className="text-lg font-medium text-foreground mb-1">Contact Information</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2">Contact Information</h3>
             <Separator className="mb-3"/>
             <div className="space-y-2 text-sm">
               <p className="flex items-center gap-2"><Mail className="h-4 w-4 text-muted-foreground"/> contact@{seller.businessName.toLowerCase().replace(/\s+/g, '')}.com (mock)</p>
@@ -112,31 +128,105 @@ export function SellerProfileSheet({
             </div>
           </div>
 
-          <div>
-            <h3 className="text-lg font-medium text-foreground mb-1">Account Details</h3>
-            <Separator className="mb-3"/>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-              <p><span className="font-medium text-muted-foreground">Joined Date:</span> {formatDate(seller.joinedDate)}</p>
-              <p className="flex items-center gap-1"><Package className="h-4 w-4 text-muted-foreground"/> <span className="font-medium text-muted-foreground">Package:</span> Basic (mock)</p>
+          {seller.socialMediaProfiles && seller.socialMediaProfiles.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Social Media Profiles</h3>
+              <Separator className="mb-3"/>
+              <div className="space-y-2 text-sm">
+                {seller.socialMediaProfiles.map((profile, index) => (
+                  <div key={index} className="flex items-center gap-2">
+                    {getSocialIcon(profile.platform)}
+                    <a href={profile.link} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline truncate">
+                      {profile.link}
+                    </a>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
+          {seller.bankAccountDetails && (
+            <div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Bank Account Details</h3>
+              <Separator className="mb-3"/>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm bg-muted/50 p-3 rounded-md border">
+                <p><span className="font-medium text-muted-foreground">Holder:</span> {seller.bankAccountDetails.accountHolderName}</p>
+                <p><span className="font-medium text-muted-foreground">Account No:</span> {seller.bankAccountDetails.accountNumber}</p>
+                <p><span className="font-medium text-muted-foreground">IFSC:</span> {seller.bankAccountDetails.ifscCode}</p>
+                <p><span className="font-medium text-muted-foreground">Bank:</span> {seller.bankAccountDetails.bankName}</p>
+                {seller.bankAccountDetails.branchName && <p><span className="font-medium text-muted-foreground">Branch:</span> {seller.bankAccountDetails.branchName}</p>}
+              </div>
+            </div>
+          )}
+
+          {seller.verificationDocuments && seller.verificationDocuments.length > 0 && (
+            <div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">Verification Documents</h3>
+              <Separator className="mb-3"/>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {seller.verificationDocuments.map((doc, index) => (
+                  <div key={index} className="space-y-1">
+                    <p className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                      <FileText className="w-4 h-4"/>
+                      {doc.name}
+                    </p>
+                    <div
+                      className="relative aspect-[16/10] w-full rounded-md overflow-hidden border border-muted cursor-pointer hover:opacity-80 transition-opacity bg-muted/30"
+                      onClick={() => onOpenImagePopup(doc.url)}
+                    >
+                      <NextImage
+                        src={doc.url}
+                        alt={doc.name}
+                        layout="fill"
+                        objectFit="contain" // Changed to contain to see full doc image better
+                        className="rounded-md p-1"
+                        data-ai-hint={doc.aiHint}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Mock Performance Data - Kept from previous version */}
           <div>
-            <h3 className="text-lg font-medium text-foreground mb-1">Performance (Mock Data)</h3>
+            <h3 className="text-lg font-semibold text-foreground mb-2">Performance (Mock Data)</h3>
             <Separator className="mb-3"/>
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                 <p className="flex items-center gap-1"><BarChart2 className="h-4 w-4 text-muted-foreground" /> <span className="font-medium text-muted-foreground">Total Products:</span> 75</p>
                 <p className="flex items-center gap-1"><DollarSign className="h-4 w-4 text-muted-foreground" /> <span className="font-medium text-muted-foreground">Total Sales:</span> ₹1,25,000</p>
                 <p className="flex items-center gap-1"><Star className="h-4 w-4 text-muted-foreground" /> <span className="font-medium text-muted-foreground">Avg. Rating:</span> 4.5</p>
-                <p><span className="font-medium text-muted-foreground">KYC Status:</span> Verified</p>
             </div>
           </div>
         </div>
 
-        <SheetFooter className="mt-8 pt-6 border-t">
-          <SheetClose asChild>
-            <Button variant="outline">Close</Button>
+        <SheetFooter className="p-6 pt-4 mt-6 border-t flex flex-col sm:flex-row sm:justify-between gap-2">
+           <SheetClose asChild>
+            <Button variant="outline" className="w-full sm:w-auto">Close</Button>
           </SheetClose>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            {seller.status === "Pending" && (
+                <>
+                <Button onClick={() => onApprove(seller.id)} className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white">
+                    <UserCheck className="mr-2 h-4 w-4" /> Approve Application
+                </Button>
+                <Button variant="destructive" onClick={() => onReject(seller.id)} className="w-full sm:w-auto">
+                    <XCircle className="mr-2 h-4 w-4" /> Decline Application
+                </Button>
+                </>
+            )}
+            {seller.status === "Approved" && (
+                <Button variant="destructive" onClick={() => onSuspend(seller.id)} className="w-full sm:w-auto">
+                    <UserX className="mr-2 h-4 w-4" /> Suspend Seller Role
+                </Button>
+            )}
+            {seller.status === "Rejected" && (
+                 <Button onClick={() => onReactivate(seller.id)} className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white">
+                    <UserCheck className="mr-2 h-4 w-4" /> Re-Approve Application
+                </Button>
+            )}
+          </div>
         </SheetFooter>
       </SheetContent>
     </Sheet>

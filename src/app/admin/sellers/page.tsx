@@ -12,41 +12,154 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from 'date-fns';
-import { SellerProfileSheet } from "@/components/admin/sellers/SellerProfileSheet"; 
-import type { SellerRole } from "@/types/seller-package"; // Import SellerRole
-import { SELLER_ROLES } from "@/types/seller-package"; // For mock data assignment
+import { SellerProfileSheet } from "@/components/admin/sellers/SellerProfileSheet";
+import type { SellerRole } from "@/types/seller-package";
+import { SELLER_ROLES } from "@/types/seller-package";
+import { ImagePopup } from "@/components/admin/kyc/ImagePopup"; // Re-using ImagePopup
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
-// Define Seller type matching the data structure
-interface Seller {
-  id: string;
+// Define Seller related interfaces
+interface SellerDocument {
   name: string;
+  url: string;
+  aiHint: string;
+}
+
+interface SocialMediaProfile {
+  platform: 'Instagram' | 'Facebook' | 'Twitter' | 'YouTube' | 'LinkedIn' | 'Other';
+  link: string;
+}
+
+interface BankAccountDetails {
+  accountHolderName: string;
+  accountNumber: string;
+  ifscCode: string;
+  bankName: string;
+  branchName?: string;
+}
+
+export interface Seller {
+  id: string;
+  name: string; // Contact person name
   businessName: string;
-  sellerType: SellerRole; // Added SellerType
+  sellerType: SellerRole;
   status: SellerStatus;
-  joinedDate: string; 
-  rejectionReason?: string; 
+  joinedDate: string; // "YYYY-MM-DD"
+  rejectionReason?: string;
+  socialMediaProfiles?: SocialMediaProfile[];
+  bankAccountDetails?: BankAccountDetails;
+  verificationDocuments?: SellerDocument[];
 }
 
 const initialSellersData: Seller[] = [
-  { id: "usr001-sel", name: "Rajesh Kumar", businessName: "RK Electronics", sellerType: "ECommerceSeller", status: "Approved", joinedDate: "2024-06-01" },
-  { id: "usr002-sel", name: "Anjali Desai", businessName: "Anjali's Artistry", sellerType: "IndividualMerchant", status: "Pending", joinedDate: "2024-07-10" },
-  { id: "usr003-sel", name: "Mohammed Khan", businessName: "Khan's Spices", sellerType: "ECommerceSeller", status: "Approved", joinedDate: "2024-05-15" },
-  { id: "usr004-sel", name: "Priya Singh", businessName: "Fashion Forward", sellerType: "Influencer", status: "Rejected", joinedDate: "2024-07-01", rejectionReason: "Incomplete documentation" },
-  { id: "usr005-sel", name: "Amit Patel", businessName: "Patel's Organics", sellerType: "OnlineSeller", status: "Pending", joinedDate: "2024-07-18" },
-  { id: "usr006-sel", name: "Sneha Iyer", businessName: "Iyer Books", sellerType: "ECommerceSeller", status: "Approved", joinedDate: "2024-04-20" },
-  { id: "usr007-sel", name: "Vikram Rathore", businessName: "Rathore Mobiles", sellerType: "Wholesaler", status: "Pending", joinedDate: "2024-07-20" },
-  { id: "usr008-sel", name: "Deepa Sharma", businessName: "Sharma Decor", sellerType: "IndividualMerchant", status: "Rejected", joinedDate: "2024-06-10", rejectionReason: "Business not verifiable" },
-  { id: "usr009-sel", name: "Arjun Mehra", businessName: "Mehra Fitness", sellerType: "Influencer", status: "Approved", joinedDate: "2024-03-01" },
-  { id: "usr010-sel", name: "Meena Kumari", businessName: "Kumari Crafts", sellerType: "IndividualMerchant", status: "Pending", joinedDate: "2024-07-22" },
-  { id: "usr011-sel", name: "Ravi Shankar", businessName: "Shankar Sounds", sellerType: "ECommerceSeller", status: "Approved", joinedDate: "2024-02-15" },
-  { id: "usr012-sel", name: "Kavita Nair", businessName: "Nair Apparel", sellerType: "OnlineSeller", status: "Rejected", joinedDate: "2024-05-05", rejectionReason: "Policy violation" },
-  { id: "usr013-sel", name: "Sunil Gupta", businessName: "Gupta Groceries", sellerType: "Wholesaler", status: "Pending", joinedDate: "2024-07-25" },
-  { id: "usr014-sel", name: "Pooja Reddy", businessName: "Reddy Beauty", sellerType: "Celebrity", status: "Approved", joinedDate: "2024-01-10" },
-  { id: "usr015-sel", name: "Imran Ali", businessName: "Ali Auto", sellerType: "Affiliator", status: "Pending", joinedDate: "2024-07-28" },
+  {
+    id: "usr001-sel", name: "Rajesh Kumar", businessName: "RK Electronics", sellerType: "ECommerceSeller", status: "Approved", joinedDate: "2024-06-01",
+    socialMediaProfiles: [{ platform: 'Facebook', link: 'https://facebook.com/rkelectronics' }],
+    bankAccountDetails: { accountHolderName: "RK Electronics", accountNumber: "123456789012", ifscCode: "HDFC0000123", bankName: "HDFC Bank" },
+    verificationDocuments: [
+      { name: "GST Certificate", url: "https://placehold.co/600x400.png?text=GST+Cert", aiHint: "tax registration" },
+      { name: "Business PAN", url: "https://placehold.co/600x400.png?text=Biz+PAN", aiHint: "tax document" }
+    ]
+  },
+  {
+    id: "usr002-sel", name: "Anjali Desai", businessName: "Anjali's Artistry", sellerType: "IndividualMerchant", status: "Pending", joinedDate: "2024-07-10",
+    socialMediaProfiles: [{ platform: 'Instagram', link: 'https://instagram.com/anjaliart' }],
+    bankAccountDetails: { accountHolderName: "Anjali Desai", accountNumber: "098765432109", ifscCode: "ICIC0000456", bankName: "ICICI Bank" },
+    verificationDocuments: [
+      { name: "Aadhaar Card - Front", url: "https://placehold.co/600x400.png?text=Aadhaar+Front", aiHint: "identity document" },
+      { name: "Aadhaar Card - Back", url: "https://placehold.co/600x400.png?text=Aadhaar+Back", aiHint: "identity document" }
+    ]
+  },
+  {
+    id: "usr003-sel", name: "Mohammed Khan", businessName: "Khan's Spices", sellerType: "ECommerceSeller", status: "Approved", joinedDate: "2024-05-15",
+    bankAccountDetails: { accountHolderName: "Mohammed Khan", accountNumber: "112233445566", ifscCode: "SBIN0000789", bankName: "State Bank of India" },
+    verificationDocuments: [
+      { name: "GST Certificate", url: "https://placehold.co/600x400.png?text=GST+Spices", aiHint: "tax registration" }
+    ]
+  },
+  {
+    id: "usr004-sel", name: "Priya Singh", businessName: "Fashion Forward", sellerType: "Influencer", status: "Rejected", joinedDate: "2024-07-01", rejectionReason: "Incomplete documentation",
+    socialMediaProfiles: [{ platform: 'YouTube', link: 'https://youtube.com/fashionforwardpriya' }],
+    verificationDocuments: [
+      { name: "Aadhaar Card - Front", url: "https://placehold.co/600x400.png?text=Aadhaar+Priya+F", aiHint: "identity document" },
+      { name: "Aadhaar Card - Back", url: "https://placehold.co/600x400.png?text=Aadhaar+Priya+B", aiHint: "identity document" }
+    ]
+  },
+  {
+    id: "usr005-sel", name: "Amit Patel", businessName: "Patel's Organics", sellerType: "OnlineSeller", status: "Pending", joinedDate: "2024-07-18",
+    verificationDocuments: [
+        { name: "GST Certificate (Optional for OnlineSeller)", url: "https://placehold.co/600x400.png?text=GST+Patel", aiHint: "tax registration" }
+    ]
+  },
+  {
+    id: "usr006-sel", name: "Sneha Iyer", businessName: "Iyer Books", sellerType: "ECommerceSeller", status: "Approved", joinedDate: "2024-04-20",
+    verificationDocuments: [
+      { name: "GST Certificate", url: "https://placehold.co/600x400.png?text=GST+IyerBooks", aiHint: "tax registration" }
+    ]
+  },
+  {
+    id: "usr007-sel", name: "Vikram Rathore", businessName: "Rathore Mobiles", sellerType: "Wholesaler", status: "Pending", joinedDate: "2024-07-20",
+    bankAccountDetails: { accountHolderName: "Rathore Mobiles Pvt Ltd", accountNumber: "223344556677", ifscCode: "AXIS0000112", bankName: "Axis Bank" },
+    verificationDocuments: [
+      { name: "GST Certificate", url: "https://placehold.co/600x400.png?text=GST+Rathore", aiHint: "tax registration" },
+      { name: "Trade Registration Certificate", url: "https://placehold.co/600x400.png?text=Trade+Cert+Rathore", aiHint: "business license" }
+    ]
+  },
+  {
+    id: "usr008-sel", name: "Deepa Sharma", businessName: "Sharma Decor", sellerType: "IndividualMerchant", status: "Rejected", joinedDate: "2024-06-10", rejectionReason: "Business not verifiable",
+    verificationDocuments: [
+      { name: "Aadhaar Card - Front", url: "https://placehold.co/600x400.png?text=Aadhaar+Deepa+F", aiHint: "identity document" },
+      { name: "Aadhaar Card - Back", url: "https://placehold.co/600x400.png?text=Aadhaar+Deepa+B", aiHint: "identity document" }
+    ]
+  },
+  {
+    id: "usr009-sel", name: "Arjun Mehra", businessName: "Mehra Fitness", sellerType: "Influencer", status: "Approved", joinedDate: "2024-03-01",
+    socialMediaProfiles: [{ platform: 'Instagram', link: 'https://instagram.com/mehrafitness' }, { platform: 'YouTube', link: 'https://youtube.com/mehrafit' }],
+    verificationDocuments: [
+      { name: "Aadhaar Card - Front", url: "https://placehold.co/600x400.png?text=Aadhaar+Arjun+F", aiHint: "identity document" },
+      { name: "Aadhaar Card - Back", url: "https://placehold.co/600x400.png?text=Aadhaar+Arjun+B", aiHint: "identity document" }
+    ]
+  },
+  {
+    id: "usr010-sel", name: "Meena Kumari", businessName: "Kumari Crafts", sellerType: "IndividualMerchant", status: "Pending", joinedDate: "2024-07-22",
+    verificationDocuments: [
+      { name: "Aadhaar Card - Front", url: "https://placehold.co/600x400.png?text=Aadhaar+Meena+F", aiHint: "identity document" },
+      { name: "Aadhaar Card - Back", url: "https://placehold.co/600x400.png?text=Aadhaar+Meena+B", aiHint: "identity document" }
+    ]
+  },
+  {
+    id: "usr011-sel", name: "Ravi Shankar", businessName: "Shankar Sounds", sellerType: "ECommerceSeller", status: "Approved", joinedDate: "2024-02-15",
+    verificationDocuments: [
+        { name: "GST Certificate", url: "https://placehold.co/600x400.png?text=GST+ShankarSounds", aiHint: "tax registration" }
+    ]
+  },
+  {
+    id: "usr012-sel", name: "Kavita Nair", businessName: "Nair Apparel", sellerType: "OnlineSeller", status: "Rejected", joinedDate: "2024-05-05", rejectionReason: "Policy violation"
+  },
+  {
+    id: "usr013-sel", name: "Sunil Gupta", businessName: "Gupta Groceries", sellerType: "Wholesaler", status: "Pending", joinedDate: "2024-07-25",
+    verificationDocuments: [
+      { name: "GST Certificate", url: "https://placehold.co/600x400.png?text=GST+GuptaGroc", aiHint: "tax registration" },
+      { name: "Trade Registration Certificate", url: "https://placehold.co/600x400.png?text=Trade+Cert+Gupta", aiHint: "business license" }
+    ]
+  },
+  {
+    id: "usr014-sel", name: "Pooja Reddy", businessName: "Reddy Beauty", sellerType: "Celebrity", status: "Approved", joinedDate: "2024-01-10",
+    socialMediaProfiles: [{platform: 'Instagram', link: 'https://instagram.com/realpoojareddy'}],
+    verificationDocuments: [
+      { name: "Celebrity Proof Document", url: "https://placehold.co/600x400.png?text=CelebProof+Pooja", aiHint: "proof identity" }
+    ]
+  },
+  {
+    id: "usr015-sel", name: "Imran Ali", businessName: "Ali Auto", sellerType: "Affiliator", status: "Pending", joinedDate: "2024-07-28",
+    verificationDocuments: [
+      { name: "Aadhaar Card - Front", url: "https://placehold.co/600x400.png?text=Aadhaar+Imran+F", aiHint: "identity document" },
+      { name: "Aadhaar Card - Back", url: "https://placehold.co/600x400.png?text=Aadhaar+Imran+B", aiHint: "identity document" }
+    ]
+  },
 ];
 
 type SellerStatus = "Pending" | "Approved" | "Rejected";
@@ -60,9 +173,12 @@ const statusVariant: Record<SellerStatus, "default" | "secondary" | "destructive
 
 export default function SellersPage() {
   const { toast } = useToast();
-  const [sellersData, setSellersData] = useState<Seller[]>(initialSellersData); 
+  const [sellersData, setSellersData] = useState<Seller[]>(initialSellersData);
   const [isProfileSheetOpen, setIsProfileSheetOpen] = useState(false);
   const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null);
+  const [isImagePopupOpen, setIsImagePopupOpen] = useState(false);
+  const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+
 
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<SellerStatus | "All">("All");
@@ -80,7 +196,7 @@ export default function SellersPage() {
         seller.id.toLowerCase().includes(lowerSearchTerm) ||
         seller.name.toLowerCase().includes(lowerSearchTerm) ||
         seller.businessName.toLowerCase().includes(lowerSearchTerm) ||
-        seller.sellerType.toLowerCase().includes(lowerSearchTerm) 
+        seller.sellerType.toLowerCase().includes(lowerSearchTerm)
       );
     }
 
@@ -112,7 +228,7 @@ export default function SellersPage() {
     }
     return filteredItems;
   }, [sellersData, searchTerm, statusFilter, sortConfig]);
-  
+
   const paginatedSellers = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
@@ -129,7 +245,7 @@ export default function SellersPage() {
     setSortConfig({ key, direction });
     setCurrentPage(1);
   };
-  
+
   const renderSortIcon = (columnKey: SortableSellerKeys) => {
     if (sortConfig.key !== columnKey) {
       return <ArrowUpDown className="h-4 w-4 opacity-30 group-hover:opacity-100" />;
@@ -139,9 +255,9 @@ export default function SellersPage() {
 
   const formatDateDisplay = (dateString: string) => {
     try {
-      return format(parseISO(dateString), "PP"); 
+      return format(parseISO(dateString), "PP");
     } catch (error) {
-      return format(new Date(dateString), "PP"); 
+      return format(new Date(dateString), "PP");
     }
   };
 
@@ -149,40 +265,58 @@ export default function SellersPage() {
     setSelectedSeller(seller);
     setIsProfileSheetOpen(true);
   };
-  
+
+  const handleOpenImagePopup = (imageUrl: string) => {
+    setSelectedImageUrl(imageUrl);
+    setIsImagePopupOpen(true);
+  };
+
+  const handleCloseImagePopup = () => {
+    setIsImagePopupOpen(false);
+    setSelectedImageUrl(null);
+  };
+
   const handleApproveApplication = (sellerId: string) => {
     setSellersData(prev => prev.map(s => s.id === sellerId ? {...s, status: "Approved", rejectionReason: undefined} : s));
+    setSelectedSeller(prev => prev && prev.id === sellerId ? {...prev, status: "Approved", rejectionReason: undefined } : prev);
     const seller = sellersData.find(s => s.id === sellerId);
     toast({ title: "Seller Approved", description: `${seller?.businessName || 'Seller'} application approved.`});
+    if(selectedSeller?.id === sellerId && isProfileSheetOpen) setIsProfileSheetOpen(false);
   };
 
   const handleDeclineApplication = (sellerId: string) => {
     const reason = window.prompt("Please enter the reason for declining this application:");
-    if (reason === null) return; 
+    if (reason === null) return;
 
     const finalReason = reason.trim() || "Reason not specified";
     setSellersData(prev => prev.map(s => s.id === sellerId ? {...s, status: "Rejected", rejectionReason: finalReason} : s));
+    setSelectedSeller(prev => prev && prev.id === sellerId ? {...prev, status: "Rejected", rejectionReason: finalReason } : prev);
     const seller = sellersData.find(s => s.id === sellerId);
-    toast({ 
-        title: "Seller Application Declined", 
-        description: `${seller?.businessName || 'Seller'} application declined. Reason: ${finalReason}`, 
+    toast({
+        title: "Seller Application Declined",
+        description: `${seller?.businessName || 'Seller'} application declined. Reason: ${finalReason}`,
         variant: "destructive"
     });
+    if(selectedSeller?.id === sellerId && isProfileSheetOpen) setIsProfileSheetOpen(false);
   };
 
   const handleSuspendSellerRole = (sellerId: string) => {
     const reason = window.prompt("Please enter the reason for suspending this seller:");
-    if (reason === null) return; 
+    if (reason === null) return;
     const finalReason = reason.trim() || "Account suspended by admin";
-    setSellersData(prev => prev.map(s => s.id === sellerId ? {...s, status: "Rejected", rejectionReason: finalReason} : s)); 
+    setSellersData(prev => prev.map(s => s.id === sellerId ? {...s, status: "Rejected", rejectionReason: finalReason} : s));
+    setSelectedSeller(prev => prev && prev.id === sellerId ? {...prev, status: "Rejected", rejectionReason: finalReason } : prev);
     const seller = sellersData.find(s => s.id === sellerId);
     toast({ title: "Seller Role Suspended", description: `${seller?.businessName || 'Seller'} role suspended. Reason: ${finalReason}`, variant: "destructive"});
+    if(selectedSeller?.id === sellerId && isProfileSheetOpen) setIsProfileSheetOpen(false);
   };
 
   const handleReactivateSeller = (sellerId: string) => {
     setSellersData(prev => prev.map(s => s.id === sellerId ? {...s, status: "Approved", rejectionReason: undefined} : s));
+    setSelectedSeller(prev => prev && prev.id === sellerId ? {...prev, status: "Approved", rejectionReason: undefined } : prev);
     const seller = sellersData.find(s => s.id === sellerId);
     toast({ title: "Seller Re-Approved", description: `${seller?.businessName || 'Seller'} has been re-approved.`});
+    if(selectedSeller?.id === sellerId && isProfileSheetOpen) setIsProfileSheetOpen(false);
   };
 
 
@@ -190,7 +324,7 @@ export default function SellersPage() {
     const headers = ["Seller ID", "Business Name", "Contact Name", "Seller Type", "Joined Date", "Status", "Rejection Reason"];
     const csvRows = [
       headers.join(','),
-      ...processedSellers.map(seller => 
+      ...processedSellers.map(seller =>
         [
           seller.id,
           seller.businessName,
@@ -282,11 +416,11 @@ export default function SellersPage() {
                 <CardDescription>Track and manage seller statuses and applications.</CardDescription>
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-stretch sm:items-center">
-                <Input 
-                  placeholder="Search ID, Name, Business, Type..." 
+                <Input
+                  placeholder="Search ID, Name, Business, Type..."
                   value={searchTerm}
                   onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1);}}
-                  className="max-w-full sm:max-w-xs flex-grow" 
+                  className="max-w-full sm:max-w-xs flex-grow"
                 />
                 <Select value={statusFilter} onValueChange={(value) => {setStatusFilter(value as SellerStatus | "All"); setCurrentPage(1);}}>
                   <SelectTrigger className="w-full sm:w-[180px]">
@@ -350,8 +484,8 @@ export default function SellersPage() {
                 paginatedSellers.map((seller) => (
                   <TableRow key={seller.id}>
                     <TableCell className="font-medium">
-                       <Button 
-                        variant="link" 
+                       <Button
+                        variant="link"
                         className="p-0 h-auto text-primary hover:underline"
                         onClick={() => handleViewProfile(seller)}
                       >
@@ -368,7 +502,7 @@ export default function SellersPage() {
                     </TableCell>
                     <TableCell>{formatDateDisplay(seller.joinedDate)}</TableCell>
                     <TableCell>
-                      <Badge 
+                      <Badge
                         variant={statusVariant[seller.status as SellerStatus]}
                         className={seller.status === 'Approved' ? 'bg-green-500 hover:bg-green-600 text-white' : ''}
                       >
@@ -394,13 +528,13 @@ export default function SellersPage() {
                           </DropdownMenuItem>
                           {seller.status === "Pending" && (
                             <>
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 className="text-green-600 focus:text-green-700 focus:bg-green-50"
                                 onClick={() => handleApproveApplication(seller.id)}
                               >
                                 <UserCheck className="mr-2 h-4 w-4" /> Approve Application
                               </DropdownMenuItem>
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 className="text-red-600 focus:text-red-700 focus:bg-red-50"
                                 onClick={() => handleDeclineApplication(seller.id)}
                               >
@@ -409,7 +543,7 @@ export default function SellersPage() {
                             </>
                           )}
                            {seller.status === "Approved" && (
-                            <DropdownMenuItem 
+                            <DropdownMenuItem
                               className="text-red-600 focus:text-red-700 focus:bg-red-50"
                               onClick={() => handleSuspendSellerRole(seller.id)}
                             >
@@ -417,7 +551,7 @@ export default function SellersPage() {
                             </DropdownMenuItem>
                           )}
                           {seller.status === "Rejected" && (
-                             <DropdownMenuItem 
+                             <DropdownMenuItem
                               className="text-green-600 focus:text-green-700 focus:bg-green-50"
                               onClick={() => handleReactivateSeller(seller.id)}
                             >
@@ -488,6 +622,19 @@ export default function SellersPage() {
           isOpen={isProfileSheetOpen}
           onOpenChange={setIsProfileSheetOpen}
           seller={selectedSeller}
+          onOpenImagePopup={handleOpenImagePopup}
+          onApprove={handleApproveApplication}
+          onReject={handleDeclineApplication}
+          onSuspend={handleSuspendSellerRole}
+          onReactivate={handleReactivateSeller}
+        />
+      )}
+
+      {selectedImageUrl && (
+        <ImagePopup
+          isOpen={isImagePopupOpen}
+          onOpenChange={handleCloseImagePopup}
+          imageUrl={selectedImageUrl}
         />
       )}
     </div>
