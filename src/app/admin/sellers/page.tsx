@@ -299,7 +299,15 @@ export default function SellersPage() {
               {paginatedSellers.length > 0 ? (
                 paginatedSellers.map((seller) => (
                   <TableRow key={seller.id}>
-                    <TableCell className="font-medium">{seller.id}</TableCell>
+                    <TableCell className="font-medium">
+                       <Button 
+                        variant="link" 
+                        className="p-0 h-auto text-primary hover:underline"
+                        onClick={() => handleViewProfile(seller)}
+                      >
+                        {seller.id}
+                      </Button>
+                    </TableCell>
                     <TableCell className="flex items-center gap-2">
                       <Store className="h-4 w-4 text-muted-foreground" />
                       {seller.businessName}
