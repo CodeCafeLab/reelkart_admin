@@ -18,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { EditAdminUserSheet } from "@/components/admin/users/EditAdminUserSheet";
 import { AddAdminUserSheet } from "@/components/admin/users/AddAdminUserSheet";
+import { AddAdminRoleSheet } from "@/components/admin/users/AddAdminRoleSheet";
 
 // Mock data for admin users
 const initialMockAdminUsers: AdminUser[] = [
@@ -73,9 +74,17 @@ export function AdminUsersClient() {
   const [isAddUserSheetOpen, setIsAddUserSheetOpen] = useState(false);
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
-  const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null); 
+  
+  const [isAddRoleSheetOpen, setIsAddRoleSheetOpen] = useState(false);
+  const [customRoles, setCustomRoles] = useState<string[]>([]); // Store custom role names
 
-  const [selectedRoleForPermissions, setSelectedRoleForPermissions] = useState<AdminRole | "">("");
+  const allDisplayableRoles = useMemo(() => {
+    const combined = new Set([...ADMIN_ROLES, ...customRoles]);
+    return Array.from(combined);
+  }, [customRoles]);
+
+
+  const [selectedRoleForPermissions, setSelectedRoleForPermissions] = useState<string | "">(""); // Can be AdminRole or custom string
   const [rolePermissions, setRolePermissions] = useState<Record<Permission, boolean>>(() => {
     const initial: Record<Permission, boolean> = {} as Record<Permission, boolean>;
     PERMISSIONS.forEach(p => initial[p] = false);
@@ -129,7 +138,6 @@ export function AdminUsersClient() {
     };
     setUsers(prevUsers => [newUser, ...prevUsers]);
     setIsAddUserSheetOpen(false);
-    // Toast is handled in AddAdminUserSheet now
   };
 
 
@@ -140,9 +148,22 @@ export function AdminUsersClient() {
     }
   };
 
-  const handleAddNewRole = () => {
-    toast({ title: "Add New Role (Placeholder)", description: "Functionality to create new roles to be implemented."});
+  const handleCustomRoleAdded = (newRoleName: string) => {
+    const formattedRoleName = newRoleName.trim();
+    if (!formattedRoleName) {
+      toast({ title: "Invalid Role Name", description: "Role name cannot be empty.", variant: "destructive" });
+      return;
+    }
+    const combinedRoles = [...ADMIN_ROLES, ...customRoles];
+    if (combinedRoles.some(role => role.toLowerCase() === formattedRoleName.toLowerCase())) {
+      toast({ title: "Duplicate Role", description: `Role "${formattedRoleName}" already exists.`, variant: "destructive" });
+      return;
+    }
+    setCustomRoles(prev => [...prev, formattedRoleName]);
+    toast({ title: "Custom Role Added", description: `Role "${formattedRoleName}" added to the local list.` });
+    setIsAddRoleSheetOpen(false);
   };
+
 
   const handlePermissionChange = (permission: Permission, checked: boolean) => {
     setRolePermissions(prev => ({ ...prev, [permission]: checked }));
@@ -160,17 +181,23 @@ export function AdminUsersClient() {
   useEffect(() => {
     if (selectedRoleForPermissions) {
       const newPerms = {} as Record<Permission, boolean>;
-      PERMISSIONS.forEach((p, index) => {
-        if (selectedRoleForPermissions === 'SuperAdmin') {
-          newPerms[p] = true;
-        } else if (selectedRoleForPermissions === 'KYCReviewer' && (p === 'manage_kyc_submissions' || p.startsWith('view_'))) {
-           newPerms[p] = true;
-        } else {
-          if (selectedRoleForPermissions === 'ContentModerator') newPerms[p] = p === 'moderate_content' || p.startsWith('view_');
-          else if (selectedRoleForPermissions === 'LogisticsManager') newPerms[p] = p === 'manage_order_logistics' || p.startsWith('view_');
-          else newPerms[p] = index % 3 === 0; 
-        }
-      });
+      // Check if it's a predefined role to apply existing logic
+      if (ADMIN_ROLES.includes(selectedRoleForPermissions as AdminRole)) {
+        const role = selectedRoleForPermissions as AdminRole;
+        PERMISSIONS.forEach((p, index) => {
+          if (role === 'SuperAdmin') {
+            newPerms[p] = true;
+          } else if (role === 'KYCReviewer' && (p === 'manage_kyc_submissions' || p.startsWith('view_'))) {
+             newPerms[p] = true;
+          } else {
+            if (role === 'ContentModerator') newPerms[p] = p === 'moderate_content' || p.startsWith('view_');
+            else if (role === 'LogisticsManager') newPerms[p] = p === 'manage_order_logistics' || p.startsWith('view_');
+            else newPerms[p] = index % 3 === 0; 
+          }
+        });
+      } else { // For custom roles, default all permissions to false
+        PERMISSIONS.forEach(p => newPerms[p] = false);
+      }
       setRolePermissions(newPerms);
     } else {
       const resetPerms = {} as Record<Permission, boolean>;
@@ -283,7 +310,7 @@ export function AdminUsersClient() {
                     <CardTitle>Role & Permission Management (Mock UI)</CardTitle>
                     <CardDescription>Define admin roles and their access permissions. (This is a mock UI with local state)</CardDescription>
                 </div>
-                 <Button onClick={handleAddNewRole} variant="outline">
+                 <Button onClick={() => setIsAddRoleSheetOpen(true)} variant="outline">
                     <ShieldPlus className="mr-2 h-4 w-4" /> Add New Role
                 </Button>
             </div>
@@ -292,7 +319,7 @@ export function AdminUsersClient() {
             <div>
                 <h3 className="text-lg font-medium mb-2">Existing Roles</h3>
                 <div className="flex flex-wrap gap-2">
-                    {ADMIN_ROLES.map(role => (
+                    {allDisplayableRoles.map(role => (
                         <Badge key={role} variant="secondary">{role}</Badge>
                     ))}
                 </div>
@@ -304,12 +331,12 @@ export function AdminUsersClient() {
                 <div className="flex flex-col sm:flex-row gap-4 items-end">
                     <div className="grid w-full sm:max-w-xs items-center gap-1.5">
                         <Label htmlFor="role-select">Select Role</Label>
-                         <Select value={selectedRoleForPermissions} onValueChange={(value) => setSelectedRoleForPermissions(value as AdminRole)}>
+                         <Select value={selectedRoleForPermissions} onValueChange={(value) => setSelectedRoleForPermissions(value as string)}>
                             <SelectTrigger id="role-select">
                                 <SelectValue placeholder="Select a role..." />
                             </SelectTrigger>
                             <SelectContent>
-                                {ADMIN_ROLES.map(role => (
+                                {allDisplayableRoles.map(role => (
                                     <SelectItem key={role} value={role}>{role}</SelectItem>
                                 ))}
                             </SelectContent>
@@ -356,6 +383,12 @@ export function AdminUsersClient() {
         isOpen={isAddUserSheetOpen}
         onOpenChange={setIsAddUserSheetOpen}
         onUserAdded={handleUserAdded}
+      />
+
+      <AddAdminRoleSheet
+        isOpen={isAddRoleSheetOpen}
+        onOpenChange={setIsAddRoleSheetOpen}
+        onRoleAdded={handleCustomRoleAdded}
       />
       
     </div>
