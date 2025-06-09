@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown, AlertCircle, CheckCircle, Clock, DollarSign, Server, MessageSquare, Truck as LogisticsIcon, Brain, CreditCard, BarChartHorizontal } from "lucide-react";
+import { MoreHorizontal, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown, AlertCircle, CheckCircle, Clock, DollarSign, Server, MessageSquare, Truck as LogisticsIcon, Brain, CreditCard, BarChartHorizontal, User } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +16,7 @@ import { useAppSettings } from "@/contexts/AppSettingsContext";
 import { StatCard } from "@/components/dashboard/StatCard";
 import type { LogEntry, ThirdPartyService, LogStatus, SortableLogKeys, DashboardStat } from "@/types/logs";
 import { THIRD_PARTY_SERVICES, LOG_STATUSES } from "@/types/logs";
+import { UserUsageDetailsSheet } from "@/components/admin/logs/UserUsageDetailsSheet";
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -32,6 +33,8 @@ const mockLogEntries: LogEntry[] = [
   { id: "log008", timestamp: new Date(Date.now() - 1000 * 60 * 40).toISOString(), service: "SMSProvider", event: "Delivery Notification", userId: "usr_qwe", cost: 0.50, status: "Failed", durationMs: 150, details: "Error: Invalid Number" },
   { id: "log009", timestamp: new Date(Date.now() - 1000 * 60 * 45).toISOString(), service: "LogisticsAPI", event: "Track Shipment", userId: "usr_qwe", cost: 0.10, status: "Success", durationMs: 300, details: "AWB: LP789543, Status: In Transit" },
   { id: "log010", timestamp: new Date(Date.now() - 1000 * 60 * 50).toISOString(), service: "OpenAI", event: "Moderation API Call", userId: "usr_mod", cost: 0.002, status: "Success", durationMs: 100, details: "Input: 'Some text', Flagged: false" },
+  { id: "log011", timestamp: new Date(Date.now() - 1000 * 60 * 55).toISOString(), service: "OpenAI", event: "Completion API Call", userId: "usr_abc", cost: 0.015, status: "Success", durationMs: 1200, details: "Model: gpt-4o, Tokens: 120" },
+  { id: "log012", timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(), service: "SMSProvider", event: "OTP Sent", userId: "usr_abc", cost: 0.45, status: "Success", durationMs: 180, details: { to: "+91YYYYYY", messageId: "sms_456" } },
 ];
 
 
@@ -39,7 +42,7 @@ const statusVariantMap: Record<LogStatus, "default" | "secondary" | "destructive
   Success: "default",
   Failed: "destructive",
   Pending: "secondary",
-  Warning: "outline", // Example, yellow not directly in shadcn variants
+  Warning: "outline",
 };
 const statusIconMap: Record<LogStatus, React.ElementType> = {
   Success: CheckCircle,
@@ -47,11 +50,11 @@ const statusIconMap: Record<LogStatus, React.ElementType> = {
   Pending: Clock,
   Warning: AlertCircle,
 };
-const serviceIconMap: Record<ThirdPartyService, React.ElementType> = {
+export const serviceIconMap: Record<ThirdPartyService, React.ElementType> = {
   OpenAI: Brain,
   SMSProvider: MessageSquare,
   LogisticsAPI: LogisticsIcon,
-  RunwayML: Server, // Placeholder, could be more specific
+  RunwayML: Server, 
   PaymentGateway: CreditCard,
   AnalyticsTool: BarChartHorizontal,
 };
@@ -72,8 +75,11 @@ export function ThirdPartyLogDashboardClient() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
+  const [isUserSheetOpen, setIsUserSheetOpen] = useState(false);
+  const [selectedUserIdForSheet, setSelectedUserIdForSheet] = useState<string | null>(null);
+
+
   useEffect(() => {
-    // Calculate dashboard stats from logEntries
     const stats: Record<ThirdPartyService | "Total", DashboardStat> = {} as any;
 
     THIRD_PARTY_SERVICES.forEach(service => {
@@ -105,7 +111,7 @@ export function ThirdPartyLogDashboardClient() {
       style: 'currency',
       currency: appSettings.currencyCode,
       minimumFractionDigits: 2,
-      maximumFractionDigits: 4, // Allow more precision for small API costs
+      maximumFractionDigits: 4, 
     }).format(amount);
   };
 
@@ -141,7 +147,7 @@ export function ThirdPartyLogDashboardClient() {
           valB = valB.toLowerCase();
         } else if (typeof valA === 'number' && typeof valB === 'number') {
           // Standard number comparison
-        } else { // Handle null/undefined for sorting numbers, or mixed types
+        } else { 
           valA = valA ?? (sortConfig.direction === 'ascending' ? Infinity : -Infinity);
           valB = valB ?? (sortConfig.direction === 'ascending' ? Infinity : -Infinity);
         }
@@ -175,6 +181,13 @@ export function ThirdPartyLogDashboardClient() {
       return <ArrowUpDown className="h-3 w-3 opacity-30 group-hover:opacity-100" />;
     }
     return sortConfig.direction === 'ascending' ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />;
+  };
+
+  const handleUserClick = (userId: string | null | undefined) => {
+    if (userId) {
+      setSelectedUserIdForSheet(userId);
+      setIsUserSheetOpen(true);
+    }
   };
 
   const formatDateForDisplay = (dateString: string) => format(parseISO(dateString), "PPpp");
@@ -215,8 +228,9 @@ export function ThirdPartyLogDashboardClient() {
         Details: getDetailsString(log.details), "Correlation ID": log.correlationId || ''
       }));
       const ws = XLSX.utils.json_to_sheet(wsData);
-      XLSX.utils.book_append_sheet(XLSX.utils.book_new(), ws, "Logs");
-      XLSX.writeFile(XLSX.utils.book_new(), `${filenamePrefix}.xlsx`); // Corrected: pass wb to writeFile
+      const wb = XLSX.utils.book_new(); // Create a new workbook
+      XLSX.utils.book_append_sheet(wb, ws, "Logs"); // Append the worksheet to the workbook
+      XLSX.writeFile(wb, `${filenamePrefix}.xlsx`); // Write the workbook to a file
       toast({ title: "Excel Exported", description: "Log data exported." });
     } else if (formatType === 'pdf') {
       const doc = new jsPDF({orientation: "landscape"});
@@ -329,7 +343,7 @@ export function ThirdPartyLogDashboardClient() {
                 <TableHead onClick={() => handleSort('timestamp')} className="cursor-pointer hover:bg-muted/50 group w-[180px]"><div className="flex items-center gap-1">Timestamp {renderSortIcon('timestamp')}</div></TableHead>
                 <TableHead onClick={() => handleSort('service')} className="cursor-pointer hover:bg-muted/50 group w-[140px]"><div className="flex items-center gap-1">Service {renderSortIcon('service')}</div></TableHead>
                 <TableHead onClick={() => handleSort('event')} className="cursor-pointer hover:bg-muted/50 group"><div className="flex items-center gap-1">Event {renderSortIcon('event')}</div></TableHead>
-                <TableHead onClick={() => handleSort('userId')} className="cursor-pointer hover:bg-muted/50 group w-[120px]"><div className="flex items-center gap-1">User ID {renderSortIcon('userId')}</div></TableHead>
+                <TableHead onClick={() => handleSort('userId')} className="cursor-pointer hover:bg-muted/50 group w-[120px]"><div className="flex items-center gap-1"><User className="h-4 w-4 text-muted-foreground mr-1" />User ID {renderSortIcon('userId')}</div></TableHead>
                 <TableHead onClick={() => handleSort('cost')} className="cursor-pointer hover:bg-muted/50 group w-[100px] text-right"><div className="flex items-center justify-end gap-1">Cost {renderSortIcon('cost')}</div></TableHead>
                 <TableHead onClick={() => handleSort('status')} className="cursor-pointer hover:bg-muted/50 group w-[110px]"><div className="flex items-center gap-1">Status {renderSortIcon('status')}</div></TableHead>
                 <TableHead>Details</TableHead>
@@ -357,7 +371,17 @@ export function ThirdPartyLogDashboardClient() {
                         </div>
                       </TableCell>
                       <TableCell className="text-xs max-w-[200px] truncate" title={log.event}>{log.event}</TableCell>
-                      <TableCell className="text-xs">{log.userId || "N/A"}</TableCell>
+                      <TableCell className="text-xs">
+                        {log.userId ? (
+                           <Button 
+                              variant="link" 
+                              className="p-0 h-auto text-xs text-primary hover:underline"
+                              onClick={() => handleUserClick(log.userId)}
+                            >
+                              {log.userId}
+                            </Button>
+                        ) : "N/A"}
+                      </TableCell>
                       <TableCell className="text-xs text-right">{formatCurrency(log.cost)}</TableCell>
                       <TableCell>
                         <Badge variant={statusVariantMap[log.status]} className={log.status === "Success" ? "bg-green-500 hover:bg-green-600 text-white" : ""}>
@@ -410,6 +434,21 @@ export function ThirdPartyLogDashboardClient() {
           </div>
         </CardContent>
       </Card>
+
+      {selectedUserIdForSheet && (
+        <UserUsageDetailsSheet
+          isOpen={isUserSheetOpen}
+          onOpenChange={setIsUserSheetOpen}
+          userId={selectedUserIdForSheet}
+          allLogs={logEntries}
+          formatCurrency={formatCurrency}
+          serviceIconMap={serviceIconMap}
+          statusIconMap={statusIconMap}
+          statusVariantMap={statusVariantMap}
+          formatDateForDisplay={formatDateForDisplay}
+        />
+      )}
     </div>
   );
 }
+
