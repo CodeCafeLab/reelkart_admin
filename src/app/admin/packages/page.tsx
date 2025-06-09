@@ -398,7 +398,13 @@ export default function PackagesPage() {
                 paginatedPackages.map((pkg) => (
                   <TableRow key={pkg.id}>
                     <TableCell className="font-medium">
-                        {pkg.name}
+                        <Button 
+                            variant="link" 
+                            className="p-0 h-auto text-primary hover:underline"
+                            onClick={() => handleEditClick(pkg)}
+                        >
+                            {pkg.name}
+                        </Button>
                         {pkg.description && <p className="text-xs text-muted-foreground max-w-xs truncate">{pkg.description}</p>}
                     </TableCell>
                     <TableCell>
