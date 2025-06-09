@@ -15,7 +15,7 @@ export async function GET(request: NextRequest, { params }: { params: { id: stri
 
   try {
     const { data, error } = await supabase
-      .from('AdminUser')
+      .from('admin_users')
       .select('id, email, full_name, role, last_login_at, is_active, created_at, updated_at') // Exclude hashed_password
       .eq('id', id)
       .single();
@@ -64,7 +64,7 @@ export async function PUT(request: NextRequest, { params }: { params: { id: stri
     }
 
     const { data, error } = await supabase
-      .from('AdminUser')
+      .from('admin_users')
       .update(updateData)
       .eq('id', id)
       .select('id, email, full_name, role, is_active, updated_at') // Return updated user, exclude password
@@ -101,7 +101,7 @@ export async function DELETE(request: NextRequest, { params }: { params: { id: s
 
   try {
     const { error, count } = await supabase
-      .from('AdminUser')
+      .from('admin_users')
       .delete({ count: 'exact' }) // Ensure we know if a row was actually deleted
       .eq('id', id);
 

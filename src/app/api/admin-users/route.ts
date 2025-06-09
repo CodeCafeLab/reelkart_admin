@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
 
   try {
     const { data, error } = await supabase
-      .from('AdminUser')
+      .from('admin_users')
       .select('id, email, full_name, role, last_login_at, is_active, created_at, updated_at') // Exclude hashed_password
       .order('created_at', { ascending: false });
 
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
 
     // Check if user already exists
     const { data: existingUser, error: fetchError } = await supabase
-      .from('AdminUser')
+      .from('admin_users')
       .select('email')
       .eq('email', email)
       .single();
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     const { data: newUser, error: insertError } = await supabase
-      .from('AdminUser')
+      .from('admin_users')
       .insert([
         {
           email,
