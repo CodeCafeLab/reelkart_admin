@@ -53,3 +53,4 @@ export const updateAdminUserSchema = z.object({
   is_active: z.boolean().optional(),
 });
 export type UpdateAdminUserPayload = z.infer<typeof updateAdminUserSchema>;
+
