@@ -11,18 +11,18 @@ import { MoreHorizontal, Eye, PackageCheck, PackageSearch, Truck, Edit, Loader2,
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { format } from 'date-fns'; // parseISO removed as not strictly needed
-import { OrderDetailsSheet } from "@/components/admin/logistics/OrderDetailsSheet"; // Import the new sheet
+import { format } from 'date-fns'; 
+import { OrderDetailsSheet } from "@/components/admin/logistics/OrderDetailsSheet"; 
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
-export interface Order { // Exporting for use in OrderDetailsSheet
+export interface Order { 
   id: string;
   customer: string;
   seller: string;
-  date: string; // "YYYY-MM-DD"
+  date: string; 
   status: OrderStatus;
   trackingId: string | null;
 }
@@ -40,7 +40,7 @@ const initialOrdersData: Order[] = [
   { id: "ord010", customer: "Aditya Rao", seller: "Sports Gear", date: "2024-07-22", status: "Pending Payment", trackingId: null },
 ];
 
-export type OrderStatus = "Pending Payment" | "Processing" | "Shipped" | "Delivered" | "Cancelled"; // Exporting
+export type OrderStatus = "Pending Payment" | "Processing" | "Shipped" | "Delivered" | "Cancelled"; 
 export type SortableOrderKeys = keyof Order;
 
 const ALL_ORDER_STATUSES: OrderStatus[] = ["Pending Payment", "Processing", "Shipped", "Delivered", "Cancelled"];
@@ -271,7 +271,15 @@ export default function LogisticsPage() {
             <TableBody>
               {paginatedOrders.map((order) => (
                 <TableRow key={order.id}>
-                  <TableCell className="font-medium">{order.id}</TableCell>
+                  <TableCell className="font-medium">
+                    <Button
+                      variant="link"
+                      className="p-0 h-auto text-primary hover:underline"
+                      onClick={() => handleViewDetails(order)}
+                    >
+                      {order.id}
+                    </Button>
+                  </TableCell>
                   <TableCell>{order.customer}</TableCell>
                   <TableCell>{order.seller}</TableCell>
                   <TableCell>{formatDateForDisplay(order.date)}</TableCell>
@@ -301,7 +309,7 @@ export default function LogisticsPage() {
                             value={order.status} 
                             onValueChange={(newStatus) => handleUpdateStatus(order.id, newStatus as OrderStatus)}
                         >
-                          {ALL_ORDER_STATUSES.filter(s => s !== "Pending Payment").map(statusOption => ( // Exclude "Pending Payment" from manual updates
+                          {ALL_ORDER_STATUSES.filter(s => s !== "Pending Payment").map(statusOption => ( 
                              <DropdownMenuRadioItem key={statusOption} value={statusOption}>
                                 {statusOption === "Processing" && <PackageSearch className="mr-2 h-4 w-4" />}
                                 {statusOption === "Shipped" && <Truck className="mr-2 h-4 w-4" />}
@@ -359,3 +367,4 @@ export default function LogisticsPage() {
     </div>
   );
 }
+
