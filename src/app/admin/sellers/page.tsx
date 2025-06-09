@@ -7,12 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, UserCheck, UserX, Eye, Store, Download, ArrowUpDown, ArrowUp, ArrowDown, FileText, FileSpreadsheet, Printer } from "lucide-react";
+import { MoreHorizontal, UserCheck, UserX, Eye, Store, Download, ArrowUpDown, ArrowUp, ArrowDown, FileText, FileSpreadsheet, Printer, XCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from 'date-fns';
-import { SellerProfileSheet } from "@/components/admin/sellers/SellerProfileSheet"; // Import the new sheet
+import { SellerProfileSheet } from "@/components/admin/sellers/SellerProfileSheet"; 
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -25,21 +25,22 @@ interface Seller {
   businessName: string;
   status: SellerStatus;
   joinedDate: string; 
+  rejectionReason?: string; // Added for decline/rejection reason
 }
 
 const initialSellersData: Seller[] = [
   { id: "usr001-sel", name: "Rajesh Kumar", businessName: "RK Electronics", status: "Approved", joinedDate: "2024-06-01" },
   { id: "usr002-sel", name: "Anjali Desai", businessName: "Anjali's Artistry", status: "Pending", joinedDate: "2024-07-10" },
   { id: "usr003-sel", name: "Mohammed Khan", businessName: "Khan's Spices", status: "Approved", joinedDate: "2024-05-15" },
-  { id: "usr004-sel", name: "Priya Singh", businessName: "Fashion Forward", status: "Rejected", joinedDate: "2024-07-01" },
+  { id: "usr004-sel", name: "Priya Singh", businessName: "Fashion Forward", status: "Rejected", joinedDate: "2024-07-01", rejectionReason: "Incomplete documentation" },
   { id: "usr005-sel", name: "Amit Patel", businessName: "Patel's Organics", status: "Pending", joinedDate: "2024-07-18" },
   { id: "usr006-sel", name: "Sneha Iyer", businessName: "Iyer Books", status: "Approved", joinedDate: "2024-04-20" },
   { id: "usr007-sel", name: "Vikram Rathore", businessName: "Rathore Mobiles", status: "Pending", joinedDate: "2024-07-20" },
-  { id: "usr008-sel", name: "Deepa Sharma", businessName: "Sharma Decor", status: "Rejected", joinedDate: "2024-06-10" },
+  { id: "usr008-sel", name: "Deepa Sharma", businessName: "Sharma Decor", status: "Rejected", joinedDate: "2024-06-10", rejectionReason: "Business not verifiable" },
   { id: "usr009-sel", name: "Arjun Mehra", businessName: "Mehra Fitness", status: "Approved", joinedDate: "2024-03-01" },
   { id: "usr010-sel", name: "Meena Kumari", businessName: "Kumari Crafts", status: "Pending", joinedDate: "2024-07-22" },
   { id: "usr011-sel", name: "Ravi Shankar", businessName: "Shankar Sounds", status: "Approved", joinedDate: "2024-02-15" },
-  { id: "usr012-sel", name: "Kavita Nair", businessName: "Nair Apparel", status: "Rejected", joinedDate: "2024-05-05" },
+  { id: "usr012-sel", name: "Kavita Nair", businessName: "Nair Apparel", status: "Rejected", joinedDate: "2024-05-05", rejectionReason: "Policy violation" },
   { id: "usr013-sel", name: "Sunil Gupta", businessName: "Gupta Groceries", status: "Pending", joinedDate: "2024-07-25" },
   { id: "usr014-sel", name: "Pooja Reddy", businessName: "Reddy Beauty", status: "Approved", joinedDate: "2024-01-10" },
   { id: "usr015-sel", name: "Imran Ali", businessName: "Ali Auto", status: "Pending", joinedDate: "2024-07-28" },
@@ -145,8 +146,43 @@ export default function SellersPage() {
     setIsProfileSheetOpen(true);
   };
   
+  const handleApproveApplication = (sellerId: string) => {
+    setSellersData(prev => prev.map(s => s.id === sellerId ? {...s, status: "Approved", rejectionReason: undefined} : s));
+    const seller = sellersData.find(s => s.id === sellerId);
+    toast({ title: "Seller Approved", description: `${seller?.businessName || 'Seller'} application approved.`});
+  };
+
+  const handleDeclineApplication = (sellerId: string) => {
+    const reason = window.prompt("Please enter the reason for declining this application:");
+    if (reason === null) return; // User cancelled the prompt
+
+    const finalReason = reason.trim() || "Reason not specified";
+    setSellersData(prev => prev.map(s => s.id === sellerId ? {...s, status: "Rejected", rejectionReason: finalReason} : s));
+    const seller = sellersData.find(s => s.id === sellerId);
+    toast({ 
+        title: "Seller Application Declined", 
+        description: `${seller?.businessName || 'Seller'} application declined. Reason: ${finalReason}`, 
+        variant: "destructive"
+    });
+  };
+
+  const handleSuspendSellerRole = (sellerId: string) => {
+    // For now, direct suspension without reason prompt as per original setup
+    // Could be enhanced to prompt for reason similar to decline
+    setSellersData(prev => prev.map(s => s.id === sellerId ? {...s, status: "Rejected", rejectionReason: "Account suspended by admin"} : s)); 
+    const seller = sellersData.find(s => s.id === sellerId);
+    toast({ title: "Seller Role Suspended", description: `${seller?.businessName || 'Seller'} role suspended.`, variant: "destructive"});
+  };
+
+  const handleReactivateSeller = (sellerId: string) => {
+    setSellersData(prev => prev.map(s => s.id === sellerId ? {...s, status: "Approved", rejectionReason: undefined} : s));
+    const seller = sellersData.find(s => s.id === sellerId);
+    toast({ title: "Seller Re-Approved", description: `${seller?.businessName || 'Seller'} has been re-approved.`});
+  };
+
+
   const handleExportCSV = () => {
-    const headers = ["Seller ID", "Business Name", "Contact Name", "Joined Date", "Status"];
+    const headers = ["Seller ID", "Business Name", "Contact Name", "Joined Date", "Status", "Rejection Reason"];
     const csvRows = [
       headers.join(','),
       ...processedSellers.map(seller => 
@@ -155,7 +191,8 @@ export default function SellersPage() {
           seller.businessName,
           seller.name,
           formatDateDisplay(seller.joinedDate),
-          seller.status
+          seller.status,
+          seller.rejectionReason || ""
         ].map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')
       )
     ];
@@ -182,6 +219,7 @@ export default function SellersPage() {
         "Contact Name": seller.name,
         "Joined Date": formatDateDisplay(seller.joinedDate),
         "Status": seller.status,
+        "Rejection Reason": seller.rejectionReason || ""
       }));
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
     const workbook = XLSX.utils.book_new();
@@ -192,7 +230,7 @@ export default function SellersPage() {
 
   const handleExportPDF = () => {
     const doc = new jsPDF();
-    const tableColumn = ["ID", "Business Name", "Contact Name", "Joined Date", "Status"];
+    const tableColumn = ["ID", "Business Name", "Contact Name", "Joined Date", "Status", "Reason"];
     const tableRows: (string | number)[][] = [];
 
     processedSellers.forEach(seller => {
@@ -202,6 +240,7 @@ export default function SellersPage() {
         seller.name,
         formatDateDisplay(seller.joinedDate),
         seller.status,
+        seller.rejectionReason || ""
       ];
       tableRows.push(sellerData);
     });
@@ -321,6 +360,11 @@ export default function SellersPage() {
                       >
                         {seller.status}
                       </Badge>
+                      {seller.status === "Rejected" && seller.rejectionReason && (
+                        <p className="text-xs text-muted-foreground mt-1 max-w-[150px] truncate" title={seller.rejectionReason}>
+                          Reason: {seller.rejectionReason}
+                        </p>
+                      )}
                     </TableCell>
                     <TableCell className="text-right">
                       <DropdownMenu>
@@ -335,23 +379,25 @@ export default function SellersPage() {
                             <Eye className="mr-2 h-4 w-4" /> View Profile
                           </DropdownMenuItem>
                           {seller.status === "Pending" && (
-                            <DropdownMenuItem 
-                              className="text-green-600 focus:text-green-700 focus:bg-green-50"
-                              onClick={() => {
-                                setSellersData(prev => prev.map(s => s.id === seller.id ? {...s, status: "Approved"} : s));
-                                toast({ title: "Seller Approved", description: `${seller.businessName} approved.`});
-                              }}
-                            >
-                              <UserCheck className="mr-2 h-4 w-4" /> Approve Application
-                            </DropdownMenuItem>
+                            <>
+                              <DropdownMenuItem 
+                                className="text-green-600 focus:text-green-700 focus:bg-green-50"
+                                onClick={() => handleApproveApplication(seller.id)}
+                              >
+                                <UserCheck className="mr-2 h-4 w-4" /> Approve Application
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="text-red-600 focus:text-red-700 focus:bg-red-50"
+                                onClick={() => handleDeclineApplication(seller.id)}
+                              >
+                                <XCircle className="mr-2 h-4 w-4" /> Decline Application
+                              </DropdownMenuItem>
+                            </>
                           )}
                            {seller.status === "Approved" && (
                             <DropdownMenuItem 
                               className="text-red-600 focus:text-red-700 focus:bg-red-50"
-                               onClick={() => {
-                                setSellersData(prev => prev.map(s => s.id === seller.id ? {...s, status: "Rejected"} : s)); 
-                                toast({ title: "Seller Role Suspended", description: `${seller.businessName} role suspended.`, variant: "destructive"});
-                              }}
+                              onClick={() => handleSuspendSellerRole(seller.id)}
                             >
                               <UserX className="mr-2 h-4 w-4" /> Suspend Seller Role
                             </DropdownMenuItem>
@@ -359,12 +405,9 @@ export default function SellersPage() {
                           {seller.status === "Rejected" && (
                              <DropdownMenuItem 
                               className="text-green-600 focus:text-green-700 focus:bg-green-50"
-                              onClick={() => {
-                                setSellersData(prev => prev.map(s => s.id === seller.id ? {...s, status: "Approved"} : s));
-                                toast({ title: "Seller Re-Approved", description: `${seller.businessName} re-approved.`});
-                              }}
+                              onClick={() => handleReactivateSeller(seller.id)}
                             >
-                              <UserCheck className="mr-2 h-4 w-4" /> Re-Approve
+                              <UserCheck className="mr-2 h-4 w-4" /> Re-Approve Application
                             </DropdownMenuItem>
                           )}
                         </DropdownMenuContent>
@@ -383,7 +426,7 @@ export default function SellersPage() {
           </Table>
           <div className="flex items-center justify-between mt-6">
             <span className="text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages > 0 ? totalPages : 1}
+              Page {currentPage} of {totalPages > 0 ? totalPages : 1} ({processedSellers.length} total sellers)
             </span>
              <div className="flex items-center gap-2">
                 <Select
@@ -436,4 +479,3 @@ export default function SellersPage() {
     </div>
   );
 }
-

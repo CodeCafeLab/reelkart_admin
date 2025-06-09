@@ -7,7 +7,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFo
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Mail, Phone, MapPin, Package, BarChart2, DollarSign, Star } from "lucide-react";
+import { Mail, Phone, MapPin, Package, BarChart2, DollarSign, Star, AlertTriangle } from "lucide-react";
 import { format, parseISO } from 'date-fns';
 
 // Define the Seller type based on the data structure in sellers/page.tsx
@@ -18,6 +18,7 @@ interface Seller {
   businessName: string;
   status: SellerStatus;
   joinedDate: string; // "YYYY-MM-DD"
+  rejectionReason?: string; // Added to display rejection reason
 }
 
 interface SellerProfileSheetProps {
@@ -59,7 +60,7 @@ export function SellerProfileSheet({
         <SheetHeader className="mb-6 text-left">
           <div className="flex items-center gap-4 mb-4">
             <Avatar className="h-16 w-16 border">
-              <AvatarImage src={`https://placehold.co/128x128.png?text=${seller.businessName.charAt(0)}`} alt={seller.businessName} data-ai-hint="store logo" />
+              <AvatarImage src={`https://placehold.co/128x128.png?text=${seller.businessName.charAt(0)}`} alt={seller.businessName} data-ai-hint="store logo"/>
               <AvatarFallback>{seller.businessName.slice(0, 2).toUpperCase()}</AvatarFallback>
             </Avatar>
             <div>
@@ -79,6 +80,15 @@ export function SellerProfileSheet({
             </Badge>
           </div>
            <p className="text-sm text-muted-foreground">Seller ID: {seller.id}</p>
+           {seller.status === "Rejected" && seller.rejectionReason && (
+             <div className="mt-2 flex items-start gap-2 text-sm text-destructive">
+                <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                <div>
+                    <p className="font-medium">Reason for Rejection/Suspension:</p>
+                    <p>{seller.rejectionReason}</p>
+                </div>
+             </div>
+           )}
         </SheetHeader>
         
         <div className="space-y-6">
