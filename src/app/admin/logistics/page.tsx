@@ -7,17 +7,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, PackageCheck, PackageSearch, Truck, Edit, Loader2, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { MoreHorizontal, Eye, PackageCheck, PackageSearch, Truck, Edit, Loader2, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown, ShoppingCart, DollarSign, XCircle } from "lucide-react"; // Added ShoppingCart, DollarSign, XCircle
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { format, parseISO } from 'date-fns'; // parseISO might be needed if dates become full ISO
+import { format } from 'date-fns'; // parseISO removed as not strictly needed
+import { OrderDetailsSheet } from "@/components/admin/logistics/OrderDetailsSheet"; // Import the new sheet
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
-interface Order {
+export interface Order { // Exporting for use in OrderDetailsSheet
   id: string;
   customer: string;
   seller: string;
@@ -39,7 +40,7 @@ const initialOrdersData: Order[] = [
   { id: "ord010", customer: "Aditya Rao", seller: "Sports Gear", date: "2024-07-22", status: "Pending Payment", trackingId: null },
 ];
 
-export type OrderStatus = "Pending Payment" | "Processing" | "Shipped" | "Delivered" | "Cancelled";
+export type OrderStatus = "Pending Payment" | "Processing" | "Shipped" | "Delivered" | "Cancelled"; // Exporting
 export type SortableOrderKeys = keyof Order;
 
 const ALL_ORDER_STATUSES: OrderStatus[] = ["Pending Payment", "Processing", "Shipped", "Delivered", "Cancelled"];
@@ -63,6 +64,9 @@ export default function LogisticsPage() {
   const [sortConfig, setSortConfig] = useState<{ key: SortableOrderKeys; direction: 'ascending' | 'descending' }>({ key: 'date', direction: 'descending' });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
   useEffect(() => {
     setHasMounted(true);
@@ -88,7 +92,6 @@ export default function LogisticsPage() {
         let valB = b[sortConfig.key];
 
         if (sortConfig.key === 'date') {
-          // Assuming date format is YYYY-MM-DD, can be directly compared as strings or converted to Date
           valA = new Date(valA as string).getTime();
           valB = new Date(valB as string).getTime();
         } else if (typeof valA === 'string' && typeof valB === 'string') {
@@ -129,16 +132,16 @@ export default function LogisticsPage() {
   
   const formatDateForDisplay = (dateString: string) => {
     try {
-      return format(new Date(dateString), "PP"); // e.g. Jul 22, 2024
+      return format(new Date(dateString), "PP"); 
     } catch (e) {
-      return dateString; // fallback
+      return dateString; 
     }
   };
   const formatDateForExport = (dateString: string) => {
      try {
       return format(new Date(dateString), "yyyy-MM-dd");
     } catch (e) {
-      return dateString; // fallback
+      return dateString; 
     }
   };
 
@@ -149,6 +152,11 @@ export default function LogisticsPage() {
         )
     );
     toast({ title: "Order Status Updated", description: `Order ${orderId} status changed to ${newStatus}.` });
+  };
+
+  const handleViewDetails = (order: Order) => {
+    setSelectedOrder(order);
+    setIsSheetOpen(true);
   };
 
   const handleExport = (formatType: 'csv' | 'excel' | 'pdf') => {
@@ -163,7 +171,7 @@ export default function LogisticsPage() {
           order.id, order.customer, order.seller, formatDateForExport(order.date), order.status, order.trackingId || ''
         ].map(value => `"${String(value).replace(/"/g, '""')}"`).join(','))
       ];
-      const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-utf-8;' });
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
       link.download = `${filenamePrefix}.csv`;
@@ -284,7 +292,7 @@ export default function LogisticsPage() {
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => toast({title: "View Details (Placeholder)", description: `Viewing details for order ${order.id}`})}>
+                        <DropdownMenuItem onClick={() => handleViewDetails(order)}>
                           <Eye className="mr-2 h-4 w-4" /> View Details
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
@@ -293,18 +301,15 @@ export default function LogisticsPage() {
                             value={order.status} 
                             onValueChange={(newStatus) => handleUpdateStatus(order.id, newStatus as OrderStatus)}
                         >
-                          <DropdownMenuRadioItem value="Processing">
-                            <PackageSearch className="mr-2 h-4 w-4" /> Processing
-                          </DropdownMenuRadioItem>
-                          <DropdownMenuRadioItem value="Shipped">
-                            <Truck className="mr-2 h-4 w-4" /> Shipped
-                          </DropdownMenuRadioItem>
-                          <DropdownMenuRadioItem value="Delivered">
-                            <PackageCheck className="mr-2 h-4 w-4" /> Delivered
-                          </DropdownMenuRadioItem>
-                           <DropdownMenuRadioItem value="Cancelled">
-                            <PackageCheck className="mr-2 h-4 w-4" /> Cancelled
-                          </DropdownMenuRadioItem>
+                          {ALL_ORDER_STATUSES.filter(s => s !== "Pending Payment").map(statusOption => ( // Exclude "Pending Payment" from manual updates
+                             <DropdownMenuRadioItem key={statusOption} value={statusOption}>
+                                {statusOption === "Processing" && <PackageSearch className="mr-2 h-4 w-4" />}
+                                {statusOption === "Shipped" && <Truck className="mr-2 h-4 w-4" />}
+                                {statusOption === "Delivered" && <PackageCheck className="mr-2 h-4 w-4" />}
+                                {statusOption === "Cancelled" && <XCircle className="mr-2 h-4 w-4" />}
+                                {statusOption}
+                             </DropdownMenuRadioItem>
+                          ))}
                         </DropdownMenuRadioGroup>
                          <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => toast({title: "Edit Tracking (Placeholder)", description: `Editing tracking for order ${order.id}`})}>
@@ -345,9 +350,12 @@ export default function LogisticsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <OrderDetailsSheet 
+        isOpen={isSheetOpen}
+        onOpenChange={setIsSheetOpen}
+        order={selectedOrder}
+      />
     </div>
   );
 }
-
-
-    
