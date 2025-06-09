@@ -16,10 +16,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { EditAdminUserSheet } from "@/components/admin/users/EditAdminUserSheet";
 
-// Placeholder for Add/Edit Dialogs - to be implemented later
+// Placeholder for AddAdminUserDialog - to be implemented later
 // import { AddAdminUserDialog } from "./AddAdminUserDialog";
-// import { EditAdminUserDialog } from "./EditAdminUserDialog";
+
 
 export function AdminUsersClient() {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -27,9 +28,10 @@ export function AdminUsersClient() {
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false);
+  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false); // Placeholder for future Add dialog
+  const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
-  const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null);
+  const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null); // Placeholder for future Delete dialog
 
   const [selectedRoleForPermissions, setSelectedRoleForPermissions] = useState<AdminRole | "">("");
   const [rolePermissions, setRolePermissions] = useState<Record<Permission, boolean>>(() => {
@@ -47,10 +49,8 @@ export function AdminUsersClient() {
         let apiErrorMessage = `Failed to fetch users: ${response.statusText} (status: ${response.status})`;
         try {
           const errorData = await response.json();
-          // Prefer the specific 'error' field from our API response, then 'message', then the generic one.
           apiErrorMessage = errorData.error || errorData.message || apiErrorMessage;
         } catch (jsonError) {
-          // If parsing JSON fails, stick with the statusText based message.
           console.warn("Could not parse error response as JSON:", jsonError);
         }
         throw new Error(apiErrorMessage);
@@ -106,17 +106,19 @@ export function AdminUsersClient() {
     }
   };
   
-  const handleEditUser = (user: AdminUser) => {
-    console.log("Edit user (placeholder):", user);
-    toast({ title: "Edit Action (Placeholder)", description: `Would edit ${user.email}`});
+  const handleEditUserClick = (user: AdminUser) => {
+    setEditingUser(user);
+    setIsEditSheetOpen(true);
   };
 
   const handleDeleteUser = (user: AdminUser) => {
+    // Placeholder - implement confirmation and API call
     console.log("Delete user (placeholder):", user);
     toast({ title: "Delete Action (Placeholder)", description: `Would delete ${user.email}`, variant: "destructive"});
   };
 
   const handleAddNewRole = () => {
+    // Placeholder
     toast({ title: "Add New Role (Placeholder)", description: "Functionality to create new roles to be implemented."});
   };
 
@@ -129,14 +131,13 @@ export function AdminUsersClient() {
       toast({ title: "No Role Selected", description: "Please select a role to save permissions.", variant: "destructive"});
       return;
     }
+    // Placeholder
     console.log(`Saving permissions for role ${selectedRoleForPermissions}:`, rolePermissions);
     toast({ title: "Save Permissions (Placeholder)", description: `Permissions for ${selectedRoleForPermissions} would be saved.`});
   };
 
-  // Effect to update mock permissions when role selection changes (replace with actual fetching later)
   useEffect(() => {
     if (selectedRoleForPermissions) {
-      // Mock: SuperAdmin has all permissions, others have a subset
       const newPerms = {} as Record<Permission, boolean>;
       PERMISSIONS.forEach((p, index) => {
         if (selectedRoleForPermissions === 'SuperAdmin') {
@@ -144,7 +145,7 @@ export function AdminUsersClient() {
         } else if (selectedRoleForPermissions === 'KYCReviewer' && (p === 'manage_kyc_submissions' || p.startsWith('view_'))) {
            newPerms[p] = true;
         } else {
-          newPerms[p] = index % 3 === 0; // Arbitrary mock logic
+          newPerms[p] = index % 3 === 0; 
         }
       });
       setRolePermissions(newPerms);
@@ -156,7 +157,7 @@ export function AdminUsersClient() {
   }, [selectedRoleForPermissions]);
 
 
-  if (isLoading && users.length === 0) { // Show loader only on initial load
+  if (isLoading && users.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -165,7 +166,7 @@ export function AdminUsersClient() {
     );
   }
 
-  if (error && users.length === 0) { // Show full error card only if no users could be loaded
+  if (error && users.length === 0) {
     return (
       <Card className="border-destructive">
         <CardHeader>
@@ -198,7 +199,7 @@ export function AdminUsersClient() {
           </div>
         </CardHeader>
         <CardContent>
-          {error && users.length > 0 && ( // Show dismissible error if users are loaded but an error occurred (e.g. on update)
+          {error && users.length > 0 && ( 
              <div className="mb-4 p-3 rounded-md border border-destructive/50 bg-destructive/10 text-destructive flex items-center gap-2">
                 <AlertCircle className="h-5 w-5"/> <p>{error}</p>
              </div>
@@ -250,7 +251,7 @@ export function AdminUsersClient() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEditUser(user)}>
+                          <DropdownMenuItem onClick={() => handleEditUserClick(user)}>
                             <Edit className="mr-2 h-4 w-4" /> Edit User
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleToggleActive(user)}>
@@ -341,7 +342,19 @@ export function AdminUsersClient() {
             </div>
         </CardContent>
       </Card>
-
+      
+      {editingUser && (
+        <EditAdminUserSheet
+          isOpen={isEditSheetOpen}
+          onOpenChange={setIsEditSheetOpen}
+          user={editingUser}
+          onUserUpdated={() => {
+            fetchUsers(); // Refresh the list after update
+            setIsEditSheetOpen(false); // Close the sheet
+          }}
+        />
+      )}
+      
       {/* 
       Placeholder for AddUserDialog - to be implemented later
       {isAddUserDialogOpen && (
@@ -352,19 +365,6 @@ export function AdminUsersClient() {
         />
       )}
       */}
-      
-      {/* 
-      Placeholder for EditUserDialog - to be implemented later
-      {editingUser && (
-        <EditAdminUserDialog
-          isOpen={!!editingUser}
-          onClose={() => setEditingUser(null)}
-          user={editingUser}
-          onUserUpdated={fetchUsers}
-        />
-      )}
-      */}
     </div>
   );
 }
-
