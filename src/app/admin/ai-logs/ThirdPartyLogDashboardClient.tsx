@@ -22,19 +22,22 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
+// Use a fixed base time to generate static timestamps for mock data
+const MOCK_BASE_TIMESTAMP = new Date("2024-07-20T10:00:00.000Z").getTime();
+
 const mockLogEntries: LogEntry[] = [
-  { id: "log001", timestamp: new Date(Date.now() - 1000 * 60 * 5).toISOString(), service: "OpenAI", event: "Completion API Call", userId: "usr_abc", cost: 0.02, status: "Success", durationMs: 1500, details: "Model: gpt-4o, Tokens: 150" },
-  { id: "log002", timestamp: new Date(Date.now() - 1000 * 60 * 10).toISOString(), service: "SMSProvider", event: "OTP Sent", userId: "usr_xyz", cost: 0.50, status: "Success", durationMs: 200, details: { to: "+91XXXXXX", messageId: "sms_123" } },
-  { id: "log003", timestamp: new Date(Date.now() - 1000 * 60 * 15).toISOString(), service: "LogisticsAPI", event: "Create Shipment", userId: "seller_1", cost: 75.00, status: "Pending", durationMs: 500, details: "AWB: LP789543" },
-  { id: "log004", timestamp: new Date(Date.now() - 1000 * 60 * 20).toISOString(), service: "RunwayML", event: "Image Generation", userId: "usr_designer", cost: 1.00, status: "Success", durationMs: 12000, details: "Prompt: 'cosmic cat'" },
-  { id: "log005", timestamp: new Date(Date.now() - 1000 * 60 * 25).toISOString(), service: "OpenAI", event: "Embedding API Call", userId: "sys_batch", cost: 0.005, status: "Failed", durationMs: 300, details: "Error: API Key Invalid" },
-  { id: "log006", timestamp: new Date(Date.now() - 1000 * 60 * 30).toISOString(), service: "PaymentGateway", event: "Process Payment", userId: "buyer_789", cost: 2.50, status: "Success", durationMs: 800, details: { amount: 1200, transactionId: "txn_pqr" } },
-  { id: "log007", timestamp: new Date(Date.now() - 1000 * 60 * 35).toISOString(), service: "AnalyticsTool", event: "Track Event: PageView", userId: "usr_visitor", cost: 0.001, status: "Success", durationMs: 50, details: { page: "/products/123" } },
-  { id: "log008", timestamp: new Date(Date.now() - 1000 * 60 * 40).toISOString(), service: "SMSProvider", event: "Delivery Notification", userId: "usr_qwe", cost: 0.50, status: "Failed", durationMs: 150, details: "Error: Invalid Number" },
-  { id: "log009", timestamp: new Date(Date.now() - 1000 * 60 * 45).toISOString(), service: "LogisticsAPI", event: "Track Shipment", userId: "usr_qwe", cost: 0.10, status: "Success", durationMs: 300, details: "AWB: LP789543, Status: In Transit" },
-  { id: "log010", timestamp: new Date(Date.now() - 1000 * 60 * 50).toISOString(), service: "OpenAI", event: "Moderation API Call", userId: "usr_mod", cost: 0.002, status: "Success", durationMs: 100, details: "Input: 'Some text', Flagged: false" },
-  { id: "log011", timestamp: new Date(Date.now() - 1000 * 60 * 55).toISOString(), service: "OpenAI", event: "Completion API Call", userId: "usr_abc", cost: 0.015, status: "Success", durationMs: 1200, details: "Model: gpt-4o, Tokens: 120" },
-  { id: "log012", timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(), service: "SMSProvider", event: "OTP Sent", userId: "usr_abc", cost: 0.45, status: "Success", durationMs: 180, details: { to: "+91YYYYYY", messageId: "sms_456" } },
+  { id: "log001", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 5).toISOString(), service: "OpenAI", event: "Completion API Call", userId: "usr_abc", cost: 0.02, status: "Success", durationMs: 1500, details: "Model: gpt-4o, Tokens: 150" },
+  { id: "log002", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 10).toISOString(), service: "SMSProvider", event: "OTP Sent", userId: "usr_xyz", cost: 0.50, status: "Success", durationMs: 200, details: { to: "+91XXXXXX", messageId: "sms_123" } },
+  { id: "log003", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 15).toISOString(), service: "LogisticsAPI", event: "Create Shipment", userId: "seller_1", cost: 75.00, status: "Pending", durationMs: 500, details: "AWB: LP789543" },
+  { id: "log004", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 20).toISOString(), service: "RunwayML", event: "Image Generation", userId: "usr_designer", cost: 1.00, status: "Success", durationMs: 12000, details: "Prompt: 'cosmic cat'" },
+  { id: "log005", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 25).toISOString(), service: "OpenAI", event: "Embedding API Call", userId: "sys_batch", cost: 0.005, status: "Failed", durationMs: 300, details: "Error: API Key Invalid" },
+  { id: "log006", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 30).toISOString(), service: "PaymentGateway", event: "Process Payment", userId: "buyer_789", cost: 2.50, status: "Success", durationMs: 800, details: { amount: 1200, transactionId: "txn_pqr" } },
+  { id: "log007", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 35).toISOString(), service: "AnalyticsTool", event: "Track Event: PageView", userId: "usr_visitor", cost: 0.001, status: "Success", durationMs: 50, details: { page: "/products/123" } },
+  { id: "log008", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 40).toISOString(), service: "SMSProvider", event: "Delivery Notification", userId: "usr_qwe", cost: 0.50, status: "Failed", durationMs: 150, details: "Error: Invalid Number" },
+  { id: "log009", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 45).toISOString(), service: "LogisticsAPI", event: "Track Shipment", userId: "usr_qwe", cost: 0.10, status: "Success", durationMs: 300, details: "AWB: LP789543, Status: In Transit" },
+  { id: "log010", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 50).toISOString(), service: "OpenAI", event: "Moderation API Call", userId: "usr_mod", cost: 0.002, status: "Success", durationMs: 100, details: "Input: 'Some text', Flagged: false" },
+  { id: "log011", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 55).toISOString(), service: "OpenAI", event: "Completion API Call", userId: "usr_abc", cost: 0.015, status: "Success", durationMs: 1200, details: "Model: gpt-4o, Tokens: 120" },
+  { id: "log012", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60).toISOString(), service: "SMSProvider", event: "OTP Sent", userId: "usr_abc", cost: 0.45, status: "Success", durationMs: 180, details: { to: "+91YYYYYY", messageId: "sms_456" } },
 ];
 
 
