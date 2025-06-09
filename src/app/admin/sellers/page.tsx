@@ -7,12 +7,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, UserCheck, UserX, Eye, Store, Download, ArrowUpDown, ArrowUp, ArrowDown, FileText, FileSpreadsheet, Printer, XCircle } from "lucide-react";
+import { MoreHorizontal, UserCheck, UserX, Eye, Store, Download, ArrowUpDown, ArrowUp, ArrowDown, FileText, FileSpreadsheet, Printer, XCircle, Tag } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from 'date-fns';
 import { SellerProfileSheet } from "@/components/admin/sellers/SellerProfileSheet"; 
+import type { SellerRole } from "@/types/seller-package"; // Import SellerRole
+import { SELLER_ROLES } from "@/types/seller-package"; // For mock data assignment
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -23,27 +25,28 @@ interface Seller {
   id: string;
   name: string;
   businessName: string;
+  sellerType: SellerRole; // Added SellerType
   status: SellerStatus;
   joinedDate: string; 
-  rejectionReason?: string; // Added for decline/rejection reason
+  rejectionReason?: string; 
 }
 
 const initialSellersData: Seller[] = [
-  { id: "usr001-sel", name: "Rajesh Kumar", businessName: "RK Electronics", status: "Approved", joinedDate: "2024-06-01" },
-  { id: "usr002-sel", name: "Anjali Desai", businessName: "Anjali's Artistry", status: "Pending", joinedDate: "2024-07-10" },
-  { id: "usr003-sel", name: "Mohammed Khan", businessName: "Khan's Spices", status: "Approved", joinedDate: "2024-05-15" },
-  { id: "usr004-sel", name: "Priya Singh", businessName: "Fashion Forward", status: "Rejected", joinedDate: "2024-07-01", rejectionReason: "Incomplete documentation" },
-  { id: "usr005-sel", name: "Amit Patel", businessName: "Patel's Organics", status: "Pending", joinedDate: "2024-07-18" },
-  { id: "usr006-sel", name: "Sneha Iyer", businessName: "Iyer Books", status: "Approved", joinedDate: "2024-04-20" },
-  { id: "usr007-sel", name: "Vikram Rathore", businessName: "Rathore Mobiles", status: "Pending", joinedDate: "2024-07-20" },
-  { id: "usr008-sel", name: "Deepa Sharma", businessName: "Sharma Decor", status: "Rejected", joinedDate: "2024-06-10", rejectionReason: "Business not verifiable" },
-  { id: "usr009-sel", name: "Arjun Mehra", businessName: "Mehra Fitness", status: "Approved", joinedDate: "2024-03-01" },
-  { id: "usr010-sel", name: "Meena Kumari", businessName: "Kumari Crafts", status: "Pending", joinedDate: "2024-07-22" },
-  { id: "usr011-sel", name: "Ravi Shankar", businessName: "Shankar Sounds", status: "Approved", joinedDate: "2024-02-15" },
-  { id: "usr012-sel", name: "Kavita Nair", businessName: "Nair Apparel", status: "Rejected", joinedDate: "2024-05-05", rejectionReason: "Policy violation" },
-  { id: "usr013-sel", name: "Sunil Gupta", businessName: "Gupta Groceries", status: "Pending", joinedDate: "2024-07-25" },
-  { id: "usr014-sel", name: "Pooja Reddy", businessName: "Reddy Beauty", status: "Approved", joinedDate: "2024-01-10" },
-  { id: "usr015-sel", name: "Imran Ali", businessName: "Ali Auto", status: "Pending", joinedDate: "2024-07-28" },
+  { id: "usr001-sel", name: "Rajesh Kumar", businessName: "RK Electronics", sellerType: "ECommerceSeller", status: "Approved", joinedDate: "2024-06-01" },
+  { id: "usr002-sel", name: "Anjali Desai", businessName: "Anjali's Artistry", sellerType: "IndividualMerchant", status: "Pending", joinedDate: "2024-07-10" },
+  { id: "usr003-sel", name: "Mohammed Khan", businessName: "Khan's Spices", sellerType: "ECommerceSeller", status: "Approved", joinedDate: "2024-05-15" },
+  { id: "usr004-sel", name: "Priya Singh", businessName: "Fashion Forward", sellerType: "Influencer", status: "Rejected", joinedDate: "2024-07-01", rejectionReason: "Incomplete documentation" },
+  { id: "usr005-sel", name: "Amit Patel", businessName: "Patel's Organics", sellerType: "OnlineSeller", status: "Pending", joinedDate: "2024-07-18" },
+  { id: "usr006-sel", name: "Sneha Iyer", businessName: "Iyer Books", sellerType: "ECommerceSeller", status: "Approved", joinedDate: "2024-04-20" },
+  { id: "usr007-sel", name: "Vikram Rathore", businessName: "Rathore Mobiles", sellerType: "Wholesaler", status: "Pending", joinedDate: "2024-07-20" },
+  { id: "usr008-sel", name: "Deepa Sharma", businessName: "Sharma Decor", sellerType: "IndividualMerchant", status: "Rejected", joinedDate: "2024-06-10", rejectionReason: "Business not verifiable" },
+  { id: "usr009-sel", name: "Arjun Mehra", businessName: "Mehra Fitness", sellerType: "Influencer", status: "Approved", joinedDate: "2024-03-01" },
+  { id: "usr010-sel", name: "Meena Kumari", businessName: "Kumari Crafts", sellerType: "IndividualMerchant", status: "Pending", joinedDate: "2024-07-22" },
+  { id: "usr011-sel", name: "Ravi Shankar", businessName: "Shankar Sounds", sellerType: "ECommerceSeller", status: "Approved", joinedDate: "2024-02-15" },
+  { id: "usr012-sel", name: "Kavita Nair", businessName: "Nair Apparel", sellerType: "OnlineSeller", status: "Rejected", joinedDate: "2024-05-05", rejectionReason: "Policy violation" },
+  { id: "usr013-sel", name: "Sunil Gupta", businessName: "Gupta Groceries", sellerType: "Wholesaler", status: "Pending", joinedDate: "2024-07-25" },
+  { id: "usr014-sel", name: "Pooja Reddy", businessName: "Reddy Beauty", sellerType: "Celebrity", status: "Approved", joinedDate: "2024-01-10" },
+  { id: "usr015-sel", name: "Imran Ali", businessName: "Ali Auto", sellerType: "Affiliator", status: "Pending", joinedDate: "2024-07-28" },
 ];
 
 type SellerStatus = "Pending" | "Approved" | "Rejected";
@@ -76,7 +79,8 @@ export default function SellersPage() {
       filteredItems = filteredItems.filter(seller =>
         seller.id.toLowerCase().includes(lowerSearchTerm) ||
         seller.name.toLowerCase().includes(lowerSearchTerm) ||
-        seller.businessName.toLowerCase().includes(lowerSearchTerm)
+        seller.businessName.toLowerCase().includes(lowerSearchTerm) ||
+        seller.sellerType.toLowerCase().includes(lowerSearchTerm) 
       );
     }
 
@@ -154,7 +158,7 @@ export default function SellersPage() {
 
   const handleDeclineApplication = (sellerId: string) => {
     const reason = window.prompt("Please enter the reason for declining this application:");
-    if (reason === null) return; // User cancelled the prompt
+    if (reason === null) return; 
 
     const finalReason = reason.trim() || "Reason not specified";
     setSellersData(prev => prev.map(s => s.id === sellerId ? {...s, status: "Rejected", rejectionReason: finalReason} : s));
@@ -167,11 +171,12 @@ export default function SellersPage() {
   };
 
   const handleSuspendSellerRole = (sellerId: string) => {
-    // For now, direct suspension without reason prompt as per original setup
-    // Could be enhanced to prompt for reason similar to decline
-    setSellersData(prev => prev.map(s => s.id === sellerId ? {...s, status: "Rejected", rejectionReason: "Account suspended by admin"} : s)); 
+    const reason = window.prompt("Please enter the reason for suspending this seller:");
+    if (reason === null) return; 
+    const finalReason = reason.trim() || "Account suspended by admin";
+    setSellersData(prev => prev.map(s => s.id === sellerId ? {...s, status: "Rejected", rejectionReason: finalReason} : s)); 
     const seller = sellersData.find(s => s.id === sellerId);
-    toast({ title: "Seller Role Suspended", description: `${seller?.businessName || 'Seller'} role suspended.`, variant: "destructive"});
+    toast({ title: "Seller Role Suspended", description: `${seller?.businessName || 'Seller'} role suspended. Reason: ${finalReason}`, variant: "destructive"});
   };
 
   const handleReactivateSeller = (sellerId: string) => {
@@ -182,7 +187,7 @@ export default function SellersPage() {
 
 
   const handleExportCSV = () => {
-    const headers = ["Seller ID", "Business Name", "Contact Name", "Joined Date", "Status", "Rejection Reason"];
+    const headers = ["Seller ID", "Business Name", "Contact Name", "Seller Type", "Joined Date", "Status", "Rejection Reason"];
     const csvRows = [
       headers.join(','),
       ...processedSellers.map(seller => 
@@ -190,6 +195,7 @@ export default function SellersPage() {
           seller.id,
           seller.businessName,
           seller.name,
+          seller.sellerType,
           formatDateDisplay(seller.joinedDate),
           seller.status,
           seller.rejectionReason || ""
@@ -217,6 +223,7 @@ export default function SellersPage() {
         "Seller ID": seller.id,
         "Business Name": seller.businessName,
         "Contact Name": seller.name,
+        "Seller Type": seller.sellerType,
         "Joined Date": formatDateDisplay(seller.joinedDate),
         "Status": seller.status,
         "Rejection Reason": seller.rejectionReason || ""
@@ -230,7 +237,7 @@ export default function SellersPage() {
 
   const handleExportPDF = () => {
     const doc = new jsPDF();
-    const tableColumn = ["ID", "Business Name", "Contact Name", "Joined Date", "Status", "Reason"];
+    const tableColumn = ["ID", "Business Name", "Contact Name", "Seller Type", "Joined Date", "Status", "Reason"];
     const tableRows: (string | number)[][] = [];
 
     processedSellers.forEach(seller => {
@@ -238,6 +245,7 @@ export default function SellersPage() {
         seller.id,
         seller.businessName,
         seller.name,
+        seller.sellerType,
         formatDateDisplay(seller.joinedDate),
         seller.status,
         seller.rejectionReason || ""
@@ -275,7 +283,7 @@ export default function SellersPage() {
             </div>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto items-stretch sm:items-center">
                 <Input 
-                  placeholder="Search ID, Name, Business..." 
+                  placeholder="Search ID, Name, Business, Type..." 
                   value={searchTerm}
                   onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1);}}
                   className="max-w-full sm:max-w-xs flex-grow" 
@@ -325,6 +333,9 @@ export default function SellersPage() {
                 <TableHead onClick={() => handleSort('name')} className="cursor-pointer hover:bg-muted/50 group">
                   <div className="flex items-center gap-1">Contact Name {renderSortIcon('name')}</div>
                 </TableHead>
+                <TableHead onClick={() => handleSort('sellerType')} className="cursor-pointer hover:bg-muted/50 group">
+                  <div className="flex items-center gap-1"><Tag className="h-4 w-4 text-muted-foreground mr-1" />Seller Type {renderSortIcon('sellerType')}</div>
+                </TableHead>
                 <TableHead onClick={() => handleSort('joinedDate')} className="cursor-pointer hover:bg-muted/50 group">
                   <div className="flex items-center gap-1">Joined Date {renderSortIcon('joinedDate')}</div>
                 </TableHead>
@@ -352,6 +363,9 @@ export default function SellersPage() {
                       {seller.businessName}
                     </TableCell>
                     <TableCell>{seller.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{seller.sellerType.replace(/([A-Z])/g, ' $1').trim()}</Badge>
+                    </TableCell>
                     <TableCell>{formatDateDisplay(seller.joinedDate)}</TableCell>
                     <TableCell>
                       <Badge 
@@ -417,7 +431,7 @@ export default function SellersPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
                     No sellers found matching your criteria.
                   </TableCell>
                 </TableRow>
@@ -479,3 +493,4 @@ export default function SellersPage() {
     </div>
   );
 }
+

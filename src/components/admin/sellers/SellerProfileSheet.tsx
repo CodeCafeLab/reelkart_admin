@@ -7,8 +7,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFo
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Mail, Phone, MapPin, Package, BarChart2, DollarSign, Star, AlertTriangle } from "lucide-react";
+import { Mail, Phone, MapPin, Package, BarChart2, DollarSign, Star, AlertTriangle, Tag } from "lucide-react";
 import { format, parseISO } from 'date-fns';
+import type { SellerRole } from "@/types/seller-package"; // Import SellerRole
 
 // Define the Seller type based on the data structure in sellers/page.tsx
 type SellerStatus = "Pending" | "Approved" | "Rejected";
@@ -16,9 +17,10 @@ interface Seller {
   id: string;
   name: string;
   businessName: string;
+  sellerType: SellerRole; // Added SellerType
   status: SellerStatus;
   joinedDate: string; // "YYYY-MM-DD"
-  rejectionReason?: string; // Added to display rejection reason
+  rejectionReason?: string; 
 }
 
 interface SellerProfileSheetProps {
@@ -44,15 +46,18 @@ export function SellerProfileSheet({
 
   const formatDate = (dateString: string) => {
     try {
-      // Try parsing as ISO first (if dates become ISO strings later)
       return format(parseISO(dateString), "PP"); 
     } catch (error) {
-      // Fallback for "YYYY-MM-DD" or other parsable formats
       return format(new Date(dateString), "PP");
     }
   };
   
   const currentStatusVariant = statusVariant[seller.status];
+
+  // Helper to format SellerRole for display
+  const formatSellerType = (type: SellerRole) => {
+    return type.replace(/([A-Z])/g, ' $1').trim();
+  };
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
@@ -80,6 +85,11 @@ export function SellerProfileSheet({
             </Badge>
           </div>
            <p className="text-sm text-muted-foreground">Seller ID: {seller.id}</p>
+           <div className="flex items-center gap-1 text-sm text-muted-foreground">
+             <Tag className="h-4 w-4" />
+             <span>Type: </span>
+             <Badge variant="outline">{formatSellerType(seller.sellerType)}</Badge>
+           </div>
            {seller.status === "Rejected" && seller.rejectionReason && (
              <div className="mt-2 flex items-start gap-2 text-sm text-destructive">
                 <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
@@ -132,3 +142,4 @@ export function SellerProfileSheet({
     </Sheet>
   );
 }
+
