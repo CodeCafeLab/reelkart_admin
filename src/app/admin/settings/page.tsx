@@ -90,7 +90,7 @@ export default function SettingsPage() {
       </p>
 
       <Tabs defaultValue="general" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4">
+        <TabsList className="flex items-center justify-start w-full overflow-x-auto">
           <TabsTrigger value="general"><Cog className="mr-2 h-4 w-4 sm:hidden md:inline-block" />General</TabsTrigger>
           <TabsTrigger value="commissions"><DollarSign className="mr-2 h-4 w-4 sm:hidden md:inline-block" />Commissions</TabsTrigger>
           <TabsTrigger value="integrations"><Puzzle className="mr-2 h-4 w-4 sm:hidden md:inline-block" />Integrations</TabsTrigger>
