@@ -15,11 +15,13 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { User, DollarSign, Hash, Activity, Server } from "lucide-react";
 import type { LogEntry, ThirdPartyService, LogStatus } from "@/types/logs";
 import { StatCard } from "@/components/dashboard/StatCard";
+import { enUS } from 'date-fns/locale'; // Default to enUS
+import { format, parseISO } from 'date-fns';
 
 // Helper component for client-side date formatting
 function ClientFormattedDateTime({ 
@@ -35,7 +37,7 @@ function ClientFormattedDateTime({
 
   useEffect(() => {
     setFormattedDate(fullFormatFn(isoDateString));
-  }, [isoDateString, fullFormatFn, initialFormatFn]); // Added initialFormatFn to dependencies
+  }, [isoDateString, fullFormatFn, initialFormatFn]); 
 
   return <>{formattedDate}</>;
 }
@@ -77,8 +79,8 @@ export function UserUsageDetailsSheet({
   serviceIconMap,
   statusIconMap,
   statusVariantMap,
-  formatDateForDisplay, // This is the full "PPpp" formatter
-  initialFormatDateForDisplay, // This is the "PP" formatter
+  formatDateForDisplay, 
+  initialFormatDateForDisplay, 
 }: UserUsageDetailsSheetProps) {
   const userLogs = useMemo(() => {
     if (!userId) return [];

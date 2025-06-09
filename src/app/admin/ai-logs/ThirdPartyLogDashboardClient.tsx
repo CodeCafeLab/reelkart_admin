@@ -12,8 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from 'date-fns';
-import { useLocale } from 'next-intl';
-import { enUS, hi as hiLocale } from 'date-fns/locale';
+import { enUS } from 'date-fns/locale'; // Default to enUS
 import { useAppSettings } from "@/contexts/AppSettingsContext";
 import { StatCard } from "@/components/dashboard/StatCard";
 import type { LogEntry, ThirdPartyService, LogStatus, SortableLogKeys, DashboardStat } from "@/types/logs";
@@ -78,7 +77,7 @@ function ClientFormattedDateTime({
 
   useEffect(() => {
     setFormattedDate(fullFormatFn(isoDateString));
-  }, [isoDateString, fullFormatFn, initialFormatFn]); // Added initialFormatFn
+  }, [isoDateString, fullFormatFn, initialFormatFn]);
 
   return <>{formattedDate}</>;
 }
@@ -87,7 +86,6 @@ function ClientFormattedDateTime({
 export function ThirdPartyLogDashboardClient() {
   const { toast } = useToast();
   const { settings: appSettings } = useAppSettings();
-  const currentLocale = useLocale();
   
   const [logEntries, setLogEntries] = useState<LogEntry[]>(mockLogEntries);
   const [dashboardStats, setDashboardStats] = useState<DashboardStat[]>([]);
@@ -103,44 +101,35 @@ export function ThirdPartyLogDashboardClient() {
   const [isUserSheetOpen, setIsUserSheetOpen] = useState(false);
   const [selectedUserIdForSheet, setSelectedUserIdForSheet] = useState<string | null>(null);
 
-  const dateFnsLocale = useMemo(() => {
-    switch (currentLocale) {
-      case 'hi':
-        return hiLocale;
-      default:
-        return enUS;
-    }
-  }, [currentLocale]);
-
   const formatDateForDisplay = useCallback((dateString: string) => {
     if (!dateString) return "Invalid Date";
     try {
-      return format(parseISO(dateString), "PPpp", { locale: dateFnsLocale });
+      return format(parseISO(dateString), "PPpp", { locale: enUS });
     } catch (e) { 
       console.error("Error formatting date for display:", e, "Input:", dateString);
       return "Format Error"; 
     }
-  }, [dateFnsLocale]);
+  }, []);
 
   const initialFormatDateForDisplay = useCallback((dateString: string) => {
     if (!dateString) return "Invalid Date";
     try {
-      return format(parseISO(dateString), "PP", { locale: dateFnsLocale });
+      return format(parseISO(dateString), "PP", { locale: enUS });
     } catch (e) { 
       console.error("Error formatting initial date for display:", e, "Input:", dateString);
       return "Format Error"; 
     }
-  }, [dateFnsLocale]);
+  }, []);
   
   const formatDateForExport = useCallback((dateString: string) => {
     if (!dateString) return "Invalid Date";
     try {
-      return format(parseISO(dateString), "yyyy-MM-dd HH:mm:ss", { locale: dateFnsLocale });
+      return format(parseISO(dateString), "yyyy-MM-dd HH:mm:ss", { locale: enUS });
     } catch (e) { 
       console.error("Error formatting date for export:", e, "Input:", dateString);
       return "Format Error"; 
     }
-  }, [dateFnsLocale]);
+  }, []);
 
 
   useEffect(() => {
@@ -171,7 +160,10 @@ export function ThirdPartyLogDashboardClient() {
 
   const formatCurrency = (amount: number | null | undefined) => {
     if (amount == null) return "N/A";
-    return new Intl.NumberFormat(currentLocale === 'hi' ? 'hi-IN' : 'en-IN', { // Use next-intl locale for number formatting consistency
+    // Use appSettings.currencyCode which might be INR, USD etc.
+    // next-intl locale is not used here to avoid dependency.
+    const localeForFormatting = appSettings.currencyCode === 'INR' ? 'en-IN' : 'en-US'; // Basic mapping
+    return new Intl.NumberFormat(localeForFormatting, { 
       style: 'currency',
       currency: appSettings.currencyCode,
       minimumFractionDigits: 2,
@@ -289,9 +281,9 @@ export function ThirdPartyLogDashboardClient() {
         Details: getDetailsString(log.details), "Correlation ID": log.correlationId || ''
       }));
       const ws = XLSX.utils.json_to_sheet(wsData);
-      const wb = XLSX.utils.book_new(); // Create a new workbook
-      XLSX.utils.book_append_sheet(wb, ws, "Logs"); // Append the worksheet to the workbook
-      XLSX.writeFile(wb, `${filenamePrefix}.xlsx`); // Write the workbook to a file
+      const wb = XLSX.utils.book_new(); 
+      XLSX.utils.book_append_sheet(wb, ws, "Logs"); 
+      XLSX.writeFile(wb, `${filenamePrefix}.xlsx`); 
       toast({ title: "Excel Exported", description: "Log data exported." });
     } else if (formatType === 'pdf') {
       const doc = new jsPDF({orientation: "landscape"});
