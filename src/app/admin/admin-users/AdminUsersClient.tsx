@@ -44,8 +44,16 @@ export function AdminUsersClient() {
     try {
       const response = await fetch("/api/admin-users");
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Failed to fetch users: ${response.statusText}`);
+        let apiErrorMessage = `Failed to fetch users: ${response.statusText} (status: ${response.status})`;
+        try {
+          const errorData = await response.json();
+          // Prefer the specific 'error' field from our API response, then 'message', then the generic one.
+          apiErrorMessage = errorData.error || errorData.message || apiErrorMessage;
+        } catch (jsonError) {
+          // If parsing JSON fails, stick with the statusText based message.
+          console.warn("Could not parse error response as JSON:", jsonError);
+        }
+        throw new Error(apiErrorMessage);
       }
       const data = await response.json();
       setUsers(data);
