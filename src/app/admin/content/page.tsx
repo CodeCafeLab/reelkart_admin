@@ -60,16 +60,17 @@ export default function ContentPage() {
   };
 
   const handleApproveContent = (itemId: string) => {
-    setContentItems(prev => prev.map(item => item.id === itemId ? { ...item, status: "Approved" as ContentStatus } : item));
-    setSelectedContentItem(prev => prev && prev.id === itemId ? { ...prev, status: "Approved" as ContentStatus } : prev);
+    setContentItems(prev => prev.map(item => item.id === itemId ? { ...item, status: "Approved" as ContentStatus, reason: undefined } : item));
+    setSelectedContentItem(prev => prev && prev.id === itemId ? { ...prev, status: "Approved" as ContentStatus, reason: undefined } : prev);
     toast({ title: "Content Approved", description: `Content item ${itemId} has been approved.` });
     if (selectedContentItem?.id === itemId) setIsSheetOpen(false);
   };
 
   const handleRejectContent = (itemId: string, reason: string = "Violation of guidelines") => {
-    setContentItems(prev => prev.map(item => item.id === itemId ? { ...item, status: "Rejected" as ContentStatus, reason } : item));
-    setSelectedContentItem(prev => prev && prev.id === itemId ? { ...prev, status: "Rejected" as ContentStatus, reason } : prev);
-    toast({ title: "Content Rejected", description: `Content item ${itemId} has been rejected. Reason: ${reason}`, variant: "destructive" });
+    const finalReason = reason.trim() === "" ? "Violation of guidelines" : reason;
+    setContentItems(prev => prev.map(item => item.id === itemId ? { ...item, status: "Rejected" as ContentStatus, reason: finalReason } : item));
+    setSelectedContentItem(prev => prev && prev.id === itemId ? { ...prev, status: "Rejected" as ContentStatus, reason: finalReason } : prev);
+    toast({ title: "Content Rejected", description: `Content item ${itemId} has been rejected. Reason: ${finalReason}`, variant: "destructive" });
     if (selectedContentItem?.id === itemId) setIsSheetOpen(false);
   };
 
@@ -284,7 +285,9 @@ function ContentActions({ item, onViewDetails, onApprove, onReject }: ContentAct
               className="text-red-600 focus:text-red-700 focus:bg-red-50"
               onClick={() => {
                 const reason = prompt("Enter reason for rejection (optional):");
-                onReject(item.id, reason || "Violation of guidelines");
+                // If prompt is cancelled, reason will be null. We pass it along.
+                // handleRejectContent will provide a default if reason is null or empty string.
+                onReject(item.id, reason === null ? undefined : reason);
               }}
             >
               <ThumbsDown className="mr-2 h-4 w-4" /> Reject
@@ -298,3 +301,6 @@ function ContentActions({ item, onViewDetails, onApprove, onReject }: ContentAct
     </DropdownMenu>
   );
 }
+
+
+    

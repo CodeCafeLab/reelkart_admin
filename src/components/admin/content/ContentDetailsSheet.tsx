@@ -144,7 +144,9 @@ export function ContentDetailsSheet({
                 variant="destructive" 
                 onClick={() => {
                     const reason = prompt("Enter reason for rejection (optional):");
-                    onReject(contentItem.id, reason || "Violation of guidelines");
+                    // If prompt is cancelled, reason will be null. We pass it along.
+                    // handleRejectContent will provide a default if reason is null or empty string.
+                    onReject(contentItem.id, reason === null ? undefined : reason);
                 }}
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
@@ -163,3 +165,6 @@ export function ContentDetailsSheet({
     </Sheet>
   );
 }
+
+
+    
