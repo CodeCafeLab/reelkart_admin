@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DollarSign, Cog, Puzzle, Truck, Share2, AlertTriangle, Save, Users, Settings as SettingsIcon } from "lucide-react";
+import { DollarSign, Cog, Puzzle, Truck, Share2, AlertTriangle, Save, Settings as SettingsIcon } from "lucide-react";
 import React from "react";
 import { useAppSettings } from "@/contexts/AppSettingsContext";
 import { useToast } from "@/hooks/use-toast";
@@ -70,9 +70,6 @@ export default function SettingsPage() {
       settingsToSave = { facebookUrl, instagramUrl, twitterUrl, youtubeUrl };
     } else if (category === "Maintenance") {
       settingsToSave = { maintenanceMode };
-    } else if (category === "User Management") {
-      // Placeholder for user management settings
-      settingsToSave = { note: "User Management settings are conceptual here." };
     }
     
     console.log(`Saving settings for ${category}:`, settingsToSave);
@@ -97,7 +94,6 @@ export default function SettingsPage() {
           <TabsTrigger value="delivery"><Truck className="mr-2 h-4 w-4 sm:hidden md:inline-block" />Delivery</TabsTrigger>
           <TabsTrigger value="social"><Share2 className="mr-2 h-4 w-4 sm:hidden md:inline-block" />Social Links</TabsTrigger>
           <TabsTrigger value="maintenance"><AlertTriangle className="mr-2 h-4 w-4 sm:hidden md:inline-block" />Maintenance</TabsTrigger>
-          <TabsTrigger value="userManagement"><Users className="mr-2 h-4 w-4 sm:hidden md:inline-block" />User Management</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
@@ -256,37 +252,6 @@ export default function SettingsPage() {
                 <Switch id="maintenance-mode" checked={maintenanceMode} onCheckedChange={setMaintenanceMode} />
               </div>
               <Button onClick={() => handleSaveSettings("Maintenance")}><Save className="mr-2 h-4 w-4" />Save Maintenance Settings</Button>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="userManagement">
-          <Card>
-            <CardHeader>
-              <CardTitle>Platform User & Role Management</CardTitle>
-              <CardDescription>Manage different platform user roles and their permissions.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <p className="text-muted-foreground">
-                This section will allow managing various platform user types, including:
-              </p>
-              <ul className="list-disc list-inside space-y-1 text-sm text-foreground/80">
-                <li>E-commerce sellers</li>
-                <li>Influencers</li>
-                <li>Affiliators</li>
-                <li>Individual merchants</li>
-                <li>Wholesalers</li>
-                <li>Celebrities</li>
-                <li>Product managers (as platform users, not admins)</li>
-                <li>Online sellers (general category)</li>
-              </ul>
-              <p className="text-muted-foreground mt-4">
-                (Full CRUD functionality for users, roles, and permissions will be implemented here.)
-              </p>
-              <Button onClick={() => handleSaveSettings("User Management")} disabled>
-                <Save className="mr-2 h-4 w-4" />
-                Save User Management Settings (Placeholder)
-              </Button>
             </CardContent>
           </Card>
         </TabsContent>
