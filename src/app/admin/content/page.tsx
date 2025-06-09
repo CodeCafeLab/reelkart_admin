@@ -1,16 +1,17 @@
 
 "use client";
 
-import React, { useState, useEffect } from "react"; // Added useEffect
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, ThumbsUp, ThumbsDown, Flag, Video, FileText } from "lucide-react";
+import { MoreHorizontal, Eye, ThumbsUp, ThumbsDown, Flag, Video, FileText, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ContentDetailsSheet } from "@/components/admin/content/ContentDetailsSheet";
+import { VideoPreviewDialog } from "@/components/admin/content/VideoPreviewDialog"; // New import
 import { useToast } from "@/hooks/use-toast";
 
 export interface ContentItem {
@@ -29,9 +30,9 @@ export interface ContentItem {
 const initialContentItems: ContentItem[] = [
   { id: "vid001", type: "Video", title: "Amazing Product Demo", uploader: "SellerStore A", date: "2024-07-18", status: "Pending", thumbnailUrl: `https://placehold.co/300x200.png?text=Vid+Demo`, videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" },
   { id: "dsc001", type: "Description", title: "Handcrafted Leather Wallet", uploader: "ArtisanGoods", date: "2024-07-17", status: "Approved", descriptionText: "This premium handcrafted leather wallet offers a sleek design with multiple card slots and a durable finish. Made from 100% genuine leather." },
-  { id: "vid002", type: "Video", title: "Unboxing New Gadget", uploader: "TechGuru", date: "2024-07-16", status: "Rejected", reason: "Copyright Claim", thumbnailUrl: `https://placehold.co/300x200.png?text=Gadget+Unbox` },
+  { id: "vid002", type: "Video", title: "Unboxing New Gadget", uploader: "TechGuru", date: "2024-07-16", status: "Rejected", reason: "Copyright Claim", thumbnailUrl: `https://placehold.co/300x200.png?text=Gadget+Unbox`, videoUrl: "https://www.sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4" },
   { id: "dsc002", type: "Description", title: "Organic Green Tea", uploader: "HealthyLiving", date: "2024-07-19", status: "Pending", descriptionText: "Experience the refreshing taste of our 100% organic green tea, sourced from the finest tea gardens. Rich in antioxidants." },
-  { id: "vid003", type: "Video", title: "DIY Home Decor Ideas", uploader: "CreativeHome", date: "2024-07-15", status: "Approved", thumbnailUrl: `https://placehold.co/300x200.png?text=DIY+Decor` },
+  { id: "vid003", type: "Video", title: "DIY Home Decor Ideas", uploader: "CreativeHome", date: "2024-07-15", status: "Approved", thumbnailUrl: `https://placehold.co/300x200.png?text=DIY+Decor`, videoUrl: "https://download.blender.org/peach/trailer/trailer_480p.mov" },
 ];
 
 export type ContentStatus = "Pending" | "Approved" | "Rejected";
@@ -45,8 +46,12 @@ const statusVariant: Record<ContentStatus, "default" | "secondary" | "destructiv
 export default function ContentPage() {
   const { toast } = useToast();
   const [contentItems, setContentItems] = useState<ContentItem[]>(initialContentItems);
+  
   const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [selectedContentItem, setSelectedContentItem] = useState<ContentItem | null>(null);
+  const [selectedContentItemForSheet, setSelectedContentItemForSheet] = useState<ContentItem | null>(null);
+
+  const [isVideoPreviewOpen, setIsVideoPreviewOpen] = useState(false);
+  const [selectedVideoForPreview, setSelectedVideoForPreview] = useState<ContentItem | null>(null);
 
   const [hasMounted, setHasMounted] = useState(false);
 
@@ -54,28 +59,47 @@ export default function ContentPage() {
     setHasMounted(true);
   }, []);
 
-  const handleViewDetails = (item: ContentItem) => {
-    setSelectedContentItem(item);
+  const handleViewTextDetails = (item: ContentItem) => {
+    setSelectedContentItemForSheet(item);
     setIsSheetOpen(true);
+  };
+
+  const handleOpenVideoPreview = (item: ContentItem) => {
+    setSelectedVideoForPreview(item);
+    setIsVideoPreviewOpen(true);
   };
 
   const handleApproveContent = (itemId: string) => {
     setContentItems(prev => prev.map(item => item.id === itemId ? { ...item, status: "Approved" as ContentStatus, reason: undefined } : item));
-    setSelectedContentItem(prev => prev && prev.id === itemId ? { ...prev, status: "Approved" as ContentStatus, reason: undefined } : prev);
+    setSelectedContentItemForSheet(prev => prev && prev.id === itemId ? { ...prev, status: "Approved" as ContentStatus, reason: undefined } : prev);
+    setSelectedVideoForPreview(prev => prev && prev.id === itemId ? { ...prev, status: "Approved" as ContentStatus, reason: undefined } : prev);
     toast({ title: "Content Approved", description: `Content item ${itemId} has been approved.` });
-    if (selectedContentItem?.id === itemId) setIsSheetOpen(false);
+    if (selectedContentItemForSheet?.id === itemId) setIsSheetOpen(false);
+    if (selectedVideoForPreview?.id === itemId) setIsVideoPreviewOpen(false);
   };
 
-  const handleRejectContent = (itemId: string, reason: string = "Violation of guidelines") => {
-    const finalReason = reason.trim() === "" ? "Violation of guidelines" : reason;
+  const handleRejectContent = (itemId: string, reason?: string) => {
+    const finalReason = reason?.trim() === "" || !reason ? "Violation of guidelines" : reason;
     setContentItems(prev => prev.map(item => item.id === itemId ? { ...item, status: "Rejected" as ContentStatus, reason: finalReason } : item));
-    setSelectedContentItem(prev => prev && prev.id === itemId ? { ...prev, status: "Rejected" as ContentStatus, reason: finalReason } : prev);
+    setSelectedContentItemForSheet(prev => prev && prev.id === itemId ? { ...prev, status: "Rejected" as ContentStatus, reason: finalReason } : prev);
+    setSelectedVideoForPreview(prev => prev && prev.id === itemId ? { ...prev, status: "Rejected" as ContentStatus, reason: finalReason } : prev);
     toast({ title: "Content Rejected", description: `Content item ${itemId} has been rejected. Reason: ${finalReason}`, variant: "destructive" });
-    if (selectedContentItem?.id === itemId) setIsSheetOpen(false);
+    if (selectedContentItemForSheet?.id === itemId) setIsSheetOpen(false);
+    if (selectedVideoForPreview?.id === itemId) setIsVideoPreviewOpen(false);
+  };
+  
+  const handleFlagContent = (itemId: string) => {
+    toast({title: "Content Flagged", description: `Content item ${itemId} has been flagged. (Placeholder)`});
+    // Future: Implement actual flagging logic, e.g., API call
   };
 
   if (!hasMounted) {
-    return null; // Or a loading skeleton component
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <p className="ml-2 text-muted-foreground">Loading content...</p>
+      </div>
+    );
   }
 
   return (
@@ -97,9 +121,10 @@ export default function ContentPage() {
             <CardContent>
               <VideoContentTable 
                 items={contentItems.filter(item => item.type === "Video")} 
-                onViewDetails={handleViewDetails}
+                onOpenVideoPreview={handleOpenVideoPreview}
                 onApprove={handleApproveContent}
                 onReject={handleRejectContent}
+                onFlag={handleFlagContent}
               />
             </CardContent>
           </Card>
@@ -113,22 +138,34 @@ export default function ContentPage() {
             <CardContent>
               <TextContentTable 
                 items={contentItems.filter(item => item.type === "Description")} 
-                onViewDetails={handleViewDetails}
+                onViewDetails={handleViewTextDetails}
                 onApprove={handleApproveContent}
                 onReject={handleRejectContent}
+                onFlag={handleFlagContent}
               />
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
 
-      {selectedContentItem && (
+      {selectedContentItemForSheet && selectedContentItemForSheet.type === "Description" && (
         <ContentDetailsSheet
           isOpen={isSheetOpen}
           onOpenChange={setIsSheetOpen}
-          contentItem={selectedContentItem}
+          contentItem={selectedContentItemForSheet}
           onApprove={handleApproveContent}
           onReject={handleRejectContent}
+        />
+      )}
+
+      {selectedVideoForPreview && selectedVideoForPreview.type === "Video" && (
+        <VideoPreviewDialog
+          isOpen={isVideoPreviewOpen}
+          onOpenChange={setIsVideoPreviewOpen}
+          contentItem={selectedVideoForPreview}
+          onApprove={handleApproveContent}
+          onReject={handleRejectContent}
+          onFlag={handleFlagContent}
         />
       )}
     </div>
@@ -138,12 +175,13 @@ export default function ContentPage() {
 
 interface VideoContentTableProps {
   items: ContentItem[];
-  onViewDetails: (item: ContentItem) => void;
+  onOpenVideoPreview: (item: ContentItem) => void;
   onApprove: (itemId: string) => void;
   onReject: (itemId: string, reason?: string) => void;
+  onFlag: (itemId: string) => void;
 }
 
-function VideoContentTable({ items, onViewDetails, onApprove, onReject }: VideoContentTableProps) {
+function VideoContentTable({ items, onOpenVideoPreview, onApprove, onReject, onFlag }: VideoContentTableProps) {
   return (
     <Table>
       <TableHeader>
@@ -160,14 +198,16 @@ function VideoContentTable({ items, onViewDetails, onApprove, onReject }: VideoC
         {items.map((item) => (
           <TableRow key={item.id}>
             <TableCell>
-              <Image 
-                src={item.thumbnailUrl || `https://placehold.co/100x75.png`} 
-                alt={item.title} 
-                width={100} 
-                height={75} 
-                className="rounded-md object-cover"
-                data-ai-hint="video thumbnail" 
-              />
+              <div className="cursor-pointer" onClick={() => onOpenVideoPreview(item)}>
+                <Image 
+                  src={item.thumbnailUrl || `https://placehold.co/100x75.png`} 
+                  alt={item.title} 
+                  width={100} 
+                  height={75} 
+                  className="rounded-md object-cover hover:opacity-80 transition-opacity"
+                  data-ai-hint="video thumbnail" 
+                />
+              </div>
             </TableCell>
             <TableCell className="font-medium">{item.title}</TableCell>
             <TableCell>{item.uploader}</TableCell>
@@ -181,7 +221,7 @@ function VideoContentTable({ items, onViewDetails, onApprove, onReject }: VideoC
               )}
             </TableCell>
             <TableCell className="text-right">
-              <ContentActions item={item} onViewDetails={onViewDetails} onApprove={onApprove} onReject={onReject} />
+              <ContentActions item={item} onViewDetails={() => onOpenVideoPreview(item)} onApprove={onApprove} onReject={onReject} onFlag={onFlag} />
             </TableCell>
           </TableRow>
         ))}
@@ -202,9 +242,10 @@ interface TextContentTableProps {
   onViewDetails: (item: ContentItem) => void;
   onApprove: (itemId: string) => void;
   onReject: (itemId: string, reason?: string) => void;
+  onFlag: (itemId: string) => void;
 }
 
-function TextContentTable({ items, onViewDetails, onApprove, onReject }: TextContentTableProps) {
+function TextContentTable({ items, onViewDetails, onApprove, onReject, onFlag }: TextContentTableProps) {
   return (
     <Table>
       <TableHeader>
@@ -236,7 +277,7 @@ function TextContentTable({ items, onViewDetails, onApprove, onReject }: TextCon
               )}
             </TableCell>
             <TableCell className="text-right">
-             <ContentActions item={item} onViewDetails={onViewDetails} onApprove={onApprove} onReject={onReject} />
+             <ContentActions item={item} onViewDetails={onViewDetails} onApprove={onApprove} onReject={onReject} onFlag={onFlag}/>
             </TableCell>
           </TableRow>
         ))}
@@ -257,10 +298,10 @@ interface ContentActionsProps {
   onViewDetails: (item: ContentItem) => void;
   onApprove: (itemId: string) => void;
   onReject: (itemId: string, reason?: string) => void;
+  onFlag: (itemId: string) => void;
 }
 
-function ContentActions({ item, onViewDetails, onApprove, onReject }: ContentActionsProps) {
-  const { toast } = useToast();
+function ContentActions({ item, onViewDetails, onApprove, onReject, onFlag }: ContentActionsProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -285,8 +326,6 @@ function ContentActions({ item, onViewDetails, onApprove, onReject }: ContentAct
               className="text-red-600 focus:text-red-700 focus:bg-red-50"
               onClick={() => {
                 const reason = prompt("Enter reason for rejection (optional):");
-                // If prompt is cancelled, reason will be null. We pass it along.
-                // handleRejectContent will provide a default if reason is null or empty string.
                 onReject(item.id, reason === null ? undefined : reason);
               }}
             >
@@ -294,13 +333,10 @@ function ContentActions({ item, onViewDetails, onApprove, onReject }: ContentAct
             </DropdownMenuItem>
           </>
         )}
-        <DropdownMenuItem onClick={() => toast({title: "Flag Action", description: "Content flagged (placeholder)"})}>
+        <DropdownMenuItem onClick={() => onFlag(item.id)}>
           <Flag className="mr-2 h-4 w-4" /> Flag Content
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
-
-
-    
