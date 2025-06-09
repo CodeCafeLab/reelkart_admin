@@ -1,25 +1,30 @@
 
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, ThumbsUp, ThumbsDown, Flag, Video, FileText, Loader2 } from "lucide-react";
+import { MoreHorizontal, Eye, ThumbsUp, ThumbsDown, Flag, Loader2, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import Image from "next/image";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ContentDetailsSheet } from "@/components/admin/content/ContentDetailsSheet";
-import { VideoPreviewDialog } from "@/components/admin/content/VideoPreviewDialog"; // New import
+import { VideoPreviewDialog } from "@/components/admin/content/VideoPreviewDialog";
 import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { format, parseISO } from 'date-fns';
+
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 export interface ContentItem {
   id: string;
   type: "Video" | "Description";
   title: string;
   uploader: string;
-  date: string; // "YYYY-MM-DD"
+  date: string; // "YYYY-MM-DDTHH:mm:ssZ"
   status: ContentStatus;
   reason?: string;
   thumbnailUrl?: string; // For videos
@@ -28,14 +33,16 @@ export interface ContentItem {
 }
 
 const initialContentItems: ContentItem[] = [
-  { id: "vid001", type: "Video", title: "Amazing Product Demo", uploader: "SellerStore A", date: "2024-07-18", status: "Pending", thumbnailUrl: `https://placehold.co/300x200.png?text=Vid+Demo`, videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" },
-  { id: "dsc001", type: "Description", title: "Handcrafted Leather Wallet", uploader: "ArtisanGoods", date: "2024-07-17", status: "Approved", descriptionText: "This premium handcrafted leather wallet offers a sleek design with multiple card slots and a durable finish. Made from 100% genuine leather." },
-  { id: "vid002", type: "Video", title: "Unboxing New Gadget", uploader: "TechGuru", date: "2024-07-16", status: "Rejected", reason: "Copyright Claim", thumbnailUrl: `https://placehold.co/300x200.png?text=Gadget+Unbox`, videoUrl: "https://www.sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4" },
-  { id: "dsc002", type: "Description", title: "Organic Green Tea", uploader: "HealthyLiving", date: "2024-07-19", status: "Pending", descriptionText: "Experience the refreshing taste of our 100% organic green tea, sourced from the finest tea gardens. Rich in antioxidants." },
-  { id: "vid003", type: "Video", title: "DIY Home Decor Ideas", uploader: "CreativeHome", date: "2024-07-15", status: "Approved", thumbnailUrl: `https://placehold.co/300x200.png?text=DIY+Decor`, videoUrl: "https://download.blender.org/peach/trailer/trailer_480p.mov" },
+  { id: "vid001", type: "Video", title: "Amazing Product Demo", uploader: "SellerStore A", date: "2024-07-18T10:30:00Z", status: "Pending", thumbnailUrl: `https://placehold.co/300x200.png?text=Vid+Demo`, videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" },
+  { id: "dsc001", type: "Description", title: "Handcrafted Leather Wallet", uploader: "ArtisanGoods", date: "2024-07-17T11:00:00Z", status: "Approved", descriptionText: "This premium handcrafted leather wallet offers a sleek design with multiple card slots and a durable finish. Made from 100% genuine leather." },
+  { id: "vid002", type: "Video", title: "Unboxing New Gadget", uploader: "TechGuru", date: "2024-07-16T12:15:00Z", status: "Rejected", reason: "Copyright Claim", thumbnailUrl: `https://placehold.co/300x200.png?text=Gadget+Unbox`, videoUrl: "https://www.sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4" },
+  { id: "dsc002", type: "Description", title: "Organic Green Tea", uploader: "HealthyLiving", date: "2024-07-19T09:00:00Z", status: "Pending", descriptionText: "Experience the refreshing taste of our 100% organic green tea, sourced from the finest tea gardens. Rich in antioxidants." },
+  { id: "vid003", type: "Video", title: "DIY Home Decor Ideas", uploader: "CreativeHome", date: "2024-07-15T14:30:00Z", status: "Approved", thumbnailUrl: `https://placehold.co/300x200.png?text=DIY+Decor`, videoUrl: "https://download.blender.org/peach/trailer/trailer_480p.mov" },
 ];
 
 export type ContentStatus = "Pending" | "Approved" | "Rejected";
+export type SortableContentKeys = keyof Pick<ContentItem, 'id' | 'title' | 'uploader' | 'date' | 'status'>;
+
 
 const statusVariant: Record<ContentStatus, "default" | "secondary" | "destructive" | "outline"> = {
   Pending: "outline",
@@ -47,22 +54,21 @@ export default function ContentPage() {
   const { toast } = useToast();
   const [contentItems, setContentItems] = useState<ContentItem[]>(initialContentItems);
   
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
-  const [selectedContentItemForSheet, setSelectedContentItemForSheet] = useState<ContentItem | null>(null);
-
   const [isVideoPreviewOpen, setIsVideoPreviewOpen] = useState(false);
   const [selectedVideoForPreview, setSelectedVideoForPreview] = useState<ContentItem | null>(null);
 
   const [hasMounted, setHasMounted] = useState(false);
 
+  // State for Video Table
+  const [videoSearchTerm, setVideoSearchTerm] = useState("");
+  const [videoStatusFilter, setVideoStatusFilter] = useState<ContentStatus | "All">("All");
+  const [videoSortConfig, setVideoSortConfig] = useState<{ key: SortableContentKeys; direction: 'ascending' | 'descending' }>({ key: 'date', direction: 'descending' });
+  const [videoCurrentPage, setVideoCurrentPage] = useState(1);
+  const [videoItemsPerPage, setVideoItemsPerPage] = useState(10);
+
   useEffect(() => {
     setHasMounted(true);
   }, []);
-
-  const handleViewTextDetails = (item: ContentItem) => {
-    setSelectedContentItemForSheet(item);
-    setIsSheetOpen(true);
-  };
 
   const handleOpenVideoPreview = (item: ContentItem) => {
     setSelectedVideoForPreview(item);
@@ -71,27 +77,127 @@ export default function ContentPage() {
 
   const handleApproveContent = (itemId: string) => {
     setContentItems(prev => prev.map(item => item.id === itemId ? { ...item, status: "Approved" as ContentStatus, reason: undefined } : item));
-    setSelectedContentItemForSheet(prev => prev && prev.id === itemId ? { ...prev, status: "Approved" as ContentStatus, reason: undefined } : prev);
     setSelectedVideoForPreview(prev => prev && prev.id === itemId ? { ...prev, status: "Approved" as ContentStatus, reason: undefined } : prev);
     toast({ title: "Content Approved", description: `Content item ${itemId} has been approved.` });
-    if (selectedContentItemForSheet?.id === itemId) setIsSheetOpen(false);
     if (selectedVideoForPreview?.id === itemId) setIsVideoPreviewOpen(false);
   };
 
   const handleRejectContent = (itemId: string, reason?: string) => {
     const finalReason = reason?.trim() === "" || !reason ? "Violation of guidelines" : reason;
     setContentItems(prev => prev.map(item => item.id === itemId ? { ...item, status: "Rejected" as ContentStatus, reason: finalReason } : item));
-    setSelectedContentItemForSheet(prev => prev && prev.id === itemId ? { ...prev, status: "Rejected" as ContentStatus, reason: finalReason } : prev);
     setSelectedVideoForPreview(prev => prev && prev.id === itemId ? { ...prev, status: "Rejected" as ContentStatus, reason: finalReason } : prev);
     toast({ title: "Content Rejected", description: `Content item ${itemId} has been rejected. Reason: ${finalReason}`, variant: "destructive" });
-    if (selectedContentItemForSheet?.id === itemId) setIsSheetOpen(false);
     if (selectedVideoForPreview?.id === itemId) setIsVideoPreviewOpen(false);
   };
   
   const handleFlagContent = (itemId: string) => {
     toast({title: "Content Flagged", description: `Content item ${itemId} has been flagged. (Placeholder)`});
-    // Future: Implement actual flagging logic, e.g., API call
   };
+
+  // Processing and Pagination for Videos
+  const processedVideoItems = useMemo(() => {
+    let filtered = contentItems.filter(item => item.type === "Video");
+    if (videoSearchTerm) {
+      const lowerSearch = videoSearchTerm.toLowerCase();
+      filtered = filtered.filter(item =>
+        item.id.toLowerCase().includes(lowerSearch) ||
+        item.title.toLowerCase().includes(lowerSearch) ||
+        item.uploader.toLowerCase().includes(lowerSearch)
+      );
+    }
+    if (videoStatusFilter !== "All") {
+      filtered = filtered.filter(item => item.status === videoStatusFilter);
+    }
+    if (videoSortConfig.key) {
+      filtered.sort((a, b) => {
+        let valA = a[videoSortConfig.key];
+        let valB = b[videoSortConfig.key];
+        if (videoSortConfig.key === 'date') {
+          valA = new Date(valA as string).getTime();
+          valB = new Date(valB as string).getTime();
+        } else if (typeof valA === 'string' && typeof valB === 'string') {
+          valA = valA.toLowerCase();
+          valB = valB.toLowerCase();
+        }
+        if (valA < valB) return videoSortConfig.direction === 'ascending' ? -1 : 1;
+        if (valA > valB) return videoSortConfig.direction === 'ascending' ? 1 : -1;
+        return 0;
+      });
+    }
+    return filtered;
+  }, [contentItems, videoSearchTerm, videoStatusFilter, videoSortConfig]);
+
+  const paginatedVideoItems = useMemo(() => {
+    const start = (videoCurrentPage - 1) * videoItemsPerPage;
+    return processedVideoItems.slice(start, start + videoItemsPerPage);
+  }, [processedVideoItems, videoCurrentPage, videoItemsPerPage]);
+  const totalVideoPages = Math.ceil(processedVideoItems.length / videoItemsPerPage);
+
+  const handleVideoSort = (key: SortableContentKeys) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (videoSortConfig.key === key && videoSortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setVideoSortConfig({ key, direction });
+    setVideoCurrentPage(1);
+  };
+
+  const renderSortIcon = (columnKey: SortableContentKeys, currentSortConfig: { key: SortableContentKeys; direction: string;}) => {
+    if (currentSortConfig.key !== columnKey) {
+      return <ArrowUpDown className="h-4 w-4 opacity-30 group-hover:opacity-100" />;
+    }
+    return currentSortConfig.direction === 'ascending' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
+  };
+
+  const formatDateForDisplay = (dateString: string) => format(parseISO(dateString), "PPpp");
+  const formatDateForExport = (dateString: string) => format(parseISO(dateString), "yyyy-MM-dd HH:mm:ss");
+
+  const createExportHandler = (contentType: 'video') => {
+    const dataToExport = contentType === 'video' ? processedVideoItems : [];
+    const filenamePrefix = contentType === 'video' ? 'video_content' : 'description_content';
+
+    return (formatType: 'csv' | 'excel' | 'pdf') => {
+        if (formatType === 'csv') {
+            const headers = ["ID", "Title", "Uploader", "Date", "Status", "Reason"];
+            const csvRows = [
+                headers.join(','),
+                ...dataToExport.map(item => [
+                    item.id, item.title, item.uploader, formatDateForExport(item.date), item.status, item.reason || ''
+                ].map(value => `"${String(value).replace(/"/g, '""')}"`).join(','))
+            ];
+            const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.download = `${filenamePrefix}_export.csv`;
+            link.click();
+            URL.revokeObjectURL(link.href);
+            toast({ title: "CSV Exported", description: `${contentType} data exported.` });
+        } else if (formatType === 'excel') {
+            const wsData = dataToExport.map(item => ({
+                ID: item.id, Title: item.title, Uploader: item.uploader, 
+                Date: formatDateForExport(item.date), Status: item.status, Reason: item.reason || ''
+            }));
+            const ws = XLSX.utils.json_to_sheet(wsData);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, contentType === 'video' ? "Videos" : "Descriptions");
+            XLSX.writeFile(wb, `${filenamePrefix}_export.xlsx`);
+            toast({ title: "Excel Exported", description: `${contentType} data exported.` });
+        } else if (formatType === 'pdf') {
+            const doc = new jsPDF();
+            const tableColumn = ["ID", "Title", "Uploader", "Date", "Status", "Reason"];
+            const tableRows = dataToExport.map(item => [
+                item.id, item.title, item.uploader, formatDateForExport(item.date), item.status, item.reason || ''
+            ]);
+            autoTable(doc, { head: [tableColumn], body: tableRows, startY: 20 });
+            doc.text(`${contentType.charAt(0).toUpperCase() + contentType.slice(1)} Content Report`, 14, 15);
+            doc.save(`${filenamePrefix}_export.pdf`);
+            toast({ title: "PDF Exported", description: `${contentType} data exported.` });
+        }
+    };
+  };
+
+  const handleVideoExport = createExportHandler('video');
+
 
   if (!hasMounted) {
     return (
@@ -105,58 +211,80 @@ export default function ContentPage() {
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold font-headline">Content Moderation</h1>
-      <p className="text-muted-foreground">Review and moderate user-generated content.</p>
+      <p className="text-muted-foreground">Review and moderate user-generated video content.</p>
 
-      <Tabs defaultValue="videos">
-        <TabsList className="grid w-full grid-cols-2 sm:w-[400px]">
-          <TabsTrigger value="videos">Videos</TabsTrigger>
-          <TabsTrigger value="descriptions">Descriptions</TabsTrigger>
-        </TabsList>
-        <TabsContent value="videos">
-          <Card>
-            <CardHeader>
-              <CardTitle>Video Moderation Queue</CardTitle>
-              <CardDescription>Review videos uploaded by sellers.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <VideoContentTable 
-                items={contentItems.filter(item => item.type === "Video")} 
-                onOpenVideoPreview={handleOpenVideoPreview}
-                onApprove={handleApproveContent}
-                onReject={handleRejectContent}
-                onFlag={handleFlagContent}
+      <Card>
+        <CardHeader>
+          <CardTitle>Video Moderation Queue</CardTitle>
+          <CardDescription>Review videos uploaded by sellers.</CardDescription>
+          <div className="flex flex-col sm:flex-row justify-between items-end gap-2 pt-4">
+            <div className="relative w-full sm:max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search videos (ID, Title, Uploader)..."
+                value={videoSearchTerm}
+                onChange={(e) => {setVideoSearchTerm(e.target.value); setVideoCurrentPage(1);}}
+                className="pl-10"
               />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="descriptions">
-          <Card>
-            <CardHeader>
-              <CardTitle>Description Moderation Queue</CardTitle>
-              <CardDescription>Review product descriptions submitted by sellers.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <TextContentTable 
-                items={contentItems.filter(item => item.type === "Description")} 
-                onViewDetails={handleViewTextDetails}
-                onApprove={handleApproveContent}
-                onReject={handleRejectContent}
-                onFlag={handleFlagContent}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-
-      {selectedContentItemForSheet && selectedContentItemForSheet.type === "Description" && (
-        <ContentDetailsSheet
-          isOpen={isSheetOpen}
-          onOpenChange={setIsSheetOpen}
-          contentItem={selectedContentItemForSheet}
-          onApprove={handleApproveContent}
-          onReject={handleRejectContent}
-        />
-      )}
+            </div>
+            <div className="flex gap-2 w-full sm:w-auto">
+              <Select value={videoStatusFilter} onValueChange={(value) => {setVideoStatusFilter(value as ContentStatus | "All"); setVideoCurrentPage(1);}}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Filter by status..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Statuses</SelectItem>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="Approved">Approved</SelectItem>
+                  <SelectItem value="Rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline"><Download className="mr-2 h-4 w-4" /> Export Videos</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleVideoExport('csv')}><ExportFileText className="mr-2 h-4 w-4" />Export CSV</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleVideoExport('excel')}><FileSpreadsheet className="mr-2 h-4 w-4" />Export Excel</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleVideoExport('pdf')}><Printer className="mr-2 h-4 w-4" />Export PDF</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <VideoContentTable 
+            items={paginatedVideoItems} 
+            onOpenVideoPreview={handleOpenVideoPreview}
+            onApprove={handleApproveContent}
+            onReject={handleRejectContent}
+            onFlag={handleFlagContent}
+            sortConfig={videoSortConfig}
+            onSort={handleVideoSort}
+            renderSortIcon={(key) => renderSortIcon(key, videoSortConfig)}
+            formatDate={formatDateForDisplay}
+          />
+          <div className="flex items-center justify-between mt-6">
+            <span className="text-sm text-muted-foreground">
+              Page {videoCurrentPage} of {totalVideoPages > 0 ? totalVideoPages : 1} ({processedVideoItems.length} total videos)
+            </span>
+            <div className="flex items-center gap-2">
+                <Select
+                    value={String(videoItemsPerPage)}
+                    onValueChange={(value) => { setVideoItemsPerPage(Number(value)); setVideoCurrentPage(1); }}
+                >
+                    <SelectTrigger className="w-[80px] h-9"><SelectValue placeholder={String(videoItemsPerPage)} /></SelectTrigger>
+                    <SelectContent>{[5, 10, 20, 50].map(size => <SelectItem key={size} value={String(size)}>{size}</SelectItem>)}</SelectContent>
+                </Select>
+                <span className="text-sm text-muted-foreground">items per page</span>
+            </div>
+            <div className="flex gap-2">
+              <Button onClick={() => setVideoCurrentPage(p => Math.max(p - 1, 1))} disabled={videoCurrentPage === 1} variant="outline" size="sm">Previous</Button>
+              <Button onClick={() => setVideoCurrentPage(p => Math.min(p + 1, totalVideoPages))} disabled={videoCurrentPage === totalVideoPages || totalVideoPages === 0} variant="outline" size="sm">Next</Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {selectedVideoForPreview && selectedVideoForPreview.type === "Video" && (
         <VideoPreviewDialog
@@ -179,18 +307,30 @@ interface VideoContentTableProps {
   onApprove: (itemId: string) => void;
   onReject: (itemId: string, reason?: string) => void;
   onFlag: (itemId: string) => void;
+  sortConfig: { key: SortableContentKeys; direction: string };
+  onSort: (key: SortableContentKeys) => void;
+  renderSortIcon: (key: SortableContentKeys) => JSX.Element;
+  formatDate: (dateString: string) => string;
 }
 
-function VideoContentTable({ items, onOpenVideoPreview, onApprove, onReject, onFlag }: VideoContentTableProps) {
+function VideoContentTable({ items, onOpenVideoPreview, onApprove, onReject, onFlag, sortConfig, onSort, renderSortIcon, formatDate }: VideoContentTableProps) {
   return (
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead className="w-[120px]">Thumbnail</TableHead>
-          <TableHead>Title</TableHead>
-          <TableHead>Uploader</TableHead>
-          <TableHead>Date</TableHead>
-          <TableHead>Status</TableHead>
+          <TableHead onClick={() => onSort('title')} className="cursor-pointer hover:bg-muted/50 group">
+            <div className="flex items-center gap-1">Title {renderSortIcon('title')}</div>
+          </TableHead>
+          <TableHead onClick={() => onSort('uploader')} className="cursor-pointer hover:bg-muted/50 group">
+            <div className="flex items-center gap-1">Uploader {renderSortIcon('uploader')}</div>
+          </TableHead>
+          <TableHead onClick={() => onSort('date')} className="cursor-pointer hover:bg-muted/50 group">
+            <div className="flex items-center gap-1">Date {renderSortIcon('date')}</div>
+          </TableHead>
+          <TableHead onClick={() => onSort('status')} className="cursor-pointer hover:bg-muted/50 group">
+            <div className="flex items-center gap-1">Status {renderSortIcon('status')}</div>
+          </TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -205,13 +345,13 @@ function VideoContentTable({ items, onOpenVideoPreview, onApprove, onReject, onF
                   width={100} 
                   height={75} 
                   className="rounded-md object-cover hover:opacity-80 transition-opacity"
-                  data-ai-hint="video thumbnail" 
+                  data-ai-hint="video thumbnail"
                 />
               </div>
             </TableCell>
             <TableCell className="font-medium">{item.title}</TableCell>
             <TableCell>{item.uploader}</TableCell>
-            <TableCell>{item.date}</TableCell>
+            <TableCell>{formatDate(item.date)}</TableCell>
             <TableCell>
               <Badge variant={statusVariant[item.status as ContentStatus]} className={item.status === 'Approved' ? 'bg-green-500 hover:bg-green-600 text-white' : item.status === 'Rejected' ? 'bg-red-500 hover:bg-red-600 text-white' : ''}>
                 {item.status}
@@ -237,61 +377,6 @@ function VideoContentTable({ items, onOpenVideoPreview, onApprove, onReject, onF
   );
 }
 
-interface TextContentTableProps {
-  items: ContentItem[];
-  onViewDetails: (item: ContentItem) => void;
-  onApprove: (itemId: string) => void;
-  onReject: (itemId: string, reason?: string) => void;
-  onFlag: (itemId: string) => void;
-}
-
-function TextContentTable({ items, onViewDetails, onApprove, onReject, onFlag }: TextContentTableProps) {
-  return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Type</TableHead>
-          <TableHead>Title</TableHead>
-          <TableHead>Uploader</TableHead>
-          <TableHead>Date</TableHead>
-          <TableHead>Status</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {items.map((item) => (
-          <TableRow key={item.id}>
-            <TableCell>
-              <FileText className="h-4 w-4 text-muted-foreground inline mr-1" />
-              {item.type}
-            </TableCell>
-            <TableCell className="font-medium">{item.title}</TableCell>
-            <TableCell>{item.uploader}</TableCell>
-            <TableCell>{item.date}</TableCell>
-            <TableCell>
-              <Badge variant={statusVariant[item.status as ContentStatus]} className={item.status === 'Approved' ? 'bg-green-500 hover:bg-green-600 text-white' : item.status === 'Rejected' ? 'bg-red-500 hover:bg-red-600 text-white' : ''}>
-                {item.status}
-              </Badge>
-              {item.status === "Rejected" && item.reason && (
-                <p className="text-xs text-muted-foreground mt-1">{item.reason}</p>
-              )}
-            </TableCell>
-            <TableCell className="text-right">
-             <ContentActions item={item} onViewDetails={onViewDetails} onApprove={onApprove} onReject={onReject} onFlag={onFlag}/>
-            </TableCell>
-          </TableRow>
-        ))}
-        {items.length === 0 && (
-          <TableRow>
-            <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
-              No description content to display.
-            </TableCell>
-          </TableRow>
-        )}
-      </TableBody>
-    </Table>
-  );
-}
 
 interface ContentActionsProps {
   item: ContentItem;
@@ -302,6 +387,11 @@ interface ContentActionsProps {
 }
 
 function ContentActions({ item, onViewDetails, onApprove, onReject, onFlag }: ContentActionsProps) {
+  const handleRejectWithPrompt = () => {
+    const reason = prompt("Enter reason for rejection (optional):");
+    onReject(item.id, reason === null ? undefined : reason);
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -324,10 +414,7 @@ function ContentActions({ item, onViewDetails, onApprove, onReject, onFlag }: Co
             </DropdownMenuItem>
             <DropdownMenuItem 
               className="text-red-600 focus:text-red-700 focus:bg-red-50"
-              onClick={() => {
-                const reason = prompt("Enter reason for rejection (optional):");
-                onReject(item.id, reason === null ? undefined : reason);
-              }}
+              onClick={handleRejectWithPrompt}
             >
               <ThumbsDown className="mr-2 h-4 w-4" /> Reject
             </DropdownMenuItem>
@@ -340,3 +427,4 @@ function ContentActions({ item, onViewDetails, onApprove, onReject, onFlag }: Co
     </DropdownMenu>
   );
 }
+
