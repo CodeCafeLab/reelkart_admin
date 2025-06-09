@@ -62,6 +62,25 @@ export const serviceIconMap: Record<ThirdPartyService, React.ElementType> = {
   AnalyticsTool: BarChartHorizontal,
 };
 
+// Helper component for client-side date formatting to avoid hydration mismatches
+function ClientFormattedDateTime({ 
+  isoDateString, 
+  fullFormatFn, 
+  initialFormatFn 
+}: { 
+  isoDateString: string;
+  fullFormatFn: (dateStr: string) => string;
+  initialFormatFn: (dateStr: string) => string;
+}) {
+  const [formattedDate, setFormattedDate] = useState(() => initialFormatFn(isoDateString));
+
+  useEffect(() => {
+    setFormattedDate(fullFormatFn(isoDateString));
+  }, [isoDateString, fullFormatFn]);
+
+  return <>{formattedDate}</>;
+}
+
 
 export function ThirdPartyLogDashboardClient() {
   const { toast } = useToast();
@@ -194,6 +213,7 @@ export function ThirdPartyLogDashboardClient() {
   };
 
   const formatDateForDisplay = (dateString: string) => format(parseISO(dateString), "PPpp");
+  const initialFormatDateForDisplay = (dateString: string) => format(parseISO(dateString), "PP"); // Date part only
   const formatDateForExport = (dateString: string) => format(parseISO(dateString), "yyyy-MM-dd HH:mm:ss");
 
   const handleExport = (formatType: 'csv' | 'excel' | 'pdf') => {
@@ -366,7 +386,13 @@ export function ThirdPartyLogDashboardClient() {
                   const StatusIcon = statusIconMap[log.status] || AlertCircle;
                   return (
                     <TableRow key={log.id}>
-                      <TableCell className="text-xs">{formatDateForDisplay(log.timestamp)}</TableCell>
+                      <TableCell className="text-xs">
+                        <ClientFormattedDateTime 
+                            isoDateString={log.timestamp} 
+                            fullFormatFn={formatDateForDisplay}
+                            initialFormatFn={initialFormatDateForDisplay}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1.5">
                           <ServiceIcon className="h-4 w-4 text-muted-foreground" />
@@ -448,7 +474,8 @@ export function ThirdPartyLogDashboardClient() {
           serviceIconMap={serviceIconMap}
           statusIconMap={statusIconMap}
           statusVariantMap={statusVariantMap}
-          formatDateForDisplay={formatDateForDisplay}
+          formatDateForDisplay={formatDateForDisplay} // Full format for sheet
+          initialFormatDateForDisplay={initialFormatDateForDisplay} // Initial format for sheet
         />
       )}
     </div>

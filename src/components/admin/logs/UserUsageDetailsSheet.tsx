@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Sheet,
   SheetContent,
@@ -21,6 +21,26 @@ import { User, DollarSign, Hash, Activity, Server } from "lucide-react";
 import type { LogEntry, ThirdPartyService, LogStatus } from "@/types/logs";
 import { StatCard } from "@/components/dashboard/StatCard";
 
+// Helper component for client-side date formatting
+function ClientFormattedDateTime({ 
+  isoDateString, 
+  fullFormatFn, 
+  initialFormatFn 
+}: { 
+  isoDateString: string;
+  fullFormatFn: (dateStr: string) => string;
+  initialFormatFn: (dateStr: string) => string;
+}) {
+  const [formattedDate, setFormattedDate] = useState(() => initialFormatFn(isoDateString));
+
+  useEffect(() => {
+    setFormattedDate(fullFormatFn(isoDateString));
+  }, [isoDateString, fullFormatFn, initialFormatFn]); // Added initialFormatFn to dependencies
+
+  return <>{formattedDate}</>;
+}
+
+
 interface UserUsageDetailsSheetProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
@@ -30,7 +50,8 @@ interface UserUsageDetailsSheetProps {
   serviceIconMap: Record<ThirdPartyService, React.ElementType>;
   statusIconMap: Record<LogStatus, React.ElementType>;
   statusVariantMap: Record<LogStatus, "default" | "secondary" | "destructive" | "outline">;
-  formatDateForDisplay: (dateString: string) => string;
+  formatDateForDisplay: (dateString: string) => string; // Full format "PPpp"
+  initialFormatDateForDisplay: (dateString: string) => string; // Initial format "PP"
 }
 
 interface UserAggregatedStats {
@@ -56,7 +77,8 @@ export function UserUsageDetailsSheet({
   serviceIconMap,
   statusIconMap,
   statusVariantMap,
-  formatDateForDisplay,
+  formatDateForDisplay, // This is the full "PPpp" formatter
+  initialFormatDateForDisplay, // This is the "PP" formatter
 }: UserUsageDetailsSheetProps) {
   const userLogs = useMemo(() => {
     if (!userId) return [];
@@ -187,7 +209,13 @@ export function UserUsageDetailsSheet({
                       const StatusIcon = statusIconMap[log.status];
                       return (
                         <TableRow key={log.id}>
-                          <TableCell className="text-xs">{formatDateForDisplay(log.timestamp)}</TableCell>
+                          <TableCell className="text-xs">
+                             <ClientFormattedDateTime 
+                                isoDateString={log.timestamp} 
+                                fullFormatFn={formatDateForDisplay}
+                                initialFormatFn={initialFormatDateForDisplay}
+                              />
+                          </TableCell>
                           <TableCell className="text-xs">
                             <div className="flex items-center gap-1.5">
                               <ServiceIcon className="h-4 w-4 text-muted-foreground" />
@@ -224,3 +252,4 @@ export function UserUsageDetailsSheet({
     </Sheet>
   );
 }
+
