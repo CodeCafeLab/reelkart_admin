@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, UserPlus, Edit, Trash2, ToggleLeft, ToggleRight, Loader2, AlertCircle, ShieldPlus, CheckSquare } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import type { AdminUser, UpdateAdminUserPayload, AdminRole, Permission } from "@/types/admin-user";
+import type { AdminUser, UpdateAdminUserPayload, AdminRole, Permission, CreateAdminUserPayload } from "@/types/admin-user";
 import { ADMIN_ROLES, PERMISSIONS } from "@/types/admin-user";
 import { format, parseISO } from 'date-fns';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -17,6 +17,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { EditAdminUserSheet } from "@/components/admin/users/EditAdminUserSheet";
+import { AddAdminUserSheet } from "@/components/admin/users/AddAdminUserSheet";
 
 // Mock data for admin users
 const initialMockAdminUsers: AdminUser[] = [
@@ -65,14 +66,14 @@ const initialMockAdminUsers: AdminUser[] = [
 
 export function AdminUsersClient() {
   const [users, setUsers] = useState<AdminUser[]>(initialMockAdminUsers);
-  const [isLoading, setIsLoading] = useState<boolean>(false); // No initial loading from API
-  const [error, setError] = useState<string | null>(null); // API errors not applicable for local data
+  const [isLoading, setIsLoading] = useState<boolean>(false); 
+  const [error, setError] = useState<string | null>(null); 
   const { toast } = useToast();
 
-  const [isAddUserDialogOpen, setIsAddUserDialogOpen] = useState(false); // Placeholder
+  const [isAddUserSheetOpen, setIsAddUserSheetOpen] = useState(false);
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AdminUser | null>(null);
-  const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null); // Placeholder
+  const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null); 
 
   const [selectedRoleForPermissions, setSelectedRoleForPermissions] = useState<AdminRole | "">("");
   const [rolePermissions, setRolePermissions] = useState<Record<Permission, boolean>>(() => {
@@ -81,7 +82,6 @@ export function AdminUsersClient() {
     return initial;
   });
 
-  // No fetchUsers or useEffect for API calls needed for local data
 
   const handleToggleActive = (userToToggle: AdminUser) => {
     const newStatus = !userToToggle.is_active;
@@ -112,17 +112,32 @@ export function AdminUsersClient() {
     setIsEditSheetOpen(false);
     toast({
         title: "User Updated Locally",
-        description: `User ${updatedUserPartial.full_name || updatedUserPartial.email} has been updated.`,
+        description: `User ${updatedUserPartial.full_name || updatedUserPartial.email || 'Unknown user'} has been updated.`,
     });
+  };
+
+  const handleUserAdded = (newUserData: CreateAdminUserPayload) => {
+    const newUser: AdminUser = {
+      id: `user_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`, // Simple unique ID for local
+      email: newUserData.email,
+      full_name: newUserData.full_name || null,
+      role: newUserData.role,
+      is_active: newUserData.is_active !== undefined ? newUserData.is_active : true,
+      last_login_at: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    setUsers(prevUsers => [newUser, ...prevUsers]);
+    setIsAddUserSheetOpen(false);
+    // Toast is handled in AddAdminUserSheet now
   };
 
 
   const handleDeleteUser = (user: AdminUser) => {
-    // Placeholder for local data - implement actual deletion if needed
-    // For now, it just shows a toast
-    console.log("Delete user (local placeholder):", user);
-    // setUsers(prevUsers => prevUsers.filter(u => u.id !== user.id)); // Example of local deletion
-    toast({ title: "Delete Action (Local Placeholder)", description: `Would delete ${user.email}. Data is local.`, variant: "destructive"});
+    if (window.confirm(`Are you sure you want to delete user ${user.email}? This action is local and cannot be undone.`)) {
+      setUsers(prevUsers => prevUsers.filter(u => u.id !== user.id));
+      toast({ title: "User Deleted (Local)", description: `User ${user.email} has been removed from the local list.`, variant: "destructive"});
+    }
   };
 
   const handleAddNewRole = () => {
@@ -151,10 +166,9 @@ export function AdminUsersClient() {
         } else if (selectedRoleForPermissions === 'KYCReviewer' && (p === 'manage_kyc_submissions' || p.startsWith('view_'))) {
            newPerms[p] = true;
         } else {
-          // Mock some permissions based on role for demo
           if (selectedRoleForPermissions === 'ContentModerator') newPerms[p] = p === 'moderate_content' || p.startsWith('view_');
           else if (selectedRoleForPermissions === 'LogisticsManager') newPerms[p] = p === 'manage_order_logistics' || p.startsWith('view_');
-          else newPerms[p] = index % 3 === 0; // Default mock
+          else newPerms[p] = index % 3 === 0; 
         }
       });
       setRolePermissions(newPerms);
@@ -166,7 +180,7 @@ export function AdminUsersClient() {
   }, [selectedRoleForPermissions]);
 
 
-  if (isLoading && users.length === 0) { // Should not happen with local data unless explicitly set
+  if (isLoading && users.length === 0) { 
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -186,7 +200,7 @@ export function AdminUsersClient() {
                 Manage all users who have access to this admin panel. Data is currently local.
               </CardDescription>
             </div>
-            <Button onClick={() => { toast({title: "Add User (Local Placeholder)"}) } }>
+            <Button onClick={() => setIsAddUserSheetOpen(true) }>
               <UserPlus className="mr-2 h-4 w-4" /> Add New Admin User
             </Button>
           </div>
@@ -207,7 +221,7 @@ export function AdminUsersClient() {
               {users.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                    No admin users found (local data).
+                    No admin users found (local data). Click "Add New Admin User" to add one.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -334,24 +348,16 @@ export function AdminUsersClient() {
           isOpen={isEditSheetOpen}
           onOpenChange={setIsEditSheetOpen}
           user={editingUser}
-          onUserUpdated={() => {
-            // This will be called by EditAdminUserSheet, but we handle update in handleUserUpdatedInSheet
-            // This callback can be used for more complex logic if needed, or simplified in EditAdminUserSheet
-            // For now, handleUserUpdatedInSheet takes care of updating local state.
-          }}
+          onUserUpdated={handleUserUpdatedInSheet}
         />
       )}
       
-      {/* 
-      Placeholder for AddUserDialog - to be implemented later
-      {isAddUserDialogOpen && (
-        <AddAdminUserDialog
-          isOpen={isAddUserDialogOpen}
-          onClose={() => setIsAddUserDialogOpen(false)}
-          onUserAdded={() => {}} // Would add to local state
-        />
-      )}
-      */}
+      <AddAdminUserSheet
+        isOpen={isAddUserSheetOpen}
+        onOpenChange={setIsAddUserSheetOpen}
+        onUserAdded={handleUserAdded}
+      />
+      
     </div>
   );
 }
