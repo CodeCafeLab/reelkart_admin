@@ -8,12 +8,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, PlusCircle, Edit, Trash2, ToggleLeft, ToggleRight, Package, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
-import type { SellerPackage, SellerRole } from "@/types/seller-package";
+import type { SellerPackage, SellerRole } from "@/types/seller-package"; // Keep SELLER_ROLES import from here
 import { useToast } from "@/hooks/use-toast";
 import { useAppSettings } from "@/contexts/AppSettingsContext";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, parseISO } from 'date-fns';
+import { AddPackageSheet, type NewPackageData } from "@/components/admin/packages/AddPackageSheet";
+
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -93,6 +95,7 @@ export default function PackagesPage() {
     mockPackagesData.map(pkg => ({ ...pkg, currency: appSettings.currencyCode }))
   );
 
+  const [isAddSheetOpen, setIsAddSheetOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<PackageStatusFilter>("All");
   const [sortConfig, setSortConfig] = React.useState<{ key: SortablePackageKeys; direction: 'ascending' | 'descending' }>({ key: 'name', direction: 'ascending' });
@@ -118,7 +121,6 @@ export default function PackagesPage() {
         maximumFractionDigits: 2
     }).format(price);
     
-    // Ensure symbol is displayed correctly, especially for INR
     const symbolAdjustedPrice = formattedPrice.includes(symbol) ? formattedPrice : `${symbol}${new Intl.NumberFormat('en-IN', {minimumFractionDigits: price === 0 ? 0 : 2, maximumFractionDigits: 2}).format(price)}`;
 
 
@@ -215,7 +217,23 @@ export default function PackagesPage() {
   };
   
   const handleAddNewPackage = () => {
-    toast({ title: "Add New Package (Placeholder)", description: "Would open a form to create a new package." });
+    setIsAddSheetOpen(true);
+  };
+
+  const handlePackageAdded = (formData: NewPackageData) => {
+    const newPackage: SellerPackage = {
+      ...formData,
+      id: `pkg_${Date.now().toString(36)}_${Math.random().toString(36).substring(2, 5)}`, // More unique mock ID
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      currency: appSettings.currencyCode,
+    };
+    setPackagesState(prevPackages => [newPackage, ...prevPackages]);
+    setIsAddSheetOpen(false); // This was missing, good catch.
+    toast({
+      title: "Package Created",
+      description: `Package "${newPackage.name}" has been successfully created.`,
+    });
   };
 
   const formatDateForExport = (dateString: string) => format(parseISO(dateString), "yyyy-MM-dd HH:mm:ss");
@@ -433,7 +451,12 @@ export default function PackagesPage() {
           </div>
         </CardContent>
       </Card>
+
+      <AddPackageSheet 
+        isOpen={isAddSheetOpen}
+        onOpenChange={setIsAddSheetOpen}
+        onPackageAdded={handlePackageAdded}
+      />
     </div>
   );
 }
-
