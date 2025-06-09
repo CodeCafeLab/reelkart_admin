@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from 'date-fns';
+import { useLocale } from 'next-intl';
+import { enUS, hi as hiLocale } from 'date-fns/locale';
 import { useAppSettings } from "@/contexts/AppSettingsContext";
 import { StatCard } from "@/components/dashboard/StatCard";
 import type { LogEntry, ThirdPartyService, LogStatus, SortableLogKeys, DashboardStat } from "@/types/logs";
@@ -76,7 +78,7 @@ function ClientFormattedDateTime({
 
   useEffect(() => {
     setFormattedDate(fullFormatFn(isoDateString));
-  }, [isoDateString, fullFormatFn]);
+  }, [isoDateString, fullFormatFn, initialFormatFn]); // Added initialFormatFn
 
   return <>{formattedDate}</>;
 }
@@ -85,6 +87,7 @@ function ClientFormattedDateTime({
 export function ThirdPartyLogDashboardClient() {
   const { toast } = useToast();
   const { settings: appSettings } = useAppSettings();
+  const currentLocale = useLocale();
   
   const [logEntries, setLogEntries] = useState<LogEntry[]>(mockLogEntries);
   const [dashboardStats, setDashboardStats] = useState<DashboardStat[]>([]);
@@ -99,6 +102,45 @@ export function ThirdPartyLogDashboardClient() {
 
   const [isUserSheetOpen, setIsUserSheetOpen] = useState(false);
   const [selectedUserIdForSheet, setSelectedUserIdForSheet] = useState<string | null>(null);
+
+  const dateFnsLocale = useMemo(() => {
+    switch (currentLocale) {
+      case 'hi':
+        return hiLocale;
+      default:
+        return enUS;
+    }
+  }, [currentLocale]);
+
+  const formatDateForDisplay = useCallback((dateString: string) => {
+    if (!dateString) return "Invalid Date";
+    try {
+      return format(parseISO(dateString), "PPpp", { locale: dateFnsLocale });
+    } catch (e) { 
+      console.error("Error formatting date for display:", e, "Input:", dateString);
+      return "Format Error"; 
+    }
+  }, [dateFnsLocale]);
+
+  const initialFormatDateForDisplay = useCallback((dateString: string) => {
+    if (!dateString) return "Invalid Date";
+    try {
+      return format(parseISO(dateString), "PP", { locale: dateFnsLocale });
+    } catch (e) { 
+      console.error("Error formatting initial date for display:", e, "Input:", dateString);
+      return "Format Error"; 
+    }
+  }, [dateFnsLocale]);
+  
+  const formatDateForExport = useCallback((dateString: string) => {
+    if (!dateString) return "Invalid Date";
+    try {
+      return format(parseISO(dateString), "yyyy-MM-dd HH:mm:ss", { locale: dateFnsLocale });
+    } catch (e) { 
+      console.error("Error formatting date for export:", e, "Input:", dateString);
+      return "Format Error"; 
+    }
+  }, [dateFnsLocale]);
 
 
   useEffect(() => {
@@ -129,7 +171,7 @@ export function ThirdPartyLogDashboardClient() {
 
   const formatCurrency = (amount: number | null | undefined) => {
     if (amount == null) return "N/A";
-    return new Intl.NumberFormat('en-IN', {
+    return new Intl.NumberFormat(currentLocale === 'hi' ? 'hi-IN' : 'en-IN', { // Use next-intl locale for number formatting consistency
       style: 'currency',
       currency: appSettings.currencyCode,
       minimumFractionDigits: 2,
@@ -211,10 +253,6 @@ export function ThirdPartyLogDashboardClient() {
       setIsUserSheetOpen(true);
     }
   };
-
-  const formatDateForDisplay = (dateString: string) => format(parseISO(dateString), "PPpp");
-  const initialFormatDateForDisplay = (dateString: string) => format(parseISO(dateString), "PP"); // Date part only
-  const formatDateForExport = (dateString: string) => format(parseISO(dateString), "yyyy-MM-dd HH:mm:ss");
 
   const handleExport = (formatType: 'csv' | 'excel' | 'pdf') => {
     const dataToExport = processedLogEntries;
@@ -474,8 +512,8 @@ export function ThirdPartyLogDashboardClient() {
           serviceIconMap={serviceIconMap}
           statusIconMap={statusIconMap}
           statusVariantMap={statusVariantMap}
-          formatDateForDisplay={formatDateForDisplay} // Full format for sheet
-          initialFormatDateForDisplay={initialFormatDateForDisplay} // Initial format for sheet
+          formatDateForDisplay={formatDateForDisplay} 
+          initialFormatDateForDisplay={initialFormatDateForDisplay}
         />
       )}
     </div>
