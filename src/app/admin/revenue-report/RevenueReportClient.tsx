@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown, TrendingUp, Users, ShoppingBag, DollarSign as DollarSignIcon, AlertCircle, XCircle, Eye } from "lucide-react";
+import { MoreHorizontal, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown, TrendingUp, Users, ShoppingBag, DollarSign as DollarSignIcon, AlertCircle, XCircle, Eye, Settings } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +16,7 @@ import { useAppSettings } from "@/contexts/AppSettingsContext";
 import { StatCard } from "@/components/dashboard/StatCard";
 import type { SubscriptionPurchase, SubscriptionStatus, SortableSubscriptionKeys } from "@/types/revenue";
 import { SubscriptionDetailsSheet } from "@/components/admin/revenue-report/SubscriptionDetailsSheet";
+import { ManageSubscriptionSheet } from "@/components/admin/revenue-report/ManageSubscriptionSheet";
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -61,6 +62,10 @@ export function RevenueReportClient() {
   const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
   const [selectedSubscription, setSelectedSubscription] = useState<SubscriptionPurchase | null>(null);
 
+  const [isManageSheetOpen, setIsManageSheetOpen] = useState(false);
+  const [subscriptionToManage, setSubscriptionToManage] = useState<SubscriptionPurchase | null>(null);
+
+
   const formatCurrency = useCallback((amount: number) => {
     return new Intl.NumberFormat('en-IN', { 
       style: 'currency', 
@@ -86,7 +91,7 @@ export function RevenueReportClient() {
 
 
   const processedSubscriptions = useMemo(() => {
-    let filtered = [...subscriptions].map(sub => ({...sub, currency: appSettings.currencyCode})); // Ensure currency is up-to-date
+    let filtered = [...subscriptions].map(sub => ({...sub, currency: appSettings.currencyCode})); 
     if (searchTerm) {
       const lowerSearch = searchTerm.toLowerCase();
       filtered = filtered.filter(sub =>
@@ -168,6 +173,25 @@ export function RevenueReportClient() {
     setSelectedSubscription(subscription);
     setIsDetailsSheetOpen(true);
   };
+
+  const handleManageSubscriptionClick = (subscription: SubscriptionPurchase) => {
+    setSubscriptionToManage(subscription);
+    setIsManageSheetOpen(true);
+  };
+  
+  const handleSubscriptionUpdatedLocally = (updatedSubscription: SubscriptionPurchase) => {
+    setSubscriptions(prevSubs => 
+      prevSubs.map(sub => sub.id === updatedSubscription.id ? updatedSubscription : sub)
+    );
+    // Optionally, update the selected subscription if it's the one being managed/viewed
+    if (selectedSubscription && selectedSubscription.id === updatedSubscription.id) {
+        setSelectedSubscription(updatedSubscription);
+    }
+    if (subscriptionToManage && subscriptionToManage.id === updatedSubscription.id) {
+        setSubscriptionToManage(updatedSubscription);
+    }
+  };
+
 
   const handleExport = (formatType: 'csv' | 'excel' | 'pdf') => {
     const dataToExport = processedSubscriptions;
@@ -337,8 +361,8 @@ export function RevenueReportClient() {
                             <DropdownMenuItem onClick={() => handleViewDetails(sub)}>
                               <Eye className="mr-2 h-4 w-4" /> View Full Details
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => toast({title: "Manage Subscription (Placeholder)", description: `Manage actions for ${sub.id}`})}>
-                              Manage Subscription
+                            <DropdownMenuItem onClick={() => handleManageSubscriptionClick(sub)}>
+                              <Settings className="mr-2 h-4 w-4" /> Manage Subscription
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -379,6 +403,17 @@ export function RevenueReportClient() {
             formatCurrency={formatCurrency}
         />
       )}
+
+      {subscriptionToManage && (
+        <ManageSubscriptionSheet
+            isOpen={isManageSheetOpen}
+            onOpenChange={setIsManageSheetOpen}
+            subscription={subscriptionToManage}
+            formatCurrency={formatCurrency}
+            onSubscriptionUpdated={handleSubscriptionUpdatedLocally}
+        />
+      )}
     </div>
   );
 }
+
