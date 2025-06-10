@@ -2,6 +2,7 @@
 "use client";
     
 import { useState, useMemo } from "react";
+import Link from 'next/link'; // Keep Link for any other direct uses, though not for StatCards anymore
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ExampleChart } from "@/components/dashboard/ExampleChart";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -101,12 +102,12 @@ export default function DashboardPage() {
       <h1 className="text-3xl font-bold font-headline">Dashboard</h1>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <StatCard title="Active Sellers" value="1,280" icon={Users} description="+20 this week" />
-        <StatCard title="Active Buyers" value="3,450" icon={Users} description="+50 today" />
-        <StatCard title="KYC Pending" value="75" icon={ShieldCheck} description="+5 from yesterday" />
-        <StatCard title="Avg Watch Time" value="2m 35s" icon={PlayCircle} description="Per active user daily" />
-        <StatCard title="Content Queue" value="212" icon={Film} description="Videos awaiting review" />
-        <StatCard title="Orders Shipped" value="850" icon={Truck} description="Last 24 hours" />
+        <StatCard href="/admin/sellers" title="Active Sellers" value="1,280" icon={Users} description="+20 this week" />
+        <StatCard href="/admin/logistics" title="Active Buyers" value="3,450" icon={Users} description="+50 today" />
+        <StatCard href="/admin/kyc" title="KYC Pending" value="75" icon={ShieldCheck} description="+5 from yesterday" />
+        <StatCard href="/admin/content" title="Avg Watch Time" value="2m 35s" icon={PlayCircle} description="Per active user daily" />
+        <StatCard href="/admin/content" title="Content Queue" value="212" icon={Film} description="Videos awaiting review" />
+        <StatCard href="/admin/logistics" title="Orders Shipped" value="850" icon={Truck} description="Last 24 hours" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
