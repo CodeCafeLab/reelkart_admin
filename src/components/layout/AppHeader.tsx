@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from 'next/link';
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { SidebarTrigger } from "@/components/ui/sidebar"; // Import SidebarTrigger
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/components/ui/dropdown-menu";
@@ -60,8 +60,9 @@ export function AppHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background px-4 sm:px-6 shadow-sm">
-      <div className="md:hidden">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-2 sm:gap-4 border-b bg-background px-4 sm:px-6 shadow-sm">
+      {/* Desktop Sidebar Toggle Button */}
+      <div className="hidden md:flex items-center">
         <SidebarTrigger />
       </div>
       <div className="flex-1">
