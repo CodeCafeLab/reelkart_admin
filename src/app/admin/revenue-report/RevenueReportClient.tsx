@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown, TrendingUp, Users, ShoppingBag, DollarSign as DollarSignIcon, AlertCircle, XCircle } from "lucide-react";
+import { MoreHorizontal, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown, TrendingUp, Users, ShoppingBag, DollarSign as DollarSignIcon, AlertCircle, XCircle, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -15,6 +15,7 @@ import { format, parseISO } from 'date-fns';
 import { useAppSettings } from "@/contexts/AppSettingsContext";
 import { StatCard } from "@/components/dashboard/StatCard";
 import type { SubscriptionPurchase, SubscriptionStatus, SortableSubscriptionKeys } from "@/types/revenue";
+import { SubscriptionDetailsSheet } from "@/components/admin/revenue-report/SubscriptionDetailsSheet";
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -56,6 +57,9 @@ export function RevenueReportClient() {
   
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
+  const [selectedSubscription, setSelectedSubscription] = useState<SubscriptionPurchase | null>(null);
 
   const formatCurrency = useCallback((amount: number) => {
     return new Intl.NumberFormat('en-IN', { 
@@ -158,6 +162,11 @@ export function RevenueReportClient() {
     } catch (e) { 
       return "Invalid Date"; 
     }
+  };
+
+  const handleViewDetails = (subscription: SubscriptionPurchase) => {
+    setSelectedSubscription(subscription);
+    setIsDetailsSheetOpen(true);
   };
 
   const handleExport = (formatType: 'csv' | 'excel' | 'pdf') => {
@@ -325,8 +334,8 @@ export function RevenueReportClient() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => toast({title: "View Details (Placeholder)", description: `Would show full details for subscription ${sub.id}`})}>
-                              View Full Details
+                            <DropdownMenuItem onClick={() => handleViewDetails(sub)}>
+                              <Eye className="mr-2 h-4 w-4" /> View Full Details
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => toast({title: "Manage Subscription (Placeholder)", description: `Manage actions for ${sub.id}`})}>
                               Manage Subscription
@@ -361,7 +370,15 @@ export function RevenueReportClient() {
           </div>
         </CardContent>
       </Card>
+
+      {selectedSubscription && (
+        <SubscriptionDetailsSheet
+            isOpen={isDetailsSheetOpen}
+            onOpenChange={setIsDetailsSheetOpen}
+            subscription={selectedSubscription}
+            formatCurrency={formatCurrency}
+        />
+      )}
     </div>
   );
 }
-
