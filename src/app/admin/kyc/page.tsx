@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { KycDetailsSheet } from "@/components/admin/kyc/KycDetailsSheet";
 import { ImagePopup } from "@/components/admin/kyc/ImagePopup";
+import { KycRejectionDialog } from "@/components/admin/kyc/KycRejectionDialog"; // Import the new dialog
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from 'date-fns';
 
@@ -157,6 +158,10 @@ export default function KycPage() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [hasMounted, setHasMounted] = useState(false);
 
+  const [isRejectionPageDialogOpen, setIsRejectionPageDialogOpen] = useState(false);
+  const [kycIdForRejectionDialog, setKycIdForRejectionDialog] = useState<string | null>(null);
+
+
   useEffect(() => {
     setHasMounted(true);
   }, []);
@@ -270,11 +275,17 @@ export default function KycPage() {
     if(selectedKycRequest?.id === kycId && isSheetOpen) setIsSheetOpen(false);
   };
 
-  const promptAndReject = (kycId: string) => {
-    const reason = window.prompt("Please enter the reason for rejection (optional):");
-    if (reason !== null) {
-      handleRejectKyc(kycId, reason);
+  const openRejectionDialog = (kycId: string) => {
+    setKycIdForRejectionDialog(kycId);
+    setIsRejectionPageDialogOpen(true);
+  };
+
+  const handleRejectionDialogSubmit = (reason: string) => {
+    if (kycIdForRejectionDialog) {
+      handleRejectKyc(kycIdForRejectionDialog, reason);
     }
+    setKycIdForRejectionDialog(null); 
+    // The dialog itself calls onOpenChange(false)
   };
 
   const handleExportCSV = () => {
@@ -512,7 +523,7 @@ export default function KycPage() {
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             className="text-red-600 focus:text-red-700 focus:bg-red-50"
-                            onClick={() => promptAndReject(request.id)}
+                            onClick={() => openRejectionDialog(request.id)}
                           >
                             <XCircle className="mr-2 h-4 w-4" /> Reject
                           </DropdownMenuItem>
@@ -593,8 +604,15 @@ export default function KycPage() {
           imageUrl={selectedImageUrl}
         />
       )}
+
+      {kycIdForRejectionDialog && (
+        <KycRejectionDialog
+          isOpen={isRejectionPageDialogOpen}
+          onOpenChange={setIsRejectionPageDialogOpen}
+          onSubmitReason={handleRejectionDialogSubmit}
+          kycIdToShow={kycIdForRejectionDialog}
+        />
+      )}
     </div>
   );
 }
-
-    
