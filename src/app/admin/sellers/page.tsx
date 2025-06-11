@@ -44,6 +44,14 @@ interface BankAccountDetails {
   branchName?: string;
 }
 
+export interface SellerLoginLog {
+  id: string;
+  timestamp: string; // ISO String
+  ipAddress: string;
+  status: 'Success' | 'Failed' | 'Attempt';
+  userAgent?: string;
+}
+
 export interface Seller {
   id: string;
   name: string; // Contact person name
@@ -58,6 +66,7 @@ export interface Seller {
   bankAccountDetails?: BankAccountDetails;
   verificationDocuments?: SellerDocument[];
   averageRating?: number | null; // 0-5, can be null or undefined
+  loginLogs?: SellerLoginLog[];
 }
 
 const initialSellersData: Seller[] = [
@@ -68,6 +77,10 @@ const initialSellersData: Seller[] = [
     verificationDocuments: [
       { name: "GST Certificate", url: "https://placehold.co/600x400.png?text=GST+Cert", aiHint: "tax registration" },
       { name: "Business PAN", url: "https://placehold.co/600x400.png?text=Biz+PAN", aiHint: "tax document" }
+    ],
+    loginLogs: [
+      { id: "log_rk1", timestamp: new Date(Date.now() - 86400000 * 1).toISOString(), ipAddress: "103.22.182.0", status: "Success", userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" },
+      { id: "log_rk2", timestamp: new Date(Date.now() - 86400000 * 2).toISOString(), ipAddress: "103.22.182.0", status: "Success", userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Mobile/15E148 Safari/604.1" },
     ]
   },
   {
@@ -77,6 +90,10 @@ const initialSellersData: Seller[] = [
     verificationDocuments: [
       { name: "Aadhaar Card - Front", url: "https://placehold.co/600x400.png?text=Aadhaar+Front", aiHint: "identity document" },
       { name: "Aadhaar Card - Back", url: "https://placehold.co/600x400.png?text=Aadhaar+Back", aiHint: "identity document" }
+    ],
+    loginLogs: [
+        { id: "log_ad1", timestamp: new Date(Date.now() - 86400000 * 3).toISOString(), ipAddress: "202.142.66.10", status: "Attempt", userAgent: "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36"},
+        { id: "log_ad2", timestamp: new Date(Date.now() - 86400000 * 3 - 60000).toISOString(), ipAddress: "202.142.66.10", status: "Failed", userAgent: "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36"},
     ]
   },
   {
@@ -98,6 +115,9 @@ const initialSellersData: Seller[] = [
     id: "usr005-sel", name: "Amit Patel", businessName: "Patel's Organics", sellerType: "OnlineSeller", status: "Pending", joinedDate: "2024-07-18", averageRating: 4.9,
     verificationDocuments: [
         { name: "GST Certificate (Optional for OnlineSeller)", url: "https://placehold.co/600x400.png?text=GST+Patel", aiHint: "tax registration" }
+    ],
+    loginLogs: [
+        { id: "log_ap1", timestamp: new Date(Date.now() - 86400000 * 0.5).toISOString(), ipAddress: "117.200.50.1", status: "Success", userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36"},
     ]
   },
   {
@@ -187,6 +207,7 @@ export default function SellersPage() {
         : undefined,
       verificationDocuments: [], // Placeholder for future document uploads
       averageRating: null, // Default to null or no rating for new sellers
+      loginLogs: [], // New sellers start with no login logs
     };
     setSellersData(prevSellers => [newSeller, ...prevSellers]);
     toast({ title: "Seller Added", description: `${newSeller.businessName} has been added to the local list.` });

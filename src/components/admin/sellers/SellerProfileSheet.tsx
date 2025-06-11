@@ -7,11 +7,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFo
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Mail, Phone, MapPin, Package, BarChart2, DollarSign, Star as StarIconLucide, AlertTriangle, Tag, FileText, Globe, Banknote, UserCheck, XCircle, UserX } from "lucide-react";
+import { Mail, Phone, MapPin, Package, BarChart2, DollarSign, Star as StarIconLucide, AlertTriangle, Tag, FileText, Globe, Banknote, UserCheck, XCircle, UserX, CheckCircle } from "lucide-react";
 import { format, parseISO } from 'date-fns';
 import type { SellerRole } from "@/types/seller-package";
-import type { Seller as SellerData } from "@/app/admin/sellers/page"; // Import Seller type from page
+import type { Seller as SellerData, SellerLoginLog } from "@/app/admin/sellers/page"; // Import Seller type from page
 import { StarRatingDisplay } from "@/components/ui/StarRatingDisplay";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 
 interface SellerProfileSheetProps {
@@ -29,6 +30,18 @@ const statusVariant: Record<SellerData['status'], "default" | "secondary" | "des
   Pending: "outline",
   Approved: "default",
   Rejected: "destructive",
+};
+
+const loginStatusVariant: Record<SellerLoginLog['status'], "default" | "secondary" | "destructive" | "outline"> = {
+  Success: "default",
+  Failed: "destructive",
+  Attempt: "secondary",
+};
+
+const loginStatusIcon: Record<SellerLoginLog['status'], React.ElementType> = {
+    Success: CheckCircle,
+    Failed: XCircle,
+    Attempt: AlertTriangle,
 };
 
 export function SellerProfileSheet({
@@ -50,6 +63,14 @@ export function SellerProfileSheet({
       return format(parseISO(dateString), "PP");
     } catch (error) {
       return format(new Date(dateString), "PP");
+    }
+  };
+  
+  const formatDateTime = (dateString: string) => {
+    try {
+      return format(parseISO(dateString), "PPpp");
+    } catch (error) {
+      return format(new Date(dateString), "PPpp");
     }
   };
 
@@ -195,6 +216,51 @@ export function SellerProfileSheet({
               </div>
             </div>
           )}
+
+          <div>
+            <h3 className="text-lg font-semibold text-foreground mb-2">Recent Login Activity</h3>
+            <Separator className="mb-3"/>
+            {seller.loginLogs && seller.loginLogs.length > 0 ? (
+              <div className="overflow-x-auto">
+                <Table className="min-w-full">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="whitespace-nowrap">Timestamp</TableHead>
+                      <TableHead className="whitespace-nowrap">IP Address</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="whitespace-nowrap">User Agent</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {seller.loginLogs.slice(0, 5).map((log) => {
+                      const StatusIcon = loginStatusIcon[log.status];
+                      return (
+                        <TableRow key={log.id}>
+                          <TableCell className="text-xs whitespace-nowrap">{formatDateTime(log.timestamp)}</TableCell>
+                          <TableCell className="text-xs">{log.ipAddress}</TableCell>
+                          <TableCell>
+                            <Badge 
+                                variant={loginStatusVariant[log.status]}
+                                className={log.status === 'Success' ? 'bg-green-500 hover:bg-green-600 text-white' : ''}
+                            >
+                              <StatusIcon className="mr-1 h-3 w-3" />
+                              {log.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-xs truncate max-w-[150px] sm:max-w-[200px]" title={log.userAgent || undefined}>
+                            {log.userAgent || 'N/A'}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">No recent login activity recorded.</p>
+            )}
+          </div>
+
         </div>
 
         <SheetFooter className="p-6 pt-4 mt-6 border-t flex flex-col sm:flex-row sm:justify-between gap-2">
@@ -228,3 +294,4 @@ export function SellerProfileSheet({
     </Sheet>
   );
 }
+
