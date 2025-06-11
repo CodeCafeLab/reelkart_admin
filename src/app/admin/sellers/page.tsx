@@ -1,4 +1,3 @@
-
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -7,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, UserCheck, UserX, Eye, Store, Download, ArrowUpDown, ArrowUp, ArrowDown, FileText, FileSpreadsheet, Printer, XCircle, Tag } from "lucide-react";
+import { MoreHorizontal, UserCheck, UserX, Eye, Store, Download, ArrowUpDown, ArrowUp, ArrowDown, FileText, FileSpreadsheet, Printer, XCircle, Tag, PlusCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +15,8 @@ import { SellerProfileSheet } from "@/components/admin/sellers/SellerProfileShee
 import type { SellerRole } from "@/types/seller-package";
 import { SELLER_ROLES } from "@/types/seller-package";
 import { ImagePopup } from "@/components/admin/kyc/ImagePopup"; // Re-using ImagePopup
+import { AddSellerSheet, type NewSellerFormData } from "@/components/admin/sellers/AddSellerSheet";
+
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -45,6 +46,8 @@ export interface Seller {
   id: string;
   name: string; // Contact person name
   businessName: string;
+  email?: string; // Added optional email
+  phone?: string; // Added optional phone
   sellerType: SellerRole;
   status: SellerStatus;
   joinedDate: string; // "YYYY-MM-DD"
@@ -56,7 +59,7 @@ export interface Seller {
 
 const initialSellersData: Seller[] = [
   {
-    id: "usr001-sel", name: "Rajesh Kumar", businessName: "RK Electronics", sellerType: "ECommerceSeller", status: "Approved", joinedDate: "2024-06-01",
+    id: "usr001-sel", name: "Rajesh Kumar", businessName: "RK Electronics", email: "rajesh@rkelectronics.com", phone: "9876543210", sellerType: "ECommerceSeller", status: "Approved", joinedDate: "2024-06-01",
     socialMediaProfiles: [{ platform: 'Facebook', link: 'https://facebook.com/rkelectronics' }],
     bankAccountDetails: { accountHolderName: "RK Electronics", accountNumber: "123456789012", ifscCode: "HDFC0000123", bankName: "HDFC Bank" },
     verificationDocuments: [
@@ -65,7 +68,7 @@ const initialSellersData: Seller[] = [
     ]
   },
   {
-    id: "usr002-sel", name: "Anjali Desai", businessName: "Anjali's Artistry", sellerType: "IndividualMerchant", status: "Pending", joinedDate: "2024-07-10",
+    id: "usr002-sel", name: "Anjali Desai", businessName: "Anjali's Artistry", email: "anjali@artistry.com", phone: "9876500000", sellerType: "IndividualMerchant", status: "Pending", joinedDate: "2024-07-10",
     socialMediaProfiles: [{ platform: 'Instagram', link: 'https://instagram.com/anjaliart' }],
     bankAccountDetails: { accountHolderName: "Anjali Desai", accountNumber: "098765432109", ifscCode: "ICIC0000456", bankName: "ICICI Bank" },
     verificationDocuments: [
@@ -178,6 +181,7 @@ export default function SellersPage() {
   const [selectedSeller, setSelectedSeller] = useState<Seller | null>(null);
   const [isImagePopupOpen, setIsImagePopupOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
+  const [isAddSellerSheetOpen, setIsAddSellerSheetOpen] = useState(false);
 
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -186,6 +190,34 @@ export default function SellersPage() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+
+  const handleSellerAdded = (newSellerData: NewSellerFormData) => {
+    const newSeller: Seller = {
+      id: `usr${Date.now()}-sel`,
+      joinedDate: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
+      name: newSellerData.contactName,
+      businessName: newSellerData.businessName,
+      email: newSellerData.email,
+      phone: newSellerData.phone,
+      sellerType: newSellerData.sellerType,
+      status: newSellerData.status,
+      socialMediaProfiles: (newSellerData.socialPlatform && newSellerData.socialLink)
+        ? [{ platform: newSellerData.socialPlatform as SocialMediaProfile['platform'], link: newSellerData.socialLink }]
+        : [],
+      bankAccountDetails: (newSellerData.accountHolderName && newSellerData.accountNumber && newSellerData.ifscCode && newSellerData.bankName)
+        ? {
+            accountHolderName: newSellerData.accountHolderName,
+            accountNumber: newSellerData.accountNumber,
+            ifscCode: newSellerData.ifscCode,
+            bankName: newSellerData.bankName,
+          }
+        : undefined,
+      verificationDocuments: [], // Placeholder for future document uploads
+    };
+    setSellersData(prevSellers => [newSeller, ...prevSellers]);
+    toast({ title: "Seller Added", description: `${newSeller.businessName} has been added to the local list.` });
+    setIsAddSellerSheetOpen(false);
+  };
 
   const processedSellers = useMemo(() => {
     let filteredItems = [...sellersData];
@@ -196,6 +228,8 @@ export default function SellersPage() {
         seller.id.toLowerCase().includes(lowerSearchTerm) ||
         seller.name.toLowerCase().includes(lowerSearchTerm) ||
         seller.businessName.toLowerCase().includes(lowerSearchTerm) ||
+        (seller.email && seller.email.toLowerCase().includes(lowerSearchTerm)) ||
+        (seller.phone && seller.phone.includes(lowerSearchTerm)) ||
         seller.sellerType.toLowerCase().includes(lowerSearchTerm)
       );
     }
@@ -257,7 +291,12 @@ export default function SellersPage() {
     try {
       return format(parseISO(dateString), "PP");
     } catch (error) {
-      return format(new Date(dateString), "PP");
+      // Fallback for dates not in ISO format (e.g., "YYYY-MM-DD" from manual add)
+      try {
+        return format(new Date(dateString), "PP");
+      } catch (secondError) {
+        return dateString; // If still error, return original
+      }
     }
   };
 
@@ -321,7 +360,7 @@ export default function SellersPage() {
 
 
   const handleExportCSV = () => {
-    const headers = ["Seller ID", "Business Name", "Contact Name", "Seller Type", "Joined Date", "Status", "Rejection Reason"];
+    const headers = ["Seller ID", "Business Name", "Contact Name", "Email", "Phone", "Seller Type", "Joined Date", "Status", "Rejection Reason"];
     const csvRows = [
       headers.join(','),
       ...processedSellers.map(seller =>
@@ -329,6 +368,8 @@ export default function SellersPage() {
           seller.id,
           seller.businessName,
           seller.name,
+          seller.email || "",
+          seller.phone || "",
           seller.sellerType,
           formatDateDisplay(seller.joinedDate),
           seller.status,
@@ -357,6 +398,8 @@ export default function SellersPage() {
         "Seller ID": seller.id,
         "Business Name": seller.businessName,
         "Contact Name": seller.name,
+        "Email": seller.email || "",
+        "Phone": seller.phone || "",
         "Seller Type": seller.sellerType,
         "Joined Date": formatDateDisplay(seller.joinedDate),
         "Status": seller.status,
@@ -406,6 +449,9 @@ export default function SellersPage() {
           <h1 className="text-3xl font-bold font-headline">Sellers Management</h1>
           <p className="text-muted-foreground">Manage seller accounts, profiles, and statuses.</p>
         </div>
+        <Button onClick={() => setIsAddSellerSheetOpen(true)}>
+          <PlusCircle className="mr-2 h-4 w-4" /> Add New Seller
+        </Button>
       </div>
 
       <Card>
@@ -637,7 +683,12 @@ export default function SellersPage() {
           imageUrl={selectedImageUrl}
         />
       )}
+
+      <AddSellerSheet 
+        isOpen={isAddSellerSheetOpen}
+        onOpenChange={setIsAddSellerSheetOpen}
+        onSellerAdded={handleSellerAdded}
+      />
     </div>
   );
 }
-
