@@ -8,7 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Edit3 } from "lucide-react";
+import { Edit3, Eye, EyeOff, Loader2, Save } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { useToast } from "@/hooks/use-toast";
 
 // Mock data for admin profile
 const adminProfileData = {
@@ -19,16 +24,69 @@ const adminProfileData = {
   avatarUrl: "https://placehold.co/200x200.png?text=AJ",
 };
 
+// Same hardcoded password as login for mock verification
+const HARDCODED_CURRENT_PASSWORD = "password123";
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "Current password is required."),
+  newPassword: z.string().min(8, "New password must be at least 8 characters long."),
+  confirmPassword: z.string().min(1, "Please confirm your new password."),
+}).refine(data => data.newPassword === data.confirmPassword, {
+  message: "New password and confirm password do not match.",
+  path: ["confirmPassword"],
+});
+
+type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;
+
 export default function ProfilePage() {
   const [lastLogin, setLastLogin] = useState<string>("Loading...");
+  const { toast } = useToast();
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isPasswordChanging, setIsPasswordChanging] = useState(false);
 
   useEffect(() => {
-    // This code runs only on the client after hydration
     setLastLogin(new Date().toLocaleString());
-  }, []); // Empty dependency array ensures this runs once on mount
+  }, []);
+
+  const passwordForm = useForm<ChangePasswordFormValues>({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    },
+  });
+
+  const onPasswordSubmit = async (data: ChangePasswordFormValues) => {
+    setIsPasswordChanging(true);
+    await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+
+    if (data.currentPassword !== HARDCODED_CURRENT_PASSWORD) {
+      passwordForm.setError("currentPassword", {
+        type: "manual",
+        message: "Incorrect current password. Please try again.",
+      });
+      toast({
+        title: "Password Change Failed",
+        description: "Incorrect current password.",
+        variant: "destructive",
+      });
+    } else {
+      // In a real app, you'd send this to your backend to securely change the password.
+      console.log("Mock Password Change Data:", { newPassword: data.newPassword });
+      toast({
+        title: "Password Changed (Mock)",
+        description: "Your password has been successfully updated (simulated).",
+      });
+      passwordForm.reset();
+    }
+    setIsPasswordChanging(false);
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8"> {/* Increased spacing between cards */}
       <h1 className="text-3xl font-bold font-headline">Admin Profile</h1>
       
       <Card className="overflow-hidden">
@@ -85,7 +143,125 @@ export default function ProfilePage() {
                 <p><span className="font-medium text-muted-foreground">Recent Actions:</span> Viewed Dashboard, Approved 2 KYCs.</p>
             </div>
           </div>
-          
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Change Password</CardTitle>
+          <CardDescription>Update your login password. Ensure it's strong and unique.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...passwordForm}>
+            <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className="space-y-6">
+              <FormField
+                control={passwordForm.control}
+                name="currentPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Current Password</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          type={showCurrentPassword ? "text" : "password"}
+                          placeholder="Enter your current password"
+                          {...field}
+                          disabled={isPasswordChanging}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                          className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground hover:text-foreground"
+                          aria-label={showCurrentPassword ? "Hide current password" : "Show current password"}
+                          disabled={isPasswordChanging}
+                        >
+                          {showCurrentPassword ? <EyeOff /> : <Eye />}
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={passwordForm.control}
+                name="newPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>New Password</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input
+                          type={showNewPassword ? "text" : "password"}
+                          placeholder="Enter new password (min. 8 characters)"
+                          {...field}
+                          disabled={isPasswordChanging}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setShowNewPassword(!showNewPassword)}
+                          className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground hover:text-foreground"
+                          aria-label={showNewPassword ? "Hide new password" : "Show new password"}
+                          disabled={isPasswordChanging}
+                        >
+                          {showNewPassword ? <EyeOff /> : <Eye />}
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={passwordForm.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirm New Password</FormLabel>
+                    <FormControl>
+                       <div className="relative">
+                        <Input
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="Re-enter new password"
+                          {...field}
+                          disabled={isPasswordChanging}
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                          className="absolute inset-y-0 right-0 h-full px-3 text-muted-foreground hover:text-foreground"
+                          aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                          disabled={isPasswordChanging}
+                        >
+                          {showConfirmPassword ? <EyeOff /> : <Eye />}
+                        </Button>
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <Button type="submit" className="w-full sm:w-auto" disabled={isPasswordChanging}>
+                {isPasswordChanging ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Changing Password...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Change Password
+                  </>
+                )}
+              </Button>
+            </form>
+          </Form>
         </CardContent>
       </Card>
     </div>
