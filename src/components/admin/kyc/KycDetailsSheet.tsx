@@ -40,11 +40,11 @@ export function KycDetailsSheet({
 
   const currentStatusVariant = statusVariant[kycRequest.status];
 
-  const handleRejectClick = () => {
+  const handleRejectClickInSheet = () => {
     setIsRejectionDialogSheetOpen(true);
   };
 
-  const handleRejectionDialogSubmit = (reason: string) => {
+  const handleRejectionDialogSubmitInSheet = (reason: string) => {
     onReject(kycRequest.id, reason);
     // The dialog itself will call its onOpenChange to close.
     // The main sheet might also close if the status update triggers it in the parent.
@@ -139,7 +139,7 @@ export function KycDetailsSheet({
             <div className="flex gap-2">
               <Button
                 variant="destructive"
-                onClick={handleRejectClick}
+                onClick={handleRejectClickInSheet} // Changed to use the sheet's handler
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
                 <XCircle className="mr-2 h-4 w-4" /> Reject
@@ -157,12 +157,13 @@ export function KycDetailsSheet({
 
       {kycRequest && (
         <KycRejectionDialog
-          isOpen={isRejectionDialogSheetOpen}
-          onOpenChange={setIsRejectionDialogSheetOpen}
-          onSubmitReason={handleRejectionDialogSubmit}
+          isOpen={isRejectionDialogSheetOpen} // Correctly use local state here
+          onOpenChange={setIsRejectionDialogSheetOpen} // Correctly use local state setter here
+          onSubmitReason={handleRejectionDialogSubmitInSheet}
           kycIdToShow={kycRequest.id}
         />
       )}
     </>
   );
 }
+
