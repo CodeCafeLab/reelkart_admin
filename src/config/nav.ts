@@ -1,6 +1,6 @@
 
 import type { LucideIcon } from 'lucide-react';
-import { LayoutDashboard, Users, ShieldCheck, Film, Truck, BrainCircuit, FilePieChart, Settings, LogOut, UserCircle, UserCog, Package, DollarSign } from 'lucide-react';
+import { LayoutDashboard, Users, ShieldCheck, Film, Truck, BrainCircuit, FilePieChart, Settings, LogOut, UserCircle, UserCog, Package, DollarSign, Send } from 'lucide-react';
 
 export interface NavItem {
   label: string;
@@ -18,6 +18,7 @@ export const navItems: NavItem[] = [
   { label: 'Orders Management', href: '/admin/logistics', icon: Truck },
   { label: 'Package Management', href: '/admin/packages', icon: Package },
   { label: 'Revenue Report', href: '/admin/revenue-report', icon: DollarSign },
+  { label: 'Notifications', href: '/admin/notifications', icon: Send },
   { label: 'Third Party Usage Logs', href: '/admin/ai-logs', icon: BrainCircuit },
   { label: 'Reports & Issues', href: '/admin/reports', icon: FilePieChart },
 ];
