@@ -7,10 +7,12 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFo
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Mail, Phone, MapPin, Package, BarChart2, DollarSign, Star, AlertTriangle, Tag, FileText, Globe, Banknote, UserCheck, XCircle, UserX } from "lucide-react";
+import { Mail, Phone, MapPin, Package, BarChart2, DollarSign, Star as StarIconLucide, AlertTriangle, Tag, FileText, Globe, Banknote, UserCheck, XCircle, UserX } from "lucide-react";
 import { format, parseISO } from 'date-fns';
 import type { SellerRole } from "@/types/seller-package";
 import type { Seller as SellerData } from "@/app/admin/sellers/page"; // Import Seller type from page
+import { StarRatingDisplay } from "@/components/ui/StarRatingDisplay";
+
 
 interface SellerProfileSheetProps {
   isOpen: boolean;
@@ -105,6 +107,11 @@ export function SellerProfileSheet({
                 <span className="text-muted-foreground">Joined:</span>
                 <span>{formatDate(seller.joinedDate)}</span>
             </div>
+            <div className="flex items-center gap-1">
+                <StarIconLucide className="h-4 w-4 text-muted-foreground" />
+                <span className="text-muted-foreground">Rating:</span>
+                <StarRatingDisplay rating={seller.averageRating} starSize="h-3.5 w-3.5" />
+            </div>
           </div>
            {seller.status === "Rejected" && seller.rejectionReason && (
              <div className="mt-2 flex items-start gap-2 text-sm text-destructive bg-destructive/10 p-2 rounded-md">
@@ -122,8 +129,8 @@ export function SellerProfileSheet({
             <h3 className="text-lg font-semibold text-foreground mb-2">Contact Information</h3>
             <Separator className="mb-3"/>
             <div className="space-y-2 text-sm">
-              <p className="flex items-center gap-2"><Mail className="h-4 w-4 text-muted-foreground"/> contact@{seller.businessName.toLowerCase().replace(/\s+/g, '')}.com (mock)</p>
-              <p className="flex items-center gap-2"><Phone className="h-4 w-4 text-muted-foreground"/> +91 98765 XXXXX (mock)</p>
+              <p className="flex items-center gap-2"><Mail className="h-4 w-4 text-muted-foreground"/> {seller.email || "N/A"}</p>
+              <p className="flex items-center gap-2"><Phone className="h-4 w-4 text-muted-foreground"/> {seller.phone || "N/A"}</p>
               <p className="flex items-center gap-2"><MapPin className="h-4 w-4 text-muted-foreground"/> 123 Business Rd, Seller City, India (mock)</p>
             </div>
           </div>
@@ -188,17 +195,6 @@ export function SellerProfileSheet({
               </div>
             </div>
           )}
-
-          {/* Mock Performance Data - Kept from previous version */}
-          <div>
-            <h3 className="text-lg font-semibold text-foreground mb-2">Performance (Mock Data)</h3>
-            <Separator className="mb-3"/>
-            <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                <p className="flex items-center gap-1"><BarChart2 className="h-4 w-4 text-muted-foreground" /> <span className="font-medium text-muted-foreground">Total Products:</span> 75</p>
-                <p className="flex items-center gap-1"><DollarSign className="h-4 w-4 text-muted-foreground" /> <span className="font-medium text-muted-foreground">Total Sales:</span> ₹1,25,000</p>
-                <p className="flex items-center gap-1"><Star className="h-4 w-4 text-muted-foreground" /> <span className="font-medium text-muted-foreground">Avg. Rating:</span> 4.5</p>
-            </div>
-          </div>
         </div>
 
         <SheetFooter className="p-6 pt-4 mt-6 border-t flex flex-col sm:flex-row sm:justify-between gap-2">
@@ -232,4 +228,3 @@ export function SellerProfileSheet({
     </Sheet>
   );
 }
-

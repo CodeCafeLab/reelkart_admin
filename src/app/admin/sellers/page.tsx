@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -6,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, UserCheck, UserX, Eye, Store, Download, ArrowUpDown, ArrowUp, ArrowDown, FileText, FileSpreadsheet, Printer, XCircle, Tag, PlusCircle } from "lucide-react";
+import { MoreHorizontal, UserCheck, UserX, Eye, Store, Download, ArrowUpDown, ArrowUp, ArrowDown, FileText, FileSpreadsheet, Printer, XCircle, Tag, PlusCircle, Star as StarIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -16,6 +17,7 @@ import type { SellerRole } from "@/types/seller-package";
 import { SELLER_ROLES } from "@/types/seller-package";
 import { ImagePopup } from "@/components/admin/kyc/ImagePopup"; // Re-using ImagePopup
 import { AddSellerSheet, type NewSellerFormData } from "@/components/admin/sellers/AddSellerSheet";
+import { StarRatingDisplay } from "@/components/ui/StarRatingDisplay";
 
 
 import jsPDF from 'jspdf';
@@ -55,11 +57,12 @@ export interface Seller {
   socialMediaProfiles?: SocialMediaProfile[];
   bankAccountDetails?: BankAccountDetails;
   verificationDocuments?: SellerDocument[];
+  averageRating?: number | null; // 0-5, can be null or undefined
 }
 
 const initialSellersData: Seller[] = [
   {
-    id: "usr001-sel", name: "Rajesh Kumar", businessName: "RK Electronics", email: "rajesh@rkelectronics.com", phone: "9876543210", sellerType: "ECommerceSeller", status: "Approved", joinedDate: "2024-06-01",
+    id: "usr001-sel", name: "Rajesh Kumar", businessName: "RK Electronics", email: "rajesh@rkelectronics.com", phone: "9876543210", sellerType: "ECommerceSeller", status: "Approved", joinedDate: "2024-06-01", averageRating: 4.5,
     socialMediaProfiles: [{ platform: 'Facebook', link: 'https://facebook.com/rkelectronics' }],
     bankAccountDetails: { accountHolderName: "RK Electronics", accountNumber: "123456789012", ifscCode: "HDFC0000123", bankName: "HDFC Bank" },
     verificationDocuments: [
@@ -68,7 +71,7 @@ const initialSellersData: Seller[] = [
     ]
   },
   {
-    id: "usr002-sel", name: "Anjali Desai", businessName: "Anjali's Artistry", email: "anjali@artistry.com", phone: "9876500000", sellerType: "IndividualMerchant", status: "Pending", joinedDate: "2024-07-10",
+    id: "usr002-sel", name: "Anjali Desai", businessName: "Anjali's Artistry", email: "anjali@artistry.com", phone: "9876500000", sellerType: "IndividualMerchant", status: "Pending", joinedDate: "2024-07-10", averageRating: null,
     socialMediaProfiles: [{ platform: 'Instagram', link: 'https://instagram.com/anjaliart' }],
     bankAccountDetails: { accountHolderName: "Anjali Desai", accountNumber: "098765432109", ifscCode: "ICIC0000456", bankName: "ICICI Bank" },
     verificationDocuments: [
@@ -77,14 +80,14 @@ const initialSellersData: Seller[] = [
     ]
   },
   {
-    id: "usr003-sel", name: "Mohammed Khan", businessName: "Khan's Spices", sellerType: "ECommerceSeller", status: "Approved", joinedDate: "2024-05-15",
+    id: "usr003-sel", name: "Mohammed Khan", businessName: "Khan's Spices", sellerType: "ECommerceSeller", status: "Approved", joinedDate: "2024-05-15", averageRating: 3.8,
     bankAccountDetails: { accountHolderName: "Mohammed Khan", accountNumber: "112233445566", ifscCode: "SBIN0000789", bankName: "State Bank of India" },
     verificationDocuments: [
       { name: "GST Certificate", url: "https://placehold.co/600x400.png?text=GST+Spices", aiHint: "tax registration" }
     ]
   },
   {
-    id: "usr004-sel", name: "Priya Singh", businessName: "Fashion Forward", sellerType: "Influencer", status: "Rejected", joinedDate: "2024-07-01", rejectionReason: "Incomplete documentation",
+    id: "usr004-sel", name: "Priya Singh", businessName: "Fashion Forward", sellerType: "Influencer", status: "Rejected", joinedDate: "2024-07-01", rejectionReason: "Incomplete documentation", averageRating: 2.1,
     socialMediaProfiles: [{ platform: 'YouTube', link: 'https://youtube.com/fashionforwardpriya' }],
     verificationDocuments: [
       { name: "Aadhaar Card - Front", url: "https://placehold.co/600x400.png?text=Aadhaar+Priya+F", aiHint: "identity document" },
@@ -92,13 +95,13 @@ const initialSellersData: Seller[] = [
     ]
   },
   {
-    id: "usr005-sel", name: "Amit Patel", businessName: "Patel's Organics", sellerType: "OnlineSeller", status: "Pending", joinedDate: "2024-07-18",
+    id: "usr005-sel", name: "Amit Patel", businessName: "Patel's Organics", sellerType: "OnlineSeller", status: "Pending", joinedDate: "2024-07-18", averageRating: 4.9,
     verificationDocuments: [
         { name: "GST Certificate (Optional for OnlineSeller)", url: "https://placehold.co/600x400.png?text=GST+Patel", aiHint: "tax registration" }
     ]
   },
   {
-    id: "usr006-sel", name: "Sneha Iyer", businessName: "Iyer Books", sellerType: "ECommerceSeller", status: "Approved", joinedDate: "2024-04-20",
+    id: "usr006-sel", name: "Sneha Iyer", businessName: "Iyer Books", sellerType: "ECommerceSeller", status: "Approved", joinedDate: "2024-04-20", averageRating: 4.2,
     verificationDocuments: [
       { name: "GST Certificate", url: "https://placehold.co/600x400.png?text=GST+IyerBooks", aiHint: "tax registration" }
     ]
@@ -112,14 +115,14 @@ const initialSellersData: Seller[] = [
     ]
   },
   {
-    id: "usr008-sel", name: "Deepa Sharma", businessName: "Sharma Decor", sellerType: "IndividualMerchant", status: "Rejected", joinedDate: "2024-06-10", rejectionReason: "Business not verifiable",
+    id: "usr008-sel", name: "Deepa Sharma", businessName: "Sharma Decor", sellerType: "IndividualMerchant", status: "Rejected", joinedDate: "2024-06-10", rejectionReason: "Business not verifiable", averageRating: 1.5,
     verificationDocuments: [
       { name: "Aadhaar Card - Front", url: "https://placehold.co/600x400.png?text=Aadhaar+Deepa+F", aiHint: "identity document" },
       { name: "Aadhaar Card - Back", url: "https://placehold.co/600x400.png?text=Aadhaar+Deepa+B", aiHint: "identity document" }
     ]
   },
   {
-    id: "usr009-sel", name: "Arjun Mehra", businessName: "Mehra Fitness", sellerType: "Influencer", status: "Approved", joinedDate: "2024-03-01",
+    id: "usr009-sel", name: "Arjun Mehra", businessName: "Mehra Fitness", sellerType: "Influencer", status: "Approved", joinedDate: "2024-03-01", averageRating: 5.0,
     socialMediaProfiles: [{ platform: 'Instagram', link: 'https://instagram.com/mehrafitness' }, { platform: 'YouTube', link: 'https://youtube.com/mehrafit' }],
     verificationDocuments: [
       { name: "Aadhaar Card - Front", url: "https://placehold.co/600x400.png?text=Aadhaar+Arjun+F", aiHint: "identity document" },
@@ -127,40 +130,10 @@ const initialSellersData: Seller[] = [
     ]
   },
   {
-    id: "usr010-sel", name: "Meena Kumari", businessName: "Kumari Crafts", sellerType: "IndividualMerchant", status: "Pending", joinedDate: "2024-07-22",
+    id: "usr010-sel", name: "Meena Kumari", businessName: "Kumari Crafts", sellerType: "IndividualMerchant", status: "Pending", joinedDate: "2024-07-22", averageRating: 3.2,
     verificationDocuments: [
       { name: "Aadhaar Card - Front", url: "https://placehold.co/600x400.png?text=Aadhaar+Meena+F", aiHint: "identity document" },
       { name: "Aadhaar Card - Back", url: "https://placehold.co/600x400.png?text=Aadhaar+Meena+B", aiHint: "identity document" }
-    ]
-  },
-  {
-    id: "usr011-sel", name: "Ravi Shankar", businessName: "Shankar Sounds", sellerType: "ECommerceSeller", status: "Approved", joinedDate: "2024-02-15",
-    verificationDocuments: [
-        { name: "GST Certificate", url: "https://placehold.co/600x400.png?text=GST+ShankarSounds", aiHint: "tax registration" }
-    ]
-  },
-  {
-    id: "usr012-sel", name: "Kavita Nair", businessName: "Nair Apparel", sellerType: "OnlineSeller", status: "Rejected", joinedDate: "2024-05-05", rejectionReason: "Policy violation"
-  },
-  {
-    id: "usr013-sel", name: "Sunil Gupta", businessName: "Gupta Groceries", sellerType: "Wholesaler", status: "Pending", joinedDate: "2024-07-25",
-    verificationDocuments: [
-      { name: "GST Certificate", url: "https://placehold.co/600x400.png?text=GST+GuptaGroc", aiHint: "tax registration" },
-      { name: "Trade Registration Certificate", url: "https://placehold.co/600x400.png?text=Trade+Cert+Gupta", aiHint: "business license" }
-    ]
-  },
-  {
-    id: "usr014-sel", name: "Pooja Reddy", businessName: "Reddy Beauty", sellerType: "Celebrity", status: "Approved", joinedDate: "2024-01-10",
-    socialMediaProfiles: [{platform: 'Instagram', link: 'https://instagram.com/realpoojareddy'}],
-    verificationDocuments: [
-      { name: "Celebrity Proof Document", url: "https://placehold.co/600x400.png?text=CelebProof+Pooja", aiHint: "proof identity" }
-    ]
-  },
-  {
-    id: "usr015-sel", name: "Imran Ali", businessName: "Ali Auto", sellerType: "Affiliator", status: "Pending", joinedDate: "2024-07-28",
-    verificationDocuments: [
-      { name: "Aadhaar Card - Front", url: "https://placehold.co/600x400.png?text=Aadhaar+Imran+F", aiHint: "identity document" },
-      { name: "Aadhaar Card - Back", url: "https://placehold.co/600x400.png?text=Aadhaar+Imran+B", aiHint: "identity document" }
     ]
   },
 ];
@@ -213,6 +186,7 @@ export default function SellersPage() {
           }
         : undefined,
       verificationDocuments: [], // Placeholder for future document uploads
+      averageRating: null, // Default to null or no rating for new sellers
     };
     setSellersData(prevSellers => [newSeller, ...prevSellers]);
     toast({ title: "Seller Added", description: `${newSeller.businessName} has been added to the local list.` });
@@ -246,6 +220,9 @@ export default function SellersPage() {
         if (sortConfig.key === 'joinedDate') {
           valA = new Date(valA as string).getTime();
           valB = new Date(valB as string).getTime();
+        } else if (sortConfig.key === 'averageRating') {
+          valA = typeof valA === 'number' ? valA : -1; // Treat null/undefined ratings as -1 for sorting
+          valB = typeof valB === 'number' ? valB : -1;
         } else if (typeof valA === 'string' && typeof valB === 'string') {
           valA = valA.toLowerCase();
           valB = valB.toLowerCase();
@@ -360,7 +337,7 @@ export default function SellersPage() {
 
 
   const handleExportCSV = () => {
-    const headers = ["Seller ID", "Business Name", "Contact Name", "Email", "Phone", "Seller Type", "Joined Date", "Status", "Rejection Reason"];
+    const headers = ["Seller ID", "Business Name", "Contact Name", "Email", "Phone", "Seller Type", "Joined Date", "Status", "Rejection Reason", "Average Rating"];
     const csvRows = [
       headers.join(','),
       ...processedSellers.map(seller =>
@@ -373,7 +350,8 @@ export default function SellersPage() {
           seller.sellerType,
           formatDateDisplay(seller.joinedDate),
           seller.status,
-          seller.rejectionReason || ""
+          seller.rejectionReason || "",
+          seller.averageRating !== null && seller.averageRating !== undefined ? seller.averageRating.toFixed(1) : "N/A"
         ].map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')
       )
     ];
@@ -403,7 +381,8 @@ export default function SellersPage() {
         "Seller Type": seller.sellerType,
         "Joined Date": formatDateDisplay(seller.joinedDate),
         "Status": seller.status,
-        "Rejection Reason": seller.rejectionReason || ""
+        "Rejection Reason": seller.rejectionReason || "",
+        "Average Rating": seller.averageRating !== null && seller.averageRating !== undefined ? seller.averageRating.toFixed(1) : "N/A"
       }));
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
     const workbook = XLSX.utils.book_new();
@@ -414,7 +393,7 @@ export default function SellersPage() {
 
   const handleExportPDF = () => {
     const doc = new jsPDF();
-    const tableColumn = ["ID", "Business Name", "Contact Name", "Seller Type", "Joined Date", "Status", "Reason"];
+    const tableColumn = ["ID", "Business Name", "Contact Name", "Seller Type", "Joined Date", "Status", "Reason", "Rating"];
     const tableRows: (string | number)[][] = [];
 
     processedSellers.forEach(seller => {
@@ -425,7 +404,8 @@ export default function SellersPage() {
         seller.sellerType,
         formatDateDisplay(seller.joinedDate),
         seller.status,
-        seller.rejectionReason || ""
+        seller.rejectionReason || "",
+        seller.averageRating !== null && seller.averageRating !== undefined ? seller.averageRating.toFixed(1) : "N/A"
       ];
       tableRows.push(sellerData);
     });
@@ -516,6 +496,9 @@ export default function SellersPage() {
                 <TableHead onClick={() => handleSort('sellerType')} className="cursor-pointer hover:bg-muted/50 group">
                   <div className="flex items-center gap-1"><Tag className="h-4 w-4 text-muted-foreground mr-1" />Seller Type {renderSortIcon('sellerType')}</div>
                 </TableHead>
+                <TableHead onClick={() => handleSort('averageRating')} className="cursor-pointer hover:bg-muted/50 group">
+                  <div className="flex items-center gap-1"><StarIcon className="h-4 w-4 text-muted-foreground mr-1" />Avg. Rating {renderSortIcon('averageRating')}</div>
+                </TableHead>
                 <TableHead onClick={() => handleSort('joinedDate')} className="cursor-pointer hover:bg-muted/50 group">
                   <div className="flex items-center gap-1">Joined Date {renderSortIcon('joinedDate')}</div>
                 </TableHead>
@@ -545,6 +528,9 @@ export default function SellersPage() {
                     <TableCell>{seller.name}</TableCell>
                     <TableCell>
                       <Badge variant="secondary">{seller.sellerType.replace(/([A-Z])/g, ' $1').trim()}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <StarRatingDisplay rating={seller.averageRating} />
                     </TableCell>
                     <TableCell>{formatDateDisplay(seller.joinedDate)}</TableCell>
                     <TableCell>
@@ -611,7 +597,7 @@ export default function SellersPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center h-24 text-muted-foreground">
                     No sellers found matching your criteria.
                   </TableCell>
                 </TableRow>
@@ -692,3 +678,4 @@ export default function SellersPage() {
     </div>
   );
 }
+
