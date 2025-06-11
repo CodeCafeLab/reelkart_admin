@@ -8,10 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DollarSign, Cog, Puzzle, Truck, Share2, AlertTriangle, Save, Settings as SettingsIcon, ShieldCheck } from "lucide-react";
-import React from "react";
+import { DollarSign, Cog, Puzzle, Truck, Share2, AlertTriangle, Save, Settings as SettingsIcon, ShieldCheck, ListChecks } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useAppSettings } from "@/contexts/AppSettingsContext";
 import { useToast } from "@/hooks/use-toast";
+import type { SellerRole } from "@/types/seller-package";
+import { SELLER_ROLES } from "@/types/seller-package";
+import { Separator } from "@/components/ui/separator";
 
 
 export default function SettingsPage() {
@@ -22,7 +25,15 @@ export default function SettingsPage() {
   const [platformName, setPlatformName] = React.useState("ReelKart Admin");
   const [logoUrl, setLogoUrl] = React.useState("");
   const [autoApproveSellers, setAutoApproveSellers] = React.useState(false);
-  const [autoApproveKYC, setAutoApproveKYC] = React.useState(false); // New state for KYC approval
+  
+  // KYC Settings
+  const [autoApproveKYCGlobal, setAutoApproveKYCGlobal] = React.useState(false); 
+  const initialSellerKycSettings = SELLER_ROLES.reduce((acc, role) => {
+    acc[role] = true; // Default to true, meaning auto-approve if global is on
+    return acc;
+  }, {} as Record<SellerRole, boolean>);
+  const [kycSettingsBySellerType, setKycSettingsBySellerType] = useState<Record<SellerRole, boolean>>(initialSellerKycSettings);
+
   const [currencyCode, setCurrencyCode] = React.useState(appSettings.currencyCode);
   const [currencySymbol, setCurrencySymbol] = React.useState(appSettings.currencySymbol);
   
@@ -53,14 +64,26 @@ export default function SettingsPage() {
     setCurrencySymbol(appSettings.currencySymbol);
   }, [appSettings]);
 
+  const handleSellerTypeKycChange = (role: SellerRole, checked: boolean) => {
+    setKycSettingsBySellerType(prev => ({ ...prev, [role]: checked }));
+  };
+
   const handleSaveSettings = (category: string) => {
     let settingsToSave: any = {};
     let toastMessage = `${category} settings saved!`;
 
     if (category === "General") {
-      settingsToSave = { platformName, logoUrl, autoApproveSellers, autoApproveKYC, currencyCode, currencySymbol };
+      settingsToSave = { 
+        platformName, 
+        logoUrl, 
+        autoApproveSellers, 
+        autoApproveKYCGlobal, 
+        kycSettingsBySellerType: autoApproveKYCGlobal ? kycSettingsBySellerType : "Global KYC Auto-Approval is OFF",
+        currencyCode, 
+        currencySymbol 
+      };
       setAppSettings({ currencyCode, currencySymbol });
-      toastMessage = "General settings (including currency & approvals) saved!";
+      toastMessage = "General settings (including currency & KYC approvals) saved!";
     } else if (category === "Commissions") {
       settingsToSave = { defaultCommission };
     } else if (category === "Integrations") {
@@ -75,8 +98,8 @@ export default function SettingsPage() {
     
     console.log(`Saving settings for ${category}:`, settingsToSave);
     toast({
-        title: "Settings Updated",
-        description: toastMessage,
+        title: "Settings Updated (Local)",
+        description: `${toastMessage} (Data logged to console, not persisted.)`,
     });
   };
 
@@ -129,15 +152,45 @@ export default function SettingsPage() {
                 </div>
                 <Switch id="auto-approve-sellers" checked={autoApproveSellers} onCheckedChange={setAutoApproveSellers} />
               </div>
-              <div className="flex items-center justify-between rounded-lg border p-4">
-                <div>
-                  <Label htmlFor="auto-approve-kyc" className="font-medium flex items-center">
-                    <ShieldCheck className="mr-2 h-4 w-4 text-primary" /> Automatic KYC Approval
-                  </Label>
-                  <p className="text-sm text-muted-foreground">Automatically approve new KYC submissions.</p>
+              
+              <Separator />
+              
+              <div>
+                <h4 className="text-md font-medium mb-3 text-foreground flex items-center"><ShieldCheck className="mr-2 h-5 w-5 text-primary"/>KYC Approval Settings</h4>
+                <div className="flex items-center justify-between rounded-lg border p-4 mb-4">
+                  <div>
+                    <Label htmlFor="auto-approve-kyc-global" className="font-medium">Enable Global Automatic KYC Approval</Label>
+                    <p className="text-sm text-muted-foreground">Master switch to enable/disable auto KYC approval for all types.</p>
+                  </div>
+                  <Switch id="auto-approve-kyc-global" checked={autoApproveKYCGlobal} onCheckedChange={setAutoApproveKYCGlobal} />
                 </div>
-                <Switch id="auto-approve-kyc" checked={autoApproveKYC} onCheckedChange={setAutoApproveKYC} />
+
+                {autoApproveKYCGlobal && (
+                  <Card className="bg-muted/30 p-4">
+                    <CardHeader className="p-0 pb-3">
+                      <CardTitle className="text-base flex items-center"><ListChecks className="mr-2 h-5 w-5"/>Customize by Seller Type</CardTitle>
+                      <CardDescription className="text-sm">
+                        Fine-tune automatic KYC approval for specific seller roles. These settings apply only if global auto-approval is enabled.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="p-0 space-y-3">
+                      {SELLER_ROLES.map((role) => (
+                        <div key={role} className="flex items-center justify-between rounded-md border bg-background p-3 shadow-sm">
+                          <Label htmlFor={`kyc-type-${role}`} className="text-sm font-normal">
+                            {role.replace(/([A-Z])/g, ' $1').trim()}
+                          </Label>
+                          <Switch
+                            id={`kyc-type-${role}`}
+                            checked={kycSettingsBySellerType[role] ?? true} // Default to true if undefined
+                            onCheckedChange={(checked) => handleSellerTypeKycChange(role, checked)}
+                          />
+                        </div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                )}
               </div>
+              
               <Button onClick={() => handleSaveSettings("General")}><Save className="mr-2 h-4 w-4" />Save General Settings</Button>
             </CardContent>
           </Card>
@@ -270,3 +323,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+
