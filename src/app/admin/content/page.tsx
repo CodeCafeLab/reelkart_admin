@@ -15,44 +15,14 @@ import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format, parseISO } from 'date-fns';
+import type { ContentItem, FlagType, ContentStatus, SortableContentKeys } from "@/types/content-moderation";
+import { FLAG_TYPES } from "@/types/content-moderation";
+
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
-// Define Flag Types
-export const FLAG_TYPES = [
-  "Nudity or Sexual Content",
-  "Hate Speech or Symbols",
-  "Violent or Graphic Content",
-  "Harassment or Bullying",
-  "Misinformation",
-  "Copyright Infringement",
-  "Spam or Scams",
-  "Illegal Activities",
-  "Other Violation"
-] as const;
-export type FlagType = typeof FLAG_TYPES[number];
-
-export interface FlagDetails {
-  type: FlagType;
-  reason?: string;
-  flaggedAt: string; // ISO Date
-}
-
-export interface ContentItem {
-  id: string;
-  type: "Video" | "Description";
-  title: string;
-  uploader: string;
-  date: string; // "YYYY-MM-DDTHH:mm:ssZ"
-  status: ContentStatus;
-  reason?: string;
-  thumbnailUrl?: string; // For videos
-  descriptionText?: string; // For descriptions
-  videoUrl?: string; // For video playback
-  flagDetails?: FlagDetails; // Added for flagging
-}
 
 const initialContentItems: ContentItem[] = [
   { id: "vid001", type: "Video", title: "Amazing Product Demo", uploader: "SellerStore A", date: "2024-07-18T10:30:00Z", status: "Pending", thumbnailUrl: `https://placehold.co/300x200.png?text=Vid+Demo`, videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4" },
@@ -61,9 +31,6 @@ const initialContentItems: ContentItem[] = [
   { id: "dsc002", type: "Description", title: "Organic Green Tea", uploader: "HealthyLiving", date: "2024-07-19T09:00:00Z", status: "Pending", descriptionText: "Experience the refreshing taste of our 100% organic green tea, sourced from the finest tea gardens. Rich in antioxidants." },
   { id: "vid003", type: "Video", title: "DIY Home Decor Ideas", uploader: "CreativeHome", date: "2024-07-15T14:30:00Z", status: "Approved", thumbnailUrl: `https://placehold.co/300x200.png?text=DIY+Decor`, videoUrl: "https://download.blender.org/peach/trailer/trailer_480p.mov" },
 ];
-
-export type ContentStatus = "Pending" | "Approved" | "Rejected";
-export type SortableContentKeys = keyof Pick<ContentItem, 'id' | 'title' | 'uploader' | 'date' | 'status'>;
 
 
 const statusVariant: Record<ContentStatus, "default" | "secondary" | "destructive" | "outline"> = {
@@ -112,7 +79,7 @@ export default function ContentPage() {
   const handleRejectContent = (itemId: string, reason?: string) => {
     const finalReason = reason?.trim() === "" || !reason ? "Violation of guidelines" : reason;
     setContentItems(prev => prev.map(item => item.id === itemId ? { ...item, status: "Rejected" as ContentStatus, reason: finalReason, flagDetails: undefined } : item));
-    setSelectedVideoForPreview(prev => prev && prev.id === itemId ? { ...prev, status: "Rejected" as ContentStatus, reason: finalReason, flagDetails: undefined } : prev);
+    setSelectedVideoForPreview(prev => prev && prev.id === itemId ? { ...prev, status: "Rejected"as ContentStatus, reason: finalReason, flagDetails: undefined } : prev);
     toast({ title: "Content Rejected", description: `Content item ${itemId} has been rejected. Reason: ${finalReason}`, variant: "destructive" });
     if (selectedVideoForPreview?.id === itemId) setIsVideoPreviewOpen(false);
   };
@@ -128,22 +95,23 @@ export default function ContentPage() {
   };
 
   const handleConfirmFlag = (contentId: string, flagType: FlagType, reason?: string) => {
-    setContentItems(prev =>
-      prev.map(item =>
+    setContentItems(prevItems =>
+      prevItems.map(item =>
         item.id === contentId
           ? {
               ...item,
-              status: item.status === "Rejected" ? "Rejected" : "Pending", // Keep rejected status if already rejected, otherwise pending
+              status: item.status === "Rejected" ? "Rejected" : "Pending", 
               flagDetails: { type: flagType, reason: reason || "N/A", flaggedAt: new Date().toISOString() },
             }
           : item
       )
     );
-    // Find the updated item to correctly report its status
-    const updatedItem = contentItems.find(ci => ci.id === contentId);
-    const finalStatus = updatedItem?.status === "Rejected" ? "Rejected" : "Pending";
+  
+    const updatedItem = contentItems.find(ci => ci.id === contentId); // Find item before state update for accurate status report
+    const finalStatus = updatedItem && updatedItem.status === "Rejected" ? "Rejected" : "Pending";
 
-    toast({ title: "Content Flagged", description: `Item ${contentId} flagged as ${flagType}. Status set to ${finalStatus}.` });
+
+    toast({ title: "Content Flagged", description: `Item ${contentId} flagged as ${flagType}. Status: ${finalStatus}.` });
     setIsFlagDialogOpen(false);
     setItemToFlag(null);
   };

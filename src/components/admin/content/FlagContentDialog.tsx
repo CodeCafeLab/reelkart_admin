@@ -18,8 +18,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import type { ContentItem, FlagType } from "@/app/admin/content/page"; // Import FlagType
-import { FLAG_TYPES } from "@/app/admin/content/page"; // Import FLAG_TYPES
+import type { ContentItem, FlagType } from "@/types/content-moderation";
+import { FLAG_TYPES } from "@/types/content-moderation";
 
 interface FlagContentDialogProps {
   isOpen: boolean;
