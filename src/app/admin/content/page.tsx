@@ -404,22 +404,20 @@ function ContentActions({ item, onViewDetails, onApprove, onReject, onFlag }: Co
         <DropdownMenuItem onClick={() => onViewDetails(item)}>
           <Eye className="mr-2 h-4 w-4" /> View Content
         </DropdownMenuItem>
-        {item.status === "Pending" && (
-          <>
-            <DropdownMenuItem 
-              className="text-green-600 focus:text-green-700 focus:bg-green-50"
-              onClick={() => onApprove(item.id)}
-            >
-              <ThumbsUp className="mr-2 h-4 w-4" /> Approve
-            </DropdownMenuItem>
-            <DropdownMenuItem 
-              className="text-red-600 focus:text-red-700 focus:bg-red-50"
-              onClick={handleRejectWithPrompt}
-            >
-              <ThumbsDown className="mr-2 h-4 w-4" /> Reject
-            </DropdownMenuItem>
-          </>
-        )}
+        <DropdownMenuItem 
+          className="text-green-600 focus:text-green-700 focus:bg-green-50"
+          onClick={() => onApprove(item.id)}
+          disabled={item.status === "Approved"}
+        >
+          <ThumbsUp className="mr-2 h-4 w-4" /> Approve
+        </DropdownMenuItem>
+        <DropdownMenuItem 
+          className="text-red-600 focus:text-red-700 focus:bg-red-50"
+          onClick={handleRejectWithPrompt}
+          disabled={item.status === "Rejected"}
+        >
+          <ThumbsDown className="mr-2 h-4 w-4" /> Reject
+        </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onFlag(item.id)}>
           <Flag className="mr-2 h-4 w-4" /> Flag Content
         </DropdownMenuItem>
@@ -427,4 +425,5 @@ function ContentActions({ item, onViewDetails, onApprove, onReject, onFlag }: Co
     </DropdownMenu>
   );
 }
+
 
