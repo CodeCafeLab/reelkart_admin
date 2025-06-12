@@ -13,13 +13,13 @@ export interface NavItem {
 export const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
   { label: 'KYC Management', href: '/admin/kyc', icon: ShieldCheck },
-  { label: 'Users Management', href: '/admin/users', icon: UserCircle }, // Added Users Management
+  { label: 'Users Management', href: '/admin/users', icon: UserCircle }, 
   { label: 'Sellers Management', href: '/admin/sellers', icon: Users },
   { label: 'Content Management', href: '/admin/content', icon: Film },
   { label: 'Orders Management', href: '/admin/logistics', icon: Truck },
   { label: 'Package Management', href: '/admin/packages', icon: Package },
   { label: 'Revenue Report', href: '/admin/revenue-report', icon: DollarSign },
-  { label: 'Notifications', href: '/admin/notifications', icon: Send },
+  { label: 'Broadcast Messages', href: '/admin/broadcast-messages', icon: Send },
   { label: 'Third Party Usage Logs', href: '/admin/ai-logs', icon: BrainCircuit },
   { label: 'Reports & Issues', href: '/admin/reports', icon: FilePieChart },
 ];
