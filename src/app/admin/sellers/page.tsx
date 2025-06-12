@@ -356,6 +356,21 @@ export default function SellersPage() {
     if(selectedSeller?.id === sellerId && isProfileSheetOpen) setIsProfileSheetOpen(false);
   };
 
+  const handleUpdateSellerRating = (sellerId: string, newRating: number) => {
+    setSellersData(prevSellers =>
+      prevSellers.map(s =>
+        s.id === sellerId ? { ...s, averageRating: newRating } : s
+      )
+    );
+    if (selectedSeller && selectedSeller.id === sellerId) {
+      setSelectedSeller(prev => prev ? { ...prev, averageRating: newRating } : null);
+    }
+    toast({
+      title: "Seller Rating Updated",
+      description: `Rating for seller ${sellerId} updated to ${newRating.toFixed(1)} stars.`,
+    });
+  };
+
 
   const handleExportCSV = () => {
     const headers = ["Seller ID", "Business Name", "Contact Name", "Email", "Phone", "Seller Type", "Joined Date", "Status", "Rejection Reason", "Average Rating"];
@@ -680,6 +695,7 @@ export default function SellersPage() {
           onReject={handleDeclineApplication}
           onSuspend={handleSuspendSellerRole}
           onReactivate={handleReactivateSeller}
+          onUpdateRating={handleUpdateSellerRating}
         />
       )}
 

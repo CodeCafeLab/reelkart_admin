@@ -2,17 +2,21 @@
 "use client";
 
 import NextImage from "next/image"; // Renamed to avoid conflict with local Image
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter, SheetClose } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Mail, Phone, MapPin, Package, BarChart2, DollarSign, Star as StarIconLucide, AlertTriangle, Tag, FileText, Globe, Banknote, UserCheck, XCircle, UserX, CheckCircle } from "lucide-react";
+import { Mail, Phone, MapPin, Package, BarChart2, DollarSign, Star as StarIconLucide, AlertTriangle, Tag, FileText, Globe, Banknote, UserCheck, XCircle, UserX, CheckCircle, Edit2, Save } from "lucide-react";
 import { format, parseISO } from 'date-fns';
 import type { SellerRole } from "@/types/seller-package";
 import type { Seller as SellerData, SellerLoginLog } from "@/app/admin/sellers/page"; // Import Seller type from page
 import { StarRatingDisplay } from "@/components/ui/StarRatingDisplay";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
 
 
 interface SellerProfileSheetProps {
@@ -21,9 +25,10 @@ interface SellerProfileSheetProps {
   seller: SellerData | null;
   onOpenImagePopup: (imageUrl: string) => void;
   onApprove: (sellerId: string) => void;
-  onReject: (sellerId: string) => void; // Rejection implies prompting for reason is handled by caller
-  onSuspend: (sellerId: string) => void; // Suspension implies prompting for reason is handled by caller
+  onReject: (sellerId: string) => void; 
+  onSuspend: (sellerId: string) => void; 
   onReactivate: (sellerId: string) => void;
+  onUpdateRating: (sellerId: string, newRating: number) => void;
 }
 
 const statusVariant: Record<SellerData['status'], "default" | "secondary" | "destructive" | "outline"> = {
@@ -52,8 +57,20 @@ export function SellerProfileSheet({
   onApprove,
   onReject,
   onSuspend,
-  onReactivate
+  onReactivate,
+  onUpdateRating,
 }: SellerProfileSheetProps) {
+  const { toast } = useToast();
+  const [editableRating, setEditableRating] = useState<string>("");
+
+  useEffect(() => {
+    if (seller && seller.averageRating !== null && seller.averageRating !== undefined) {
+      setEditableRating(seller.averageRating.toFixed(1));
+    } else if (seller) {
+      setEditableRating(""); // For sellers with no rating yet or null
+    }
+  }, [seller]);
+
   if (!seller) {
     return null;
   }
@@ -82,13 +99,26 @@ export function SellerProfileSheet({
 
   const getSocialIcon = (platform: SellerData['socialMediaProfiles'][0]['platform']) => {
     switch (platform) {
-      case 'Instagram': return <NextImage src="/icons/instagram.svg" alt="Instagram" width={16} height={16} data-ai-hint="instagram logo"/>; // Placeholder, use actual icons
+      case 'Instagram': return <NextImage src="/icons/instagram.svg" alt="Instagram" width={16} height={16} data-ai-hint="instagram logo"/>; 
       case 'Facebook': return <NextImage src="/icons/facebook.svg" alt="Facebook" width={16} height={16} data-ai-hint="facebook logo"/>;
       case 'Twitter': return <NextImage src="/icons/twitter.svg" alt="Twitter" width={16} height={16} data-ai-hint="twitter logo"/>;
       case 'YouTube': return <NextImage src="/icons/youtube.svg" alt="YouTube" width={16} height={16} data-ai-hint="youtube logo"/>;
       case 'LinkedIn': return <NextImage src="/icons/linkedin.svg" alt="LinkedIn" width={16} height={16} data-ai-hint="linkedin logo"/>;
       default: return <Globe className="h-4 w-4 text-muted-foreground" />;
     }
+  };
+
+  const handleSaveRating = () => {
+    const newRatingNum = parseFloat(editableRating);
+    if (isNaN(newRatingNum) || newRatingNum < 0 || newRatingNum > 5) {
+      toast({
+        title: "Invalid Rating",
+        description: "Please enter a number between 0.0 and 5.0.",
+        variant: "destructive",
+      });
+      return;
+    }
+    onUpdateRating(seller.id, newRatingNum);
   };
 
 
@@ -206,7 +236,7 @@ export function SellerProfileSheet({
                         src={doc.url}
                         alt={doc.name}
                         layout="fill"
-                        objectFit="contain" // Changed to contain to see full doc image better
+                        objectFit="contain" 
                         className="rounded-md p-1"
                         data-ai-hint={doc.aiHint}
                       />
@@ -216,6 +246,35 @@ export function SellerProfileSheet({
               </div>
             </div>
           )}
+          
+          <div>
+            <h3 className="text-lg font-semibold text-foreground mb-2">Manage Rating</h3>
+            <Separator className="mb-3"/>
+            <div className="space-y-3 p-3 border rounded-md bg-muted/30">
+              <div className="flex items-center gap-2">
+                <Label htmlFor="seller-rating-input" className="text-sm font-medium">Current Rating:</Label>
+                <StarRatingDisplay rating={seller.averageRating} />
+              </div>
+              <div className="flex items-end gap-2">
+                <div className="flex-grow">
+                  <Label htmlFor="seller-rating-input" className="text-xs text-muted-foreground">New Rating (0.0 - 5.0)</Label>
+                  <Input
+                    id="seller-rating-input"
+                    type="number"
+                    min="0"
+                    max="5"
+                    step="0.1"
+                    value={editableRating}
+                    onChange={(e) => setEditableRating(e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+                <Button onClick={handleSaveRating} size="sm" className="h-9">
+                  <Save className="mr-2 h-4 w-4" /> Update Rating
+                </Button>
+              </div>
+            </div>
+          </div>
 
           <div>
             <h3 className="text-lg font-semibold text-foreground mb-2">Recent Login Activity</h3>
