@@ -13,6 +13,7 @@ export interface NavItem {
 export const navItems: NavItem[] = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
   { label: 'KYC Management', href: '/admin/kyc', icon: ShieldCheck },
+  { label: 'Users Management', href: '/admin/users', icon: UserCircle }, // Added Users Management
   { label: 'Sellers Management', href: '/admin/sellers', icon: Users },
   { label: 'Content Management', href: '/admin/content', icon: Film },
   { label: 'Orders Management', href: '/admin/logistics', icon: Truck },
