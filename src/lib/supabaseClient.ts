@@ -1,31 +1,68 @@
+
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
-// Ensure NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY are set in your .env.local file
-const rawSupabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const rawSupabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrlFromEnv = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseAnonKeyFromEnv = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-console.log("Raw NEXT_PUBLIC_SUPABASE_URL:", rawSupabaseUrl);
-console.log("Raw NEXT_PUBLIC_SUPABASE_ANON_KEY:", rawSupabaseAnonKey);
+let supabaseExport: SupabaseClient;
 
-const supabaseUrl = rawSupabaseUrl ? rawSupabaseUrl.trim() : undefined;
-const supabaseAnonKey = rawSupabaseAnonKey ? rawSupabaseAnonKey.trim() : undefined;
+if (!supabaseUrlFromEnv || supabaseUrlFromEnv.trim().length === 0 || !supabaseAnonKeyFromEnv || supabaseAnonKeyFromEnv.trim().length === 0) {
+  console.warn(
+    'Supabase environment variables (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY) are missing or empty. ' +
+    'Supabase client is not properly initialized. API calls to Supabase will fail at runtime. ' +
+    'Please ensure these variables are set in your .env file or environment configuration.'
+  );
 
-if (!supabaseUrl || supabaseUrl.length === 0) {
-  throw new Error("Missing or empty environment variable NEXT_PUBLIC_SUPABASE_URL. Please check your .env.local file and ensure it's loaded correctly.");
+  // Create a non-functional proxy to avoid build errors but highlight runtime issues.
+  // This proxy will throw an error if any of its methods are called.
+  supabaseExport = new Proxy(
+    {},
+    {
+      get: (target, prop) => {
+        const errMessage = `Supabase client is not properly initialized due to missing/empty environment variables (NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY). Cannot access property '${String(prop)}'. Ensure these are set in your .env file.`;
+        console.error(errMessage);
+        // For chainable methods like .from().select(), we need to return functions that also error.
+        if (typeof prop === 'string' && ['from', 'rpc', 'channel', 'storage'].includes(prop)) {
+            return () => {
+                throw new Error(errMessage);
+            };
+        }
+        // For functions that might be called directly, e.g., auth functions
+        if (typeof prop === 'string' && prop.startsWith('get') || prop.startsWith('sign') || prop.startsWith('set')) {
+             return () => {
+                throw new Error(errMessage);
+            };
+        }
+        // For other properties or direct calls
+        throw new Error(errMessage);
+      },
+    }
+  ) as SupabaseClient;
+} else {
+  const supabaseUrl = supabaseUrlFromEnv.trim();
+  const supabaseAnonKey = supabaseAnonKeyFromEnv.trim();
+  try {
+    new URL(supabaseUrl); // Validate URL format
+    supabaseExport = createClient(supabaseUrl, supabaseAnonKey);
+    console.log("Supabase client initialized with URL:", supabaseUrl.substring(0, Math.min(20, supabaseUrl.length)) + "...");
+  } catch (e) {
+    const errMessage = `Invalid Supabase URL format: "${supabaseUrl}". Supabase client not initialized. API calls to Supabase will fail. Error: ${e instanceof Error ? e.message : String(e)}`;
+    console.error(errMessage);
+    // Fallback to proxy on initialization error as well
+    supabaseExport = new Proxy({}, {
+      get: (target, prop) => {
+        const proxyErrorMessage = `Supabase client failed to initialize due to an error (e.g., invalid URL: ${errMessage}). Cannot access property '${String(prop)}'.`;
+        console.error(proxyErrorMessage);
+         if (typeof prop === 'string' && ['from', 'rpc', 'channel', 'storage'].includes(prop)) {
+            return () => { throw new Error(proxyErrorMessage); };
+        }
+        if (typeof prop === 'string' && prop.startsWith('get') || prop.startsWith('sign') || prop.startsWith('set')) {
+             return () => { throw new Error(proxyErrorMessage); };
+        }
+        throw new Error(proxyErrorMessage);
+      },
+    }) as SupabaseClient;
+  }
 }
-if (!supabaseAnonKey || supabaseAnonKey.length === 0) {
-  throw new Error("Missing or empty environment variable NEXT_PUBLIC_SUPABASE_ANON_KEY. Please check your .env.local file and ensure it's loaded correctly.");
-}
 
-// Validate the URL structure more explicitly before passing to createClient
-try {
-  new URL(supabaseUrl);
-} catch (e) {
-  throw new Error(`Invalid Supabase URL format: "${supabaseUrl}". Please ensure it is a valid URL (e.g., https://<project_ref>.supabase.co). Error: ${e instanceof Error ? e.message : String(e)}`);
-}
-
-
-// Create a single supabase client for interacting with your database
-export const supabase: SupabaseClient = createClient(supabaseUrl, supabaseAnonKey);
-
-console.log("Supabase client initialized with URL:", supabaseUrl ? supabaseUrl.substring(0, 20) + "..." : "URL_IS_UNDEFINED_OR_EMPTY");
+export const supabase = supabaseExport;
