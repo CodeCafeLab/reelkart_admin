@@ -10,6 +10,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreHorizontal, Eye, ThumbsUp, ThumbsDown, Flag, Loader2, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import Image from "next/image";
 import { VideoPreviewDialog } from "@/components/admin/content/VideoPreviewDialog";
+import { FlagContentDialog } from "@/components/admin/content/FlagContentDialog"; // Import the dialog
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -18,6 +19,26 @@ import { format, parseISO } from 'date-fns';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+
+// Define Flag Types
+export const FLAG_TYPES = [
+  "Nudity or Sexual Content",
+  "Hate Speech or Symbols",
+  "Violent or Graphic Content",
+  "Harassment or Bullying",
+  "Misinformation",
+  "Copyright Infringement",
+  "Spam or Scams",
+  "Illegal Activities",
+  "Other Violation"
+] as const;
+export type FlagType = typeof FLAG_TYPES[number];
+
+export interface FlagDetails {
+  type: FlagType;
+  reason?: string;
+  flaggedAt: string; // ISO Date
+}
 
 export interface ContentItem {
   id: string;
@@ -30,6 +51,7 @@ export interface ContentItem {
   thumbnailUrl?: string; // For videos
   descriptionText?: string; // For descriptions
   videoUrl?: string; // For video playback
+  flagDetails?: FlagDetails; // Added for flagging
 }
 
 const initialContentItems: ContentItem[] = [
@@ -66,6 +88,11 @@ export default function ContentPage() {
   const [videoCurrentPage, setVideoCurrentPage] = useState(1);
   const [videoItemsPerPage, setVideoItemsPerPage] = useState(10);
 
+  // State for Flag Content Dialog
+  const [isFlagDialogOpen, setIsFlagDialogOpen] = useState(false);
+  const [itemToFlag, setItemToFlag] = useState<ContentItem | null>(null);
+
+
   useEffect(() => {
     setHasMounted(true);
   }, []);
@@ -76,23 +103,51 @@ export default function ContentPage() {
   };
 
   const handleApproveContent = (itemId: string) => {
-    setContentItems(prev => prev.map(item => item.id === itemId ? { ...item, status: "Approved" as ContentStatus, reason: undefined } : item));
-    setSelectedVideoForPreview(prev => prev && prev.id === itemId ? { ...prev, status: "Approved" as ContentStatus, reason: undefined } : prev);
+    setContentItems(prev => prev.map(item => item.id === itemId ? { ...item, status: "Approved" as ContentStatus, reason: undefined, flagDetails: undefined } : item));
+    setSelectedVideoForPreview(prev => prev && prev.id === itemId ? { ...prev, status: "Approved" as ContentStatus, reason: undefined, flagDetails: undefined } : prev);
     toast({ title: "Content Approved", description: `Content item ${itemId} has been approved.` });
     if (selectedVideoForPreview?.id === itemId) setIsVideoPreviewOpen(false);
   };
 
   const handleRejectContent = (itemId: string, reason?: string) => {
     const finalReason = reason?.trim() === "" || !reason ? "Violation of guidelines" : reason;
-    setContentItems(prev => prev.map(item => item.id === itemId ? { ...item, status: "Rejected" as ContentStatus, reason: finalReason } : item));
-    setSelectedVideoForPreview(prev => prev && prev.id === itemId ? { ...prev, status: "Rejected" as ContentStatus, reason: finalReason } : prev);
+    setContentItems(prev => prev.map(item => item.id === itemId ? { ...item, status: "Rejected" as ContentStatus, reason: finalReason, flagDetails: undefined } : item));
+    setSelectedVideoForPreview(prev => prev && prev.id === itemId ? { ...prev, status: "Rejected" as ContentStatus, reason: finalReason, flagDetails: undefined } : prev);
     toast({ title: "Content Rejected", description: `Content item ${itemId} has been rejected. Reason: ${finalReason}`, variant: "destructive" });
     if (selectedVideoForPreview?.id === itemId) setIsVideoPreviewOpen(false);
   };
   
   const handleFlagContent = (itemId: string) => {
-    toast({title: "Content Flagged", description: `Content item ${itemId} has been flagged. (Placeholder)`});
+    const item = contentItems.find(ci => ci.id === itemId);
+    if (item) {
+      setItemToFlag(item);
+      setIsFlagDialogOpen(true); // Open the dialog
+    } else {
+      toast({ title: "Error", description: "Content item not found.", variant: "destructive" });
+    }
   };
+
+  const handleConfirmFlag = (contentId: string, flagType: FlagType, reason?: string) => {
+    setContentItems(prev =>
+      prev.map(item =>
+        item.id === contentId
+          ? {
+              ...item,
+              status: item.status === "Rejected" ? "Rejected" : "Pending", // Keep rejected status if already rejected, otherwise pending
+              flagDetails: { type: flagType, reason: reason || "N/A", flaggedAt: new Date().toISOString() },
+            }
+          : item
+      )
+    );
+    // Find the updated item to correctly report its status
+    const updatedItem = contentItems.find(ci => ci.id === contentId);
+    const finalStatus = updatedItem?.status === "Rejected" ? "Rejected" : "Pending";
+
+    toast({ title: "Content Flagged", description: `Item ${contentId} flagged as ${flagType}. Status set to ${finalStatus}.` });
+    setIsFlagDialogOpen(false);
+    setItemToFlag(null);
+  };
+
 
   // Processing and Pagination for Videos
   const processedVideoItems = useMemo(() => {
@@ -158,11 +213,12 @@ export default function ContentPage() {
 
     return (formatType: 'csv' | 'excel' | 'pdf') => {
         if (formatType === 'csv') {
-            const headers = ["ID", "Title", "Uploader", "Date", "Status", "Reason"];
+            const headers = ["ID", "Title", "Uploader", "Date", "Status", "Reason", "Flag Type", "Flag Reason"];
             const csvRows = [
                 headers.join(','),
                 ...dataToExport.map(item => [
-                    item.id, item.title, item.uploader, formatDateForExport(item.date), item.status, item.reason || ''
+                    item.id, item.title, item.uploader, formatDateForExport(item.date), item.status, item.reason || '',
+                    item.flagDetails?.type || '', item.flagDetails?.reason || ''
                 ].map(value => `"${String(value).replace(/"/g, '""')}"`).join(','))
             ];
             const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
@@ -175,7 +231,8 @@ export default function ContentPage() {
         } else if (formatType === 'excel') {
             const wsData = dataToExport.map(item => ({
                 ID: item.id, Title: item.title, Uploader: item.uploader, 
-                Date: formatDateForExport(item.date), Status: item.status, Reason: item.reason || ''
+                Date: formatDateForExport(item.date), Status: item.status, Reason: item.reason || '',
+                "Flag Type": item.flagDetails?.type || '', "Flag Reason": item.flagDetails?.reason || ''
             }));
             const ws = XLSX.utils.json_to_sheet(wsData);
             const wb = XLSX.utils.book_new();
@@ -184,9 +241,10 @@ export default function ContentPage() {
             toast({ title: "Excel Exported", description: `${contentType} data exported.` });
         } else if (formatType === 'pdf') {
             const doc = new jsPDF();
-            const tableColumn = ["ID", "Title", "Uploader", "Date", "Status", "Reason"];
+            const tableColumn = ["ID", "Title", "Uploader", "Date", "Status", "Reason", "Flag Type"];
             const tableRows = dataToExport.map(item => [
-                item.id, item.title, item.uploader, formatDateForExport(item.date), item.status, item.reason || ''
+                item.id, item.title, item.uploader, formatDateForExport(item.date), item.status, item.reason || '',
+                item.flagDetails?.type || ''
             ]);
             autoTable(doc, { head: [tableColumn], body: tableRows, startY: 20 });
             doc.text(`${contentType.charAt(0).toUpperCase() + contentType.slice(1)} Content Report`, 14, 15);
@@ -293,9 +351,16 @@ export default function ContentPage() {
           contentItem={selectedVideoForPreview}
           onApprove={handleApproveContent}
           onReject={handleRejectContent}
-          onFlag={handleFlagContent}
+          onFlag={handleFlagContent} // This will open the FlagContentDialog
         />
       )}
+
+      <FlagContentDialog
+        isOpen={isFlagDialogOpen}
+        onOpenChange={setIsFlagDialogOpen}
+        contentItem={itemToFlag}
+        onFlagSubmit={handleConfirmFlag}
+      />
     </div>
   );
 }
@@ -306,7 +371,7 @@ interface VideoContentTableProps {
   onOpenVideoPreview: (item: ContentItem) => void;
   onApprove: (itemId: string) => void;
   onReject: (itemId: string, reason?: string) => void;
-  onFlag: (itemId: string) => void;
+  onFlag: (itemId: string) => void; // Changed to pass itemId
   sortConfig: { key: SortableContentKeys; direction: string };
   onSort: (key: SortableContentKeys) => void;
   renderSortIcon: (key: SortableContentKeys) => JSX.Element;
@@ -353,9 +418,16 @@ function VideoContentTable({ items, onOpenVideoPreview, onApprove, onReject, onF
             <TableCell>{item.uploader}</TableCell>
             <TableCell>{formatDate(item.date)}</TableCell>
             <TableCell>
-              <Badge variant={statusVariant[item.status as ContentStatus]} className={item.status === 'Approved' ? 'bg-green-500 hover:bg-green-600 text-white' : item.status === 'Rejected' ? 'bg-red-500 hover:bg-red-600 text-white' : ''}>
-                {item.status}
-              </Badge>
+              <div className="flex items-center gap-1">
+                <Badge variant={statusVariant[item.status as ContentStatus]} className={item.status === 'Approved' ? 'bg-green-500 hover:bg-green-600 text-white' : item.status === 'Rejected' ? 'bg-red-500 hover:bg-red-600 text-white' : ''}>
+                  {item.status}
+                </Badge>
+                {item.flagDetails && (
+                  <Badge variant="destructive" className="ml-1 text-xs opacity-80">
+                    Flag: {item.flagDetails.type.length > 15 ? item.flagDetails.type.substring(0,12) + "..." : item.flagDetails.type}
+                  </Badge>
+                )}
+              </div>
               {item.status === "Rejected" && item.reason && (
                 <p className="text-xs text-muted-foreground mt-1">{item.reason}</p>
               )}
@@ -425,5 +497,3 @@ function ContentActions({ item, onViewDetails, onApprove, onReject, onFlag }: Co
     </DropdownMenu>
   );
 }
-
-
