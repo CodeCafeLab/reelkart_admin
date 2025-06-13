@@ -35,3 +35,14 @@ export interface ContentItem {
 }
 
 export type SortableContentKeys = keyof Pick<ContentItem, 'id' | 'title' | 'uploader' | 'date' | 'status'>;
+
+export const PREDEFINED_CONTENT_REJECTION_REASONS = [
+  "Copyright Infringement",
+  "Inappropriate Content (Nudity, Violence, Hate Speech)",
+  "Low Video/Audio Quality",
+  "Misleading Information or Clickbait",
+  "Spam or Unsolicited Commercial Content",
+  "Violates Platform Policy",
+  "Other (Please specify)"
+] as const;
+export type PredefinedContentRejectionReason = typeof PREDEFINED_CONTENT_REJECTION_REASONS[number];

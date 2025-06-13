@@ -10,7 +10,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreHorizontal, Eye, ThumbsUp, ThumbsDown, Flag, Loader2, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import Image from "next/image";
 import { VideoPreviewDialog } from "@/components/admin/content/VideoPreviewDialog";
-import { FlagContentDialog } from "@/components/admin/content/FlagContentDialog"; // Import the dialog
+import { FlagContentDialog } from "@/components/admin/content/FlagContentDialog";
+import { RejectContentDialog } from "@/components/admin/content/RejectContentDialog"; // Import the new dialog
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -59,6 +60,10 @@ export default function ContentPage() {
   const [isFlagDialogOpen, setIsFlagDialogOpen] = useState(false);
   const [itemToFlag, setItemToFlag] = useState<ContentItem | null>(null);
 
+  // State for Reject Content Dialog
+  const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
+  const [itemToReject, setItemToReject] = useState<ContentItem | null>(null);
+
 
   useEffect(() => {
     setHasMounted(true);
@@ -74,21 +79,36 @@ export default function ContentPage() {
     setSelectedVideoForPreview(prev => prev && prev.id === itemId ? { ...prev, status: "Approved" as ContentStatus, reason: undefined, flagDetails: undefined } : prev);
     toast({ title: "Content Approved", description: `Content item ${itemId} has been approved.` });
     if (selectedVideoForPreview?.id === itemId) setIsVideoPreviewOpen(false);
+    if (itemToReject?.id === itemId) setIsRejectDialogOpen(false);
   };
 
-  const handleRejectContent = (itemId: string, reason?: string) => {
+  // This function now just opens the rejection dialog
+  const handleRejectContent = (itemId: string) => {
+    const item = contentItems.find(ci => ci.id === itemId);
+    if (item) {
+      setItemToReject(item);
+      setIsRejectDialogOpen(true);
+    } else {
+      toast({ title: "Error", description: "Content item not found.", variant: "destructive" });
+    }
+  };
+
+  // This function is called by RejectContentDialog
+  const handleConfirmReject = (contentId: string, reason: string) => {
     const finalReason = reason?.trim() === "" || !reason ? "Violation of guidelines" : reason;
-    setContentItems(prev => prev.map(item => item.id === itemId ? { ...item, status: "Rejected" as ContentStatus, reason: finalReason, flagDetails: undefined } : item));
-    setSelectedVideoForPreview(prev => prev && prev.id === itemId ? { ...prev, status: "Rejected"as ContentStatus, reason: finalReason, flagDetails: undefined } : prev);
-    toast({ title: "Content Rejected", description: `Content item ${itemId} has been rejected. Reason: ${finalReason}`, variant: "destructive" });
-    if (selectedVideoForPreview?.id === itemId) setIsVideoPreviewOpen(false);
+    setContentItems(prev => prev.map(item => item.id === contentId ? { ...item, status: "Rejected" as ContentStatus, reason: finalReason, flagDetails: undefined } : item));
+    setSelectedVideoForPreview(prev => prev && prev.id === contentId ? { ...prev, status: "Rejected"as ContentStatus, reason: finalReason, flagDetails: undefined } : prev);
+    toast({ title: "Content Rejected", description: `Content item ${contentId} has been rejected. Reason: ${finalReason}`, variant: "destructive" });
+    if (selectedVideoForPreview?.id === contentId) setIsVideoPreviewOpen(false);
+    setIsRejectDialogOpen(false);
+    setItemToReject(null);
   };
   
   const handleFlagContent = (itemId: string) => {
     const item = contentItems.find(ci => ci.id === itemId);
     if (item) {
       setItemToFlag(item);
-      setIsFlagDialogOpen(true); // Open the dialog
+      setIsFlagDialogOpen(true); 
     } else {
       toast({ title: "Error", description: "Content item not found.", variant: "destructive" });
     }
@@ -107,9 +127,8 @@ export default function ContentPage() {
       )
     );
   
-    const updatedItem = contentItems.find(ci => ci.id === contentId); // Find item before state update for accurate status report
+    const updatedItem = contentItems.find(ci => ci.id === contentId); 
     const finalStatus = updatedItem && updatedItem.status === "Rejected" ? "Rejected" : "Pending";
-
 
     toast({ title: "Content Flagged", description: `Item ${contentId} flagged as ${flagType}. Status: ${finalStatus}.` });
     setIsFlagDialogOpen(false);
@@ -283,7 +302,7 @@ export default function ContentPage() {
             items={paginatedVideoItems} 
             onOpenVideoPreview={handleOpenVideoPreview}
             onApprove={handleApproveContent}
-            onReject={handleRejectContent}
+            onReject={handleRejectContent} // This will now open the dialog
             onFlag={handleFlagContent}
             sortConfig={videoSortConfig}
             onSort={handleVideoSort}
@@ -318,8 +337,8 @@ export default function ContentPage() {
           onOpenChange={setIsVideoPreviewOpen}
           contentItem={selectedVideoForPreview}
           onApprove={handleApproveContent}
-          onReject={handleRejectContent}
-          onFlag={handleFlagContent} // This will open the FlagContentDialog
+          onReject={handleRejectContent} // Pass the function that opens the reject dialog
+          onFlag={handleFlagContent} 
         />
       )}
 
@@ -328,6 +347,13 @@ export default function ContentPage() {
         onOpenChange={setIsFlagDialogOpen}
         contentItem={itemToFlag}
         onFlagSubmit={handleConfirmFlag}
+      />
+
+      <RejectContentDialog
+        isOpen={isRejectDialogOpen}
+        onOpenChange={setIsRejectDialogOpen}
+        contentItem={itemToReject}
+        onRejectSubmit={handleConfirmReject}
       />
     </div>
   );
@@ -338,8 +364,8 @@ interface VideoContentTableProps {
   items: ContentItem[];
   onOpenVideoPreview: (item: ContentItem) => void;
   onApprove: (itemId: string) => void;
-  onReject: (itemId: string, reason?: string) => void;
-  onFlag: (itemId: string) => void; // Changed to pass itemId
+  onReject: (itemId: string) => void; // Updated: now just takes itemId to open dialog
+  onFlag: (itemId: string) => void; 
   sortConfig: { key: SortableContentKeys; direction: string };
   onSort: (key: SortableContentKeys) => void;
   renderSortIcon: (key: SortableContentKeys) => JSX.Element;
@@ -422,16 +448,11 @@ interface ContentActionsProps {
   item: ContentItem;
   onViewDetails: (item: ContentItem) => void;
   onApprove: (itemId: string) => void;
-  onReject: (itemId: string, reason?: string) => void;
+  onReject: (itemId: string) => void; // No longer takes reason here
   onFlag: (itemId: string) => void;
 }
 
 function ContentActions({ item, onViewDetails, onApprove, onReject, onFlag }: ContentActionsProps) {
-  const handleRejectWithPrompt = () => {
-    const reason = prompt("Enter reason for rejection (optional):");
-    onReject(item.id, reason === null ? undefined : reason);
-  };
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -453,7 +474,7 @@ function ContentActions({ item, onViewDetails, onApprove, onReject, onFlag }: Co
         </DropdownMenuItem>
         <DropdownMenuItem 
           className="text-red-600 focus:text-red-700 focus:bg-red-50"
-          onClick={handleRejectWithPrompt}
+          onClick={() => onReject(item.id)} // Calls the function to open the dialog
           disabled={item.status === "Rejected"}
         >
           <ThumbsDown className="mr-2 h-4 w-4" /> Reject

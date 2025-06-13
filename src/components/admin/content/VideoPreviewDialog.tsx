@@ -12,14 +12,14 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ThumbsUp, ThumbsDown, Flag, Video } from "lucide-react";
-import type { ContentItem } from "@/app/admin/content/page";
+import type { ContentItem } from "@/types/content-moderation"; // Updated import path
 
 interface VideoPreviewDialogProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   contentItem: ContentItem | null;
   onApprove: (itemId: string) => void;
-  onReject: (itemId: string, reason?: string) => void;
+  onReject: (itemId: string) => void; // No longer takes reason here
   onFlag: (itemId: string) => void;
 }
 
@@ -34,13 +34,6 @@ export function VideoPreviewDialog({
   if (!contentItem || contentItem.type !== "Video") {
     return null;
   }
-
-  const handleReject = () => {
-    const reason = prompt("Enter reason for rejection (optional):");
-    // If prompt is cancelled (null), pass undefined to onReject
-    // onReject will use a default reason if it's undefined or empty
-    onReject(contentItem.id, reason === null ? undefined : reason);
-  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -83,7 +76,7 @@ export function VideoPreviewDialog({
             <>
               <Button
                 variant="destructive"
-                onClick={handleReject}
+                onClick={() => onReject(contentItem.id)} // Now calls the prop that opens the dialog
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
                 <ThumbsDown className="mr-2 h-4 w-4" /> Reject
@@ -95,6 +88,25 @@ export function VideoPreviewDialog({
                 <ThumbsUp className="mr-2 h-4 w-4" /> Approve
               </Button>
             </>
+          )}
+          {(contentItem.status === "Approved" || contentItem.status === "Rejected") && (
+             <>
+                <Button
+                    variant="destructive"
+                    onClick={() => onReject(contentItem.id)}
+                    disabled={contentItem.status === "Rejected"}
+                    className="bg-red-600 hover:bg-red-700 text-white disabled:bg-red-600/50"
+                >
+                    <ThumbsDown className="mr-2 h-4 w-4" /> Reject
+                </Button>
+                <Button
+                    onClick={() => onApprove(contentItem.id)}
+                    disabled={contentItem.status === "Approved"}
+                    className="bg-green-600 hover:bg-green-700 text-white disabled:bg-green-600/50"
+                >
+                    <ThumbsUp className="mr-2 h-4 w-4" /> Approve
+                </Button>
+             </>
           )}
           <DialogClose asChild>
             <Button variant="outline" className="sm:ml-auto">Close</Button>
