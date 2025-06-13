@@ -5,6 +5,7 @@ import { z } from 'zod';
 export const BROADCAST_MESSAGE_AUDIENCE_TYPES = [
   "AllUsers", 
   "AllSellers", 
+  "AllBuyers", // Added "All Buyers"
   "SpecificUser", 
   "SpecificSeller", 
   "UserGroup", 
