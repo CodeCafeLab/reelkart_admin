@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown, AlertCircle, CheckCircle, Clock, DollarSign, Server, MessageSquare, Truck as LogisticsIcon, Brain, CreditCard, BarChartHorizontal, User } from "lucide-react";
+import { MoreHorizontal, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown, AlertCircle, CheckCircle, Clock, DollarSign, Server, MessageSquare, Truck as LogisticsIcon, Brain, CreditCard, BarChartHorizontal, User, Eye } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +18,7 @@ import { StatCard } from "@/components/dashboard/StatCard";
 import type { LogEntry, ThirdPartyService, LogStatus, SortableLogKeys, DashboardStat } from "@/types/logs";
 import { THIRD_PARTY_SERVICES, LOG_STATUSES } from "@/types/logs";
 import { UserUsageDetailsSheet } from "@/components/admin/logs/UserUsageDetailsSheet";
+import { LogEntryDetailsSheet } from "@/components/admin/logs/LogEntryDetailsSheet"; // New Import
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -27,18 +28,18 @@ import * as XLSX from 'xlsx';
 const MOCK_BASE_TIMESTAMP = new Date("2024-07-20T10:00:00.000Z").getTime();
 
 const mockLogEntries: LogEntry[] = [
-  { id: "log001", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 5).toISOString(), service: "OpenAI", event: "Completion API Call", userId: "usr_abc", cost: 0.02, status: "Success", durationMs: 1500, details: "Model: gpt-4o, Tokens: 150" },
-  { id: "log002", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 10).toISOString(), service: "SMSProvider", event: "OTP Sent", userId: "usr_xyz", cost: 0.50, status: "Success", durationMs: 200, details: { to: "+91XXXXXX", messageId: "sms_123" } },
-  { id: "log003", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 15).toISOString(), service: "LogisticsAPI", event: "Create Shipment", userId: "seller_1", cost: 75.00, status: "Pending", durationMs: 500, details: "AWB: LP789543" },
-  { id: "log004", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 20).toISOString(), service: "RunwayML", event: "Image Generation", userId: "usr_designer", cost: 1.00, status: "Success", durationMs: 12000, details: "Prompt: 'cosmic cat'" },
-  { id: "log005", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 25).toISOString(), service: "OpenAI", event: "Embedding API Call", userId: "sys_batch", cost: 0.005, status: "Failed", durationMs: 300, details: "Error: API Key Invalid" },
-  { id: "log006", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 30).toISOString(), service: "PaymentGateway", event: "Process Payment", userId: "buyer_789", cost: 2.50, status: "Success", durationMs: 800, details: { amount: 1200, transactionId: "txn_pqr" } },
-  { id: "log007", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 35).toISOString(), service: "AnalyticsTool", event: "Track Event: PageView", userId: "usr_visitor", cost: 0.001, status: "Success", durationMs: 50, details: { page: "/products/123" } },
-  { id: "log008", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 40).toISOString(), service: "SMSProvider", event: "Delivery Notification", userId: "usr_qwe", cost: 0.50, status: "Failed", durationMs: 150, details: "Error: Invalid Number" },
-  { id: "log009", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 45).toISOString(), service: "LogisticsAPI", event: "Track Shipment", userId: "usr_qwe", cost: 0.10, status: "Success", durationMs: 300, details: "AWB: LP789543, Status: In Transit" },
-  { id: "log010", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 50).toISOString(), service: "OpenAI", event: "Moderation API Call", userId: "usr_mod", cost: 0.002, status: "Success", durationMs: 100, details: "Input: 'Some text', Flagged: false" },
-  { id: "log011", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 55).toISOString(), service: "OpenAI", event: "Completion API Call", userId: "usr_abc", cost: 0.015, status: "Success", durationMs: 1200, details: "Model: gpt-4o, Tokens: 120" },
-  { id: "log012", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60).toISOString(), service: "SMSProvider", event: "OTP Sent", userId: "usr_abc", cost: 0.45, status: "Success", durationMs: 180, details: { to: "+91YYYYYY", messageId: "sms_456" } },
+  { id: "log001", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 5).toISOString(), service: "OpenAI", event: "Completion API Call", userId: "usr_abc", cost: 0.02, status: "Success", durationMs: 1500, details: { model: "gpt-4o", tokens: 150, promptLength: 50, completionLength: 100 }, ipAddress: "192.168.1.101", correlationId: "corr_123" },
+  { id: "log002", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 10).toISOString(), service: "SMSProvider", event: "OTP Sent", userId: "usr_xyz", cost: 0.50, status: "Success", durationMs: 200, details: { to: "+91XXXXXX", messageId: "sms_123", segments: 1 }, ipAddress: "10.0.0.5" },
+  { id: "log003", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 15).toISOString(), service: "LogisticsAPI", event: "Create Shipment", userId: "seller_1", cost: 75.00, status: "Pending", durationMs: 500, details: "AWB: LP789543, Destination: Mumbai", correlationId: "corr_456" },
+  { id: "log004", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 20).toISOString(), service: "RunwayML", event: "Image Generation", userId: "usr_designer", cost: 1.00, status: "Success", durationMs: 12000, details: "Prompt: 'cosmic cat', Size: '1024x1024'" },
+  { id: "log005", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 25).toISOString(), service: "OpenAI", event: "Embedding API Call", userId: "sys_batch", cost: 0.005, status: "Failed", durationMs: 300, details: { error: "API Key Invalid", model: "text-embedding-ada-002" }, ipAddress: "172.16.0.10" },
+  { id: "log006", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 30).toISOString(), service: "PaymentGateway", event: "Process Payment", userId: "buyer_789", cost: 2.50, status: "Success", durationMs: 800, details: { amount: 1200, transactionId: "txn_pqr", cardType: "Visa" }, correlationId: "corr_789" },
+  { id: "log007", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 35).toISOString(), service: "AnalyticsTool", event: "Track Event: PageView", userId: "usr_visitor", cost: 0.001, status: "Success", durationMs: 50, details: { page: "/products/123", referrer: "google.com" } },
+  { id: "log008", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 40).toISOString(), service: "SMSProvider", event: "Delivery Notification", userId: "usr_qwe", cost: 0.50, status: "Failed", durationMs: 150, details: "Error: Invalid Number, MessageId: sms_678" },
+  { id: "log009", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 45).toISOString(), service: "LogisticsAPI", event: "Track Shipment", userId: "usr_qwe", cost: 0.10, status: "Success", durationMs: 300, details: { awb: "LP789543", status: "In Transit", location: "Delhi Hub" } },
+  { id: "log010", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 50).toISOString(), service: "OpenAI", event: "Moderation API Call", userId: "usr_mod", cost: 0.002, status: "Success", durationMs: 100, details: { input: "Some text", flagged: false, categories: {} } },
+  { id: "log011", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 55).toISOString(), service: "OpenAI", event: "Completion API Call", userId: "usr_abc", cost: 0.015, status: "Success", durationMs: 1200, details: { model: "gpt-4o", tokens: 120, promptLength: 40, completionLength: 80 }, ipAddress: "192.168.1.101", correlationId: "corr_124" },
+  { id: "log012", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60).toISOString(), service: "SMSProvider", event: "OTP Sent", userId: "usr_abc", cost: 0.45, status: "Success", durationMs: 180, details: { to: "+91YYYYYY", messageId: "sms_456", segments: 1 }, ipAddress: "10.0.0.6" },
 ];
 
 
@@ -101,6 +102,10 @@ export function ThirdPartyLogDashboardClient() {
 
   const [isUserSheetOpen, setIsUserSheetOpen] = useState(false);
   const [selectedUserIdForSheet, setSelectedUserIdForSheet] = useState<string | null>(null);
+
+  const [isLogDetailsSheetOpen, setIsLogDetailsSheetOpen] = useState(false);
+  const [selectedLogForDetails, setSelectedLogForDetails] = useState<LogEntry | null>(null);
+
 
   const formatDateForDisplay = useCallback((dateString: string) => {
     if (!dateString) return "Invalid Date";
@@ -245,6 +250,11 @@ export function ThirdPartyLogDashboardClient() {
       setSelectedUserIdForSheet(userId);
       setIsUserSheetOpen(true);
     }
+  };
+
+  const handleViewLogDetails = (log: LogEntry) => {
+    setSelectedLogForDetails(log);
+    setIsLogDetailsSheetOpen(true);
   };
 
   const handleExport = (formatType: 'csv' | 'excel' | 'pdf') => {
@@ -461,8 +471,8 @@ export function ThirdPartyLogDashboardClient() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => toast({title: "View Full Log (Placeholder)", description: `Would show full details for log ${log.id}`})}>
-                              View Full Log
+                            <DropdownMenuItem onClick={() => handleViewLogDetails(log)}>
+                              <Eye className="mr-2 h-4 w-4" /> View Full Log
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -509,6 +519,21 @@ export function ThirdPartyLogDashboardClient() {
           initialFormatDateForDisplay={initialFormatDateForDisplay}
         />
       )}
+
+      {selectedLogForDetails && (
+        <LogEntryDetailsSheet
+          isOpen={isLogDetailsSheetOpen}
+          onOpenChange={setIsLogDetailsSheetOpen}
+          logEntry={selectedLogForDetails}
+          formatCurrency={formatCurrency}
+          formatDateForDisplay={formatDateForDisplay}
+          initialFormatDateForDisplay={initialFormatDateForDisplay}
+          serviceIconMap={serviceIconMap}
+          statusIconMap={statusIconMap}
+          statusVariantMap={statusVariantMap}
+        />
+      )}
     </div>
   );
 }
+
