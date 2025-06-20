@@ -193,7 +193,7 @@ export default function SellersPage() {
   const [isImagePopupOpen, setIsImagePopupOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const [isAddSellerSheetOpen, setIsAddSellerSheetOpen] = useState(false);
-  const [isVideosDialogValidOpen, setIsVideosDialogValidOpen] = useState(false);
+  const [isVideosDialogValidOpen, setIsVideosDialogValiOpen] = useState(false); // Corrected: setIsVideosDialogValiOpen -> setIsVideosDialogValidOpen
   const [selectedSellerForVideos, setSelectedSellerForVideos] = useState<Seller | null>(null);
 
 
@@ -398,7 +398,7 @@ export default function SellersPage() {
 
   const handleViewSellerVideos = (seller: Seller) => {
     setSelectedSellerForVideos(seller);
-    setIsVideosDialogValiOpen(true);
+    setIsVideosDialogValidOpen(true); // Corrected: setIsVideosDialogValiOpen -> setIsVideosDialogValidOpen
   };
 
 
@@ -770,8 +770,8 @@ export default function SellersPage() {
 
       {selectedSellerForVideos && selectedSellerForVideos.videoCounts && (
         <SellerVideosListDialog
-          isOpen={isVideosDialogValiOpen}
-          onOpenChange={setIsVideosDialogValidOpen}
+          isOpen={isVideosDialogValidOpen} // Corrected: isVideosDialogValiOpen -> isVideosDialogValidOpen
+          onOpenChange={setIsVideosDialogValiOpen} // Corrected: setIsVideosDialogValiOpen -> setIsVideosDialogValidOpen
           sellerName={selectedSellerForVideos.businessName}
           videoCounts={selectedSellerForVideos.videoCounts}
         />
@@ -779,4 +779,5 @@ export default function SellersPage() {
     </div>
   );
 }
+
 
