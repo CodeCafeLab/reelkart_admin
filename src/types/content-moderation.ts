@@ -20,6 +20,13 @@ export interface FlagDetails {
 
 export type ContentStatus = "Pending" | "Approved" | "Rejected";
 
+export interface AdminComment {
+  id: string;
+  adminName: string;
+  text: string;
+  timestamp: string; // ISO Date string
+}
+
 export interface ContentItem {
   id: string;
   type: "Video" | "Description";
@@ -31,7 +38,8 @@ export interface ContentItem {
   thumbnailUrl?: string; // For videos
   descriptionText?: string; // For descriptions
   videoUrl?: string; // For video playback
-  flagDetails?: FlagDetails; // Added for flagging
+  flagDetails?: FlagDetails;
+  adminComments?: AdminComment[]; // Added for admin comments
 }
 
 export type SortableContentKeys = keyof Pick<ContentItem, 'id' | 'title' | 'uploader' | 'date' | 'status'>;
