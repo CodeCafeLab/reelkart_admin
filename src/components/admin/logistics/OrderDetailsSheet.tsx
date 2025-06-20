@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, User, Store, Truck, XCircle, ShoppingCart, DollarSign as DollarSignIcon, PackageSearch, PackageCheck, CornerDownLeft, ThumbsUp, ThumbsDown, Info } from "lucide-react";
+import { CalendarDays, User, Store, Truck, XCircle, ShoppingCart, DollarSign as DollarSignIcon, PackageSearch, PackageCheck, CornerDownLeft, ThumbsUp, ThumbsDown, Info, Clock, CheckCircle } from "lucide-react"; // Added Clock and CheckCircle
 import type { Order, OrderStatus, ReturnDetails } from "@/app/admin/logistics/page";
 import { format, parseISO } from 'date-fns';
 
