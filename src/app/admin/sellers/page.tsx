@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, UserCheck, UserX, Eye, Store, Download, ArrowUpDown, ArrowUp, ArrowDown, FileText, FileSpreadsheet, Printer, XCircle, Tag, PlusCircle, Star as StarIcon } from "lucide-react";
+import { MoreHorizontal, UserCheck, UserX, Eye, Store, Download, ArrowUpDown, ArrowUp, ArrowDown, FileText, FileSpreadsheet, Printer, XCircle, Tag, PlusCircle, Star as StarIcon, Video } from "lucide-react"; // Added Video icon
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
@@ -15,9 +15,10 @@ import { format, parseISO } from 'date-fns';
 import { SellerProfileSheet } from "@/components/admin/sellers/SellerProfileSheet";
 import type { SellerRole } from "@/types/seller-package";
 import { SELLER_ROLES } from "@/types/seller-package";
-import { ImagePopup } from "@/components/admin/kyc/ImagePopup"; // Re-using ImagePopup
+import { ImagePopup } from "@/components/admin/kyc/ImagePopup";
 import { AddSellerSheet, type NewSellerFormData } from "@/components/admin/sellers/AddSellerSheet";
 import { StarRatingDisplay } from "@/components/ui/StarRatingDisplay";
+import { SellerVideosListDialog } from "@/components/admin/sellers/SellerVideosListDialog"; // New import
 
 
 import jsPDF from 'jspdf';
@@ -52,12 +53,18 @@ export interface SellerLoginLog {
   userAgent?: string;
 }
 
+export interface SellerVideoCounts {
+  approved: number;
+  rejected: number;
+  pending: number;
+}
+
 export interface Seller {
   id: string;
   name: string; // Contact person name
   businessName: string;
-  email?: string; // Added optional email
-  phone?: string; // Added optional phone
+  email?: string;
+  phone?: string;
   sellerType: SellerRole;
   status: SellerStatus;
   joinedDate: string; // "YYYY-MM-DD"
@@ -65,8 +72,9 @@ export interface Seller {
   socialMediaProfiles?: SocialMediaProfile[];
   bankAccountDetails?: BankAccountDetails;
   verificationDocuments?: SellerDocument[];
-  averageRating?: number | null; // 0-5, can be null or undefined
+  averageRating?: number | null;
   loginLogs?: SellerLoginLog[];
+  videoCounts?: SellerVideoCounts; // New field
 }
 
 const initialSellersData: Seller[] = [
@@ -81,7 +89,8 @@ const initialSellersData: Seller[] = [
     loginLogs: [
       { id: "log_rk1", timestamp: new Date(Date.now() - 86400000 * 1).toISOString(), ipAddress: "103.22.182.0", status: "Success", userAgent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" },
       { id: "log_rk2", timestamp: new Date(Date.now() - 86400000 * 2).toISOString(), ipAddress: "103.22.182.0", status: "Success", userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 14_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Mobile/15E148 Safari/604.1" },
-    ]
+    ],
+    videoCounts: { approved: 12, rejected: 2, pending: 1 }
   },
   {
     id: "usr002-sel", name: "Anjali Desai", businessName: "Anjali's Artistry", email: "anjali@artistry.com", phone: "9876500000", sellerType: "IndividualMerchant", status: "Pending", joinedDate: "2024-07-10", averageRating: null,
@@ -94,14 +103,16 @@ const initialSellersData: Seller[] = [
     loginLogs: [
         { id: "log_ad1", timestamp: new Date(Date.now() - 86400000 * 3).toISOString(), ipAddress: "202.142.66.10", status: "Attempt", userAgent: "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36"},
         { id: "log_ad2", timestamp: new Date(Date.now() - 86400000 * 3 - 60000).toISOString(), ipAddress: "202.142.66.10", status: "Failed", userAgent: "Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36"},
-    ]
+    ],
+    videoCounts: { approved: 5, rejected: 0, pending: 3 }
   },
   {
     id: "usr003-sel", name: "Mohammed Khan", businessName: "Khan's Spices", sellerType: "ECommerceSeller", status: "Approved", joinedDate: "2024-05-15", averageRating: 3.8,
     bankAccountDetails: { accountHolderName: "Mohammed Khan", accountNumber: "112233445566", ifscCode: "SBIN0000789", bankName: "State Bank of India" },
     verificationDocuments: [
       { name: "GST Certificate", url: "https://placehold.co/600x400.png?text=GST+Spices", aiHint: "tax registration" }
-    ]
+    ],
+    videoCounts: { approved: 25, rejected: 5, pending: 0 }
   },
   {
     id: "usr004-sel", name: "Priya Singh", businessName: "Fashion Forward", sellerType: "Influencer", status: "Rejected", joinedDate: "2024-07-01", rejectionReason: "Incomplete documentation", averageRating: 2.1,
@@ -109,7 +120,8 @@ const initialSellersData: Seller[] = [
     verificationDocuments: [
       { name: "Aadhaar Card - Front", url: "https://placehold.co/600x400.png?text=Aadhaar+Priya+F", aiHint: "identity document" },
       { name: "Aadhaar Card - Back", url: "https://placehold.co/600x400.png?text=Aadhaar+Priya+B", aiHint: "identity document" }
-    ]
+    ],
+    videoCounts: { approved: 0, rejected: 0, pending: 0 }
   },
   {
     id: "usr005-sel", name: "Amit Patel", businessName: "Patel's Organics", sellerType: "OnlineSeller", status: "Pending", joinedDate: "2024-07-18", averageRating: 4.9,
@@ -118,13 +130,15 @@ const initialSellersData: Seller[] = [
     ],
     loginLogs: [
         { id: "log_ap1", timestamp: new Date(Date.now() - 86400000 * 0.5).toISOString(), ipAddress: "117.200.50.1", status: "Success", userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.114 Safari/537.36"},
-    ]
+    ],
+    videoCounts: { approved: 8, rejected: 1, pending: 0 }
   },
   {
     id: "usr006-sel", name: "Sneha Iyer", businessName: "Iyer Books", sellerType: "ECommerceSeller", status: "Approved", joinedDate: "2024-04-20", averageRating: 4.2,
     verificationDocuments: [
       { name: "GST Certificate", url: "https://placehold.co/600x400.png?text=GST+IyerBooks", aiHint: "tax registration" }
-    ]
+    ],
+    videoCounts: { approved: 50, rejected: 3, pending: 7 }
   },
   {
     id: "usr007-sel", name: "Vikram Rathore", businessName: "Rathore Mobiles", sellerType: "Wholesaler", status: "Pending", joinedDate: "2024-07-20",
@@ -132,14 +146,16 @@ const initialSellersData: Seller[] = [
     verificationDocuments: [
       { name: "GST Certificate", url: "https://placehold.co/600x400.png?text=GST+Rathore", aiHint: "tax registration" },
       { name: "Trade Registration Certificate", url: "https://placehold.co/600x400.png?text=Trade+Cert+Rathore", aiHint: "business license" }
-    ]
+    ],
+     videoCounts: { approved: 2, rejected: 0, pending: 0 }
   },
   {
     id: "usr008-sel", name: "Deepa Sharma", businessName: "Sharma Decor", sellerType: "IndividualMerchant", status: "Rejected", joinedDate: "2024-06-10", rejectionReason: "Business not verifiable", averageRating: 1.5,
     verificationDocuments: [
       { name: "Aadhaar Card - Front", url: "https://placehold.co/600x400.png?text=Aadhaar+Deepa+F", aiHint: "identity document" },
       { name: "Aadhaar Card - Back", url: "https://placehold.co/600x400.png?text=Aadhaar+Deepa+B", aiHint: "identity document" }
-    ]
+    ],
+    videoCounts: { approved: 1, rejected: 4, pending: 0 }
   },
   {
     id: "usr009-sel", name: "Arjun Mehra", businessName: "Mehra Fitness", sellerType: "Influencer", status: "Approved", joinedDate: "2024-03-01", averageRating: 5.0,
@@ -147,14 +163,16 @@ const initialSellersData: Seller[] = [
     verificationDocuments: [
       { name: "Aadhaar Card - Front", url: "https://placehold.co/600x400.png?text=Aadhaar+Arjun+F", aiHint: "identity document" },
       { name: "Aadhaar Card - Back", url: "https://placehold.co/600x400.png?text=Aadhaar+Arjun+B", aiHint: "identity document" }
-    ]
+    ],
+    videoCounts: { approved: 30, rejected: 1, pending: 5 }
   },
   {
     id: "usr010-sel", name: "Meena Kumari", businessName: "Kumari Crafts", sellerType: "IndividualMerchant", status: "Pending", joinedDate: "2024-07-22", averageRating: 3.2,
     verificationDocuments: [
       { name: "Aadhaar Card - Front", url: "https://placehold.co/600x400.png?text=Aadhaar+Meena+F", aiHint: "identity document" },
       { name: "Aadhaar Card - Back", url: "https://placehold.co/600x400.png?text=Aadhaar+Meena+B", aiHint: "identity document" }
-    ]
+    ],
+    videoCounts: { approved: 0, rejected: 0, pending: 2 }
   },
 ];
 
@@ -175,6 +193,8 @@ export default function SellersPage() {
   const [isImagePopupOpen, setIsImagePopupOpen] = useState(false);
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const [isAddSellerSheetOpen, setIsAddSellerSheetOpen] = useState(false);
+  const [isVideosDialogValidOpen, setIsVideosDialogValidOpen] = useState(false);
+  const [selectedSellerForVideos, setSelectedSellerForVideos] = useState<Seller | null>(null);
 
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -187,7 +207,7 @@ export default function SellersPage() {
   const handleSellerAdded = (newSellerData: NewSellerFormData) => {
     const newSeller: Seller = {
       id: `usr${Date.now()}-sel`,
-      joinedDate: new Date().toISOString().split('T')[0], // YYYY-MM-DD format
+      joinedDate: new Date().toISOString().split('T')[0], 
       name: newSellerData.contactName,
       businessName: newSellerData.businessName,
       email: newSellerData.email,
@@ -205,9 +225,10 @@ export default function SellersPage() {
             bankName: newSellerData.bankName,
           }
         : undefined,
-      verificationDocuments: [], // Placeholder for future document uploads
-      averageRating: null, // Default to null or no rating for new sellers
-      loginLogs: [], // New sellers start with no login logs
+      verificationDocuments: [], 
+      averageRating: null, 
+      loginLogs: [],
+      videoCounts: { approved: 0, rejected: 0, pending: 0 }, // Default video counts
     };
     setSellersData(prevSellers => [newSeller, ...prevSellers]);
     toast({ title: "Seller Added", description: `${newSeller.businessName} has been added to the local list.` });
@@ -242,8 +263,13 @@ export default function SellersPage() {
           valA = new Date(valA as string).getTime();
           valB = new Date(valB as string).getTime();
         } else if (sortConfig.key === 'averageRating') {
-          valA = typeof valA === 'number' ? valA : -1; // Treat null/undefined ratings as -1 for sorting
+          valA = typeof valA === 'number' ? valA : -1; 
           valB = typeof valB === 'number' ? valB : -1;
+        } else if (sortConfig.key === 'videoCounts') {
+            const totalA = a.videoCounts ? a.videoCounts.approved + a.videoCounts.rejected + a.videoCounts.pending : -1;
+            const totalB = b.videoCounts ? b.videoCounts.approved + b.videoCounts.rejected + b.videoCounts.pending : -1;
+            valA = totalA;
+            valB = totalB;
         } else if (typeof valA === 'string' && typeof valB === 'string') {
           valA = valA.toLowerCase();
           valB = valB.toLowerCase();
@@ -289,11 +315,10 @@ export default function SellersPage() {
     try {
       return format(parseISO(dateString), "PP");
     } catch (error) {
-      // Fallback for dates not in ISO format (e.g., "YYYY-MM-DD" from manual add)
       try {
         return format(new Date(dateString), "PP");
       } catch (secondError) {
-        return dateString; // If still error, return original
+        return dateString; 
       }
     }
   };
@@ -371,9 +396,14 @@ export default function SellersPage() {
     });
   };
 
+  const handleViewSellerVideos = (seller: Seller) => {
+    setSelectedSellerForVideos(seller);
+    setIsVideosDialogValiOpen(true);
+  };
+
 
   const handleExportCSV = () => {
-    const headers = ["Seller ID", "Business Name", "Contact Name", "Email", "Phone", "Seller Type", "Joined Date", "Status", "Rejection Reason", "Average Rating"];
+    const headers = ["Seller ID", "Business Name", "Contact Name", "Email", "Phone", "Seller Type", "Joined Date", "Status", "Rejection Reason", "Average Rating", "Approved Videos", "Rejected Videos", "Pending Videos"];
     const csvRows = [
       headers.join(','),
       ...processedSellers.map(seller =>
@@ -387,7 +417,10 @@ export default function SellersPage() {
           formatDateDisplay(seller.joinedDate),
           seller.status,
           seller.rejectionReason || "",
-          seller.averageRating !== null && seller.averageRating !== undefined ? seller.averageRating.toFixed(1) : "N/A"
+          seller.averageRating !== null && seller.averageRating !== undefined ? seller.averageRating.toFixed(1) : "N/A",
+          seller.videoCounts?.approved ?? 0,
+          seller.videoCounts?.rejected ?? 0,
+          seller.videoCounts?.pending ?? 0,
         ].map(value => `"${String(value).replace(/"/g, '""')}"`).join(',')
       )
     ];
@@ -418,7 +451,10 @@ export default function SellersPage() {
         "Joined Date": formatDateDisplay(seller.joinedDate),
         "Status": seller.status,
         "Rejection Reason": seller.rejectionReason || "",
-        "Average Rating": seller.averageRating !== null && seller.averageRating !== undefined ? seller.averageRating.toFixed(1) : "N/A"
+        "Average Rating": seller.averageRating !== null && seller.averageRating !== undefined ? seller.averageRating.toFixed(1) : "N/A",
+        "Approved Videos": seller.videoCounts?.approved ?? 0,
+        "Rejected Videos": seller.videoCounts?.rejected ?? 0,
+        "Pending Videos": seller.videoCounts?.pending ?? 0,
       }));
     const worksheet = XLSX.utils.json_to_sheet(worksheetData);
     const workbook = XLSX.utils.book_new();
@@ -429,10 +465,11 @@ export default function SellersPage() {
 
   const handleExportPDF = () => {
     const doc = new jsPDF();
-    const tableColumn = ["ID", "Business Name", "Contact Name", "Seller Type", "Joined Date", "Status", "Reason", "Rating"];
+    const tableColumn = ["ID", "Business Name", "Contact Name", "Seller Type", "Joined Date", "Status", "Videos (A/R/P)", "Rating"];
     const tableRows: (string | number)[][] = [];
 
     processedSellers.forEach(seller => {
+      const videoCountsText = seller.videoCounts ? `${seller.videoCounts.approved}A/${seller.videoCounts.rejected}R/${seller.videoCounts.pending}P` : "N/A";
       const sellerData = [
         seller.id,
         seller.businessName,
@@ -440,7 +477,7 @@ export default function SellersPage() {
         seller.sellerType,
         formatDateDisplay(seller.joinedDate),
         seller.status,
-        seller.rejectionReason || "",
+        videoCountsText,
         seller.averageRating !== null && seller.averageRating !== undefined ? seller.averageRating.toFixed(1) : "N/A"
       ];
       tableRows.push(sellerData);
@@ -452,6 +489,16 @@ export default function SellersPage() {
       startY: 20,
       theme: 'grid',
       headStyles: { fillColor: [75, 75, 75] },
+      columnStyles: {
+        0: { cellWidth: 25 }, 
+        1: { cellWidth: 35 },
+        2: { cellWidth: 30 },
+        3: { cellWidth: 25 },
+        4: { cellWidth: 20 },
+        5: { cellWidth: 20 },
+        6: { cellWidth: 25 },
+        7: { cellWidth: 15 }
+      }
     });
     doc.text("Sellers Data Report", 14, 15);
     doc.save("sellers_data.pdf");
@@ -535,6 +582,9 @@ export default function SellersPage() {
                 <TableHead onClick={() => handleSort('averageRating')} className="cursor-pointer hover:bg-muted/50 group">
                   <div className="flex items-center gap-1"><StarIcon className="h-4 w-4 text-muted-foreground mr-1" />Avg. Rating {renderSortIcon('averageRating')}</div>
                 </TableHead>
+                <TableHead onClick={() => handleSort('videoCounts')} className="cursor-pointer hover:bg-muted/50 group">
+                  <div className="flex items-center gap-1"><Video className="h-4 w-4 text-muted-foreground mr-1" />Videos (A/R/P) {renderSortIcon('videoCounts')}</div>
+                </TableHead>
                 <TableHead onClick={() => handleSort('joinedDate')} className="cursor-pointer hover:bg-muted/50 group">
                   <div className="flex items-center gap-1">Joined Date {renderSortIcon('joinedDate')}</div>
                 </TableHead>
@@ -567,6 +617,11 @@ export default function SellersPage() {
                     </TableCell>
                     <TableCell>
                       <StarRatingDisplay rating={seller.averageRating} />
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="link" className="p-0 h-auto text-xs" onClick={() => handleViewSellerVideos(seller)}>
+                        {`${seller.videoCounts?.approved ?? 0}A / ${seller.videoCounts?.rejected ?? 0}R / ${seller.videoCounts?.pending ?? 0}P`}
+                      </Button>
                     </TableCell>
                     <TableCell>{formatDateDisplay(seller.joinedDate)}</TableCell>
                     <TableCell>
@@ -633,7 +688,7 @@ export default function SellersPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center h-24 text-muted-foreground">
+                  <TableCell colSpan={9} className="text-center h-24 text-muted-foreground">
                     No sellers found matching your criteria.
                   </TableCell>
                 </TableRow>
@@ -712,6 +767,15 @@ export default function SellersPage() {
         onOpenChange={setIsAddSellerSheetOpen}
         onSellerAdded={handleSellerAdded}
       />
+
+      {selectedSellerForVideos && selectedSellerForVideos.videoCounts && (
+        <SellerVideosListDialog
+          isOpen={isVideosDialogValiOpen}
+          onOpenChange={setIsVideosDialogValidOpen}
+          sellerName={selectedSellerForVideos.businessName}
+          videoCounts={selectedSellerForVideos.videoCounts}
+        />
+      )}
     </div>
   );
 }
