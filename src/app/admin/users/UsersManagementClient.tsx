@@ -7,13 +7,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, UserX, UserCheck, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown, CheckCircle, AlertTriangle, XCircle } from "lucide-react";
+import { MoreHorizontal, Eye, UserX, UserCheck, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown, CheckCircle, AlertTriangle, XCircle, History } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from 'date-fns';
-import type { User, UserStatus, SortableUserKeys, UserLoginLog } from "@/types/user";
+import type { User, UserStatus, SortableUserKeys, UserLoginLog, PurchaseHistoryItem } from "@/types/user";
 import { UserProfileSheet } from "@/components/admin/users/UserProfileSheet";
+import { UserPurchaseHistorySheet } from "@/components/admin/users/UserPurchaseHistorySheet"; // New import
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -27,14 +28,21 @@ const mockUsersData: User[] = [
     loginLogs: [
       { id: "log_a1", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 2).toISOString(), ipAddress: "192.168.1.10", status: "Success", userAgent: "Chrome/Desktop" },
       { id: "log_a2", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 3).toISOString(), ipAddress: "10.0.0.5", status: "Success", userAgent: "Safari/Mobile" },
+    ],
+    purchaseHistory: [
+      { orderId: "ORD1001", productName: "Premium Wireless Headphones", purchaseDate: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 5).toISOString(), amount: 2999, currency: "INR", status: "Completed" },
+      { orderId: "ORD1005", productName: "Ergonomic Mouse Pad", purchaseDate: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 2).toISOString(), amount: 799, currency: "INR", status: "Completed" },
     ]
   },
-  { id: "user_002", name: "Rohan Verma", email: "rohan.v@example.com", joinDate: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 5).toISOString(), status: "PendingVerification", emailVerified: false, lastLogin: null, loginLogs: [] },
+  { id: "user_002", name: "Rohan Verma", email: "rohan.v@example.com", joinDate: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 5).toISOString(), status: "PendingVerification", emailVerified: false, lastLogin: null, loginLogs: [], purchaseHistory: [] },
   {
     id: "user_003", name: "Priya Mehta", email: "priya.mehta@example.com", joinDate: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 20).toISOString(), status: "Suspended", profileImageUrl: "https://placehold.co/100x100.png?text=PM", emailVerified: true, phone: "9988776655", lastLogin: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 7).toISOString(),
     loginLogs: [
       { id: "log_p1", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 7).toISOString(), ipAddress: "203.0.113.45", status: "Success" },
       { id: "log_p2", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 7 - 60000).toISOString(), ipAddress: "203.0.113.45", status: "Failed", userAgent: "Firefox/Desktop" },
+    ],
+    purchaseHistory: [
+        { orderId: "ORD0950", productName: "Designer Phone Case", purchaseDate: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 10).toISOString(), amount: 1200, currency: "INR", status: "Refunded" },
     ]
   },
   { id: "user_004", name: "Karan Singh", email: "karan.s@example.com", joinDate: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 2).toISOString(), status: "Active", emailVerified: true, lastLogin: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 30).toISOString(), loginLogs: [{id: "log_k1", timestamp:new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 30).toISOString(), ipAddress: "172.16.0.100", status: "Success"}] },
@@ -66,6 +74,9 @@ export function UsersManagementClient() {
 
   const [isProfileSheetOpen, setIsProfileSheetOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
+  const [isPurchaseHistorySheetOpen, setIsPurchaseHistorySheetOpen] = useState(false);
+  const [selectedUserForHistory, setSelectedUserForHistory] = useState<User | null>(null);
 
 
   const processedUsers = useMemo(() => {
@@ -147,6 +158,11 @@ export function UsersManagementClient() {
   const handleViewProfile = (user: User) => {
     setSelectedUser(user);
     setIsProfileSheetOpen(true);
+  };
+
+  const handleViewPurchaseHistory = (user: User) => {
+    setSelectedUserForHistory(user);
+    setIsPurchaseHistorySheetOpen(true);
   };
 
   const handleUpdateUserStatus = (userId: string, newStatus: UserStatus) => {
@@ -293,6 +309,9 @@ export function UsersManagementClient() {
                             <DropdownMenuItem onClick={() => handleViewProfile(user)}>
                               <Eye className="mr-2 h-4 w-4" /> View Profile & Logs
                             </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleViewPurchaseHistory(user)}>
+                              <History className="mr-2 h-4 w-4" /> See Purchase History
+                            </DropdownMenuItem>
                             {user.status === "Active" && (
                               <DropdownMenuItem onClick={() => handleUpdateUserStatus(user.id, "Suspended")} className="text-red-600 focus:text-red-700">
                                 <UserX className="mr-2 h-4 w-4" /> Suspend User
@@ -340,6 +359,14 @@ export function UsersManagementClient() {
           onOpenChange={setIsProfileSheetOpen}
           user={selectedUser}
           onUpdateStatus={handleUpdateUserStatus}
+        />
+      )}
+
+      {selectedUserForHistory && (
+        <UserPurchaseHistorySheet
+          isOpen={isPurchaseHistorySheetOpen}
+          onOpenChange={setIsPurchaseHistorySheetOpen}
+          user={selectedUserForHistory}
         />
       )}
     </div>

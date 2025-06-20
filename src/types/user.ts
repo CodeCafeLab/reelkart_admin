@@ -9,6 +9,15 @@ export interface UserLoginLog {
   userAgent?: string;
 }
 
+export interface PurchaseHistoryItem {
+  orderId: string;
+  productName: string;
+  purchaseDate: string; // ISO String
+  amount: number;
+  currency: string; // e.g., "INR", "USD"
+  status: "Completed" | "Pending" | "Failed" | "Refunded";
+}
+
 export interface User {
   id: string;
   name: string;
@@ -20,6 +29,7 @@ export interface User {
   lastLogin?: string | null; // ISO string
   emailVerified: boolean;
   phone?: string | null;
+  purchaseHistory?: PurchaseHistoryItem[];
 }
 
 export type SortableUserKeys = keyof Pick<User, 'id' | 'name' | 'email' | 'joinDate' | 'status' | 'lastLogin'>;
