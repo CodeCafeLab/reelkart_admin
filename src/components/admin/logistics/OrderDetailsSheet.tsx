@@ -13,14 +13,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, User, Store, Truck, XCircle, ShoppingCart, DollarSign, PackageSearch, PackageCheck } from "lucide-react";
-import type { Order, OrderStatus } from "@/app/admin/logistics/page";
-import { format } from 'date-fns'; // Simplified import, parseISO not strictly needed if date is already Date object or valid string for `new Date()`
+import { CalendarDays, User, Store, Truck, XCircle, ShoppingCart, DollarSign as DollarSignIcon, PackageSearch, PackageCheck, CornerDownLeft, ThumbsUp, ThumbsDown, Info } from "lucide-react";
+import type { Order, OrderStatus, ReturnDetails } from "@/app/admin/logistics/page";
+import { format, parseISO } from 'date-fns';
 
 interface OrderDetailsSheetProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   order: Order | null;
+  onApproveReturn?: (orderId: string) => void;
+  onRejectReturn?: (orderId: string) => void;
 }
 
 const statusVariantMap: Record<OrderStatus, "default" | "secondary" | "destructive" | "outline"> = {
@@ -29,34 +31,69 @@ const statusVariantMap: Record<OrderStatus, "default" | "secondary" | "destructi
   Shipped: "default",
   Delivered: "default",
   Cancelled: "destructive",
+  "Return Requested": "secondary",
+  "Return Approved": "default",
+  "Return Rejected": "destructive",
+  "Return In Transit": "secondary",
+  "Returned": "default",
 };
 
 const statusIconMap: Record<OrderStatus, React.ElementType> = {
-  "Pending Payment": DollarSign,
+  "Pending Payment": DollarSignIcon,
   Processing: PackageSearch,
   Shipped: Truck,
   Delivered: PackageCheck,
   Cancelled: XCircle,
+  "Return Requested": CornerDownLeft,
+  "Return Approved": ThumbsUp,
+  "Return Rejected": ThumbsDown,
+  "Return In Transit": Truck,
+  "Returned": PackageCheck,
 };
+
+const returnStatusVariantMap: Record<ReturnDetails['status'], "default" | "secondary" | "destructive" | "outline"> = {
+  "Pending": "secondary",
+  "Approved": "default",
+  "Rejected": "destructive",
+  "In Transit": "secondary",
+  "Received": "default",
+  "Completed": "default"
+};
+
+const returnStatusIconMap: Record<ReturnDetails['status'], React.ElementType> = {
+  "Pending": Clock,
+  "Approved": ThumbsUp,
+  "Rejected": ThumbsDown,
+  "In Transit": Truck,
+  "Received": PackageCheck,
+  "Completed": CheckCircle
+};
+
 
 export function OrderDetailsSheet({
   isOpen,
   onOpenChange,
   order,
+  onApproveReturn,
+  onRejectReturn,
 }: OrderDetailsSheetProps) {
   if (!order) {
     return null;
   }
 
-  const currentStatusVariant = statusVariantMap[order.status];
-  const StatusIcon = statusIconMap[order.status];
+  const currentOrderStatusVariant = statusVariantMap[order.status];
+  const OrderStatusIcon = statusIconMap[order.status];
 
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString: string | undefined | null, includeTime = true) => {
+    if (!dateString) return "N/A";
     try {
-      return format(new Date(dateString), "PPpp"); // e.g. Jul 22, 2024, 4:30 PM
+      return format(parseISO(dateString), includeTime ? "PPpp" : "PP"); 
     } catch (e) {
-      console.error("Error formatting date:", e);
-      return dateString; // fallback
+      try { return format(new Date(dateString), includeTime ? "PPpp" : "PP"); }
+      catch (e2) { 
+        console.error("Error formatting date in OrderDetailsSheet:", e2);
+        return dateString; 
+      }
     }
   };
 
@@ -100,11 +137,11 @@ export function OrderDetailsSheet({
                 </div>
               </div>
                <div className="flex items-center gap-2 col-span-1 sm:col-span-2">
-                <StatusIcon className="h-4 w-4 text-muted-foreground" />
+                <OrderStatusIcon className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Status</p>
-                  <Badge variant={currentStatusVariant}
-                         className={order.status === 'Delivered' ? 'bg-green-500 hover:bg-green-600 text-white' : order.status === 'Shipped' ? 'bg-blue-500 hover:bg-blue-600 text-white' : ''}>
+                  <p className="text-xs text-muted-foreground">Order Status</p>
+                  <Badge variant={currentOrderStatusVariant}
+                         className={`${order.status === 'Delivered' || order.status === 'Return Approved' || order.status === 'Returned' ? 'bg-green-500 hover:bg-green-600 text-white' : order.status === 'Shipped' || order.status === 'Return In Transit' ? 'bg-blue-500 hover:bg-blue-600 text-white' : ''}`}>
                     {order.status}
                   </Badge>
                 </div>
@@ -118,6 +155,55 @@ export function OrderDetailsSheet({
               </div>
             </div>
           </div>
+
+          {order.returnDetails && (
+            <div>
+              <h3 className="text-lg font-medium text-foreground mb-1">Return Request Information</h3>
+              <Separator className="mb-3"/>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 text-sm bg-muted/30 p-4 rounded-md border">
+                <div className="flex items-center gap-2">
+                  <Info className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Return Request ID</p>
+                    <p className="font-medium">{order.returnDetails.requestId}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Return Requested On</p>
+                    <p className="font-medium">{formatDate(order.returnDetails.requestedDate)}</p>
+                  </div>
+                </div>
+                <div className="col-span-full flex items-start gap-2">
+                  <Info className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Reason for Return</p>
+                    <p className="font-medium">{order.returnDetails.reason}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                   {(returnStatusIconMap[order.returnDetails.status] || Info)({className: "h-4 w-4 text-muted-foreground"})}
+                   <div>
+                    <p className="text-xs text-muted-foreground">Return Status</p>
+                    <Badge variant={returnStatusVariantMap[order.returnDetails.status]}
+                           className={order.returnDetails.status === 'Approved' || order.returnDetails.status === 'Received' || order.returnDetails.status === 'Completed' ? 'bg-green-500 hover:bg-green-600 text-white' : ''}>
+                       {order.returnDetails.status}
+                    </Badge>
+                   </div>
+                </div>
+                {order.returnDetails.rejectionReason && (
+                    <div className="col-span-full flex items-start gap-2 text-destructive">
+                        <XCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
+                        <div>
+                            <p className="text-xs">Rejection Reason</p>
+                            <p className="font-medium">{order.returnDetails.rejectionReason}</p>
+                        </div>
+                    </div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div>
             <h3 className="text-lg font-medium text-foreground mb-1">Items in this Order (Placeholder)</h3>
@@ -145,10 +231,27 @@ export function OrderDetailsSheet({
 
         </div>
 
-        <SheetFooter className="p-6 pt-4 border-t mt-auto">
+        <SheetFooter className="p-6 pt-4 border-t mt-auto flex flex-col sm:flex-row sm:justify-between gap-2">
           <SheetClose asChild>
-            <Button variant="outline">Close</Button>
+            <Button variant="outline" className="w-full sm:w-auto">Close</Button>
           </SheetClose>
+          {order.status === "Return Requested" && onApproveReturn && onRejectReturn && (
+            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              <Button 
+                onClick={() => onRejectReturn(order.id)}
+                variant="destructive"
+                className="w-full sm:w-auto"
+              >
+                <ThumbsDown className="mr-2 h-4 w-4" /> Reject Return
+              </Button>
+              <Button 
+                onClick={() => onApproveReturn(order.id)}
+                className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white"
+              >
+                <ThumbsUp className="mr-2 h-4 w-4" /> Approve Return
+              </Button>
+            </div>
+          )}
         </SheetFooter>
       </SheetContent>
     </Sheet>
