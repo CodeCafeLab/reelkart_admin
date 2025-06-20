@@ -76,8 +76,9 @@ function ClientFormattedDateTime({
   const [formattedDate, setFormattedDate] = useState(() => initialFormatFn(isoDateString));
 
   useEffect(() => {
+    // This effect runs only on the client, after hydration
     setFormattedDate(fullFormatFn(isoDateString));
-  }, [isoDateString, fullFormatFn, initialFormatFn]);
+  }, [isoDateString, fullFormatFn, initialFormatFn]); // Dependencies ensure it re-runs if props change
 
   return <>{formattedDate}</>;
 }
@@ -111,10 +112,12 @@ export function ThirdPartyLogDashboardClient() {
     }
   }, []);
 
+  // New simpler formatter for initial render
   const initialFormatDateForDisplay = useCallback((dateString: string) => {
     if (!dateString) return "Invalid Date";
     try {
-      return format(parseISO(dateString), "PP", { locale: enUS });
+      // Using a simpler format for the initial render (e.g., just date part)
+      return format(parseISO(dateString), "PP", { locale: enUS }); // e.g., "Jul 26, 2024"
     } catch (e) { 
       console.error("Error formatting initial date for display:", e, "Input:", dateString);
       return "Format Error"; 
@@ -160,9 +163,7 @@ export function ThirdPartyLogDashboardClient() {
 
   const formatCurrency = (amount: number | null | undefined) => {
     if (amount == null) return "N/A";
-    // Use appSettings.currencyCode which might be INR, USD etc.
-    // next-intl locale is not used here to avoid dependency.
-    const localeForFormatting = appSettings.currencyCode === 'INR' ? 'en-IN' : 'en-US'; // Basic mapping
+    const localeForFormatting = appSettings.currencyCode === 'INR' ? 'en-IN' : 'en-US';
     return new Intl.NumberFormat(localeForFormatting, { 
       style: 'currency',
       currency: appSettings.currencyCode,
@@ -511,4 +512,3 @@ export function ThirdPartyLogDashboardClient() {
     </div>
   );
 }
-

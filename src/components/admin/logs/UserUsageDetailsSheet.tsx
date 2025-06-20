@@ -20,10 +20,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { User, DollarSign, Hash, Activity, Server } from "lucide-react";
 import type { LogEntry, ThirdPartyService, LogStatus } from "@/types/logs";
 import { StatCard } from "@/components/dashboard/StatCard";
-import { enUS } from 'date-fns/locale'; // Default to enUS
-import { format, parseISO } from 'date-fns';
+// Import for date-fns is removed as it's handled by passed-in functions
 
-// Helper component for client-side date formatting
+// Helper component for client-side date formatting (copied from parent for self-containment if needed, or can be a shared util)
 function ClientFormattedDateTime({ 
   isoDateString, 
   fullFormatFn, 
@@ -36,8 +35,9 @@ function ClientFormattedDateTime({
   const [formattedDate, setFormattedDate] = useState(() => initialFormatFn(isoDateString));
 
   useEffect(() => {
+    // This effect runs only on the client, after hydration
     setFormattedDate(fullFormatFn(isoDateString));
-  }, [isoDateString, fullFormatFn, initialFormatFn]); 
+  }, [isoDateString, fullFormatFn, initialFormatFn]);
 
   return <>{formattedDate}</>;
 }
@@ -52,8 +52,8 @@ interface UserUsageDetailsSheetProps {
   serviceIconMap: Record<ThirdPartyService, React.ElementType>;
   statusIconMap: Record<LogStatus, React.ElementType>;
   statusVariantMap: Record<LogStatus, "default" | "secondary" | "destructive" | "outline">;
-  formatDateForDisplay: (dateString: string) => string; // Full format "PPpp"
-  initialFormatDateForDisplay: (dateString: string) => string; // Initial format "PP"
+  formatDateForDisplay: (dateString: string) => string; // For full display (PPpp)
+  initialFormatDateForDisplay: (dateString: string) => string; // For initial display (PP)
 }
 
 interface UserAggregatedStats {
@@ -125,7 +125,7 @@ export function UserUsageDetailsSheet({
   const recentUserLogs = useMemo(() => {
     return userLogs
       .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-      .slice(0, 10); // Show latest 10 logs for this user
+      .slice(0, 10); 
   }, [userLogs]);
 
   if (!userId) {
@@ -214,8 +214,8 @@ export function UserUsageDetailsSheet({
                           <TableCell className="text-xs">
                              <ClientFormattedDateTime 
                                 isoDateString={log.timestamp} 
-                                fullFormatFn={formatDateForDisplay}
-                                initialFormatFn={initialFormatDateForDisplay}
+                                fullFormatFn={formatDateForDisplay} // Passed from parent
+                                initialFormatFn={initialFormatDateForDisplay} // Passed from parent
                               />
                           </TableCell>
                           <TableCell className="text-xs">
@@ -254,4 +254,3 @@ export function UserUsageDetailsSheet({
     </Sheet>
   );
 }
-
