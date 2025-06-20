@@ -7,14 +7,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, PlusCircle, Edit, Trash2, Eye, Send, Clock, CheckCircle, XCircle, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
-import type { BroadcastMessageItem, BroadcastMessageStatus, SortableBroadcastMessageKeys, CreateBroadcastMessageFormValues } from "@/types/broadcast-messages"; // Updated import
-import { BROADCAST_MESSAGE_STATUSES, BROADCAST_MESSAGE_AUDIENCE_TYPES } from "@/types/broadcast-messages"; // Updated import
+import { MoreHorizontal, PlusCircle, Edit, Trash2, Eye, Send, Clock, CheckCircle, XCircle, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown, Users } from "lucide-react"; // Added Users icon
+import type { BroadcastMessageItem, BroadcastMessageStatus, SortableBroadcastMessageKeys, CreateBroadcastMessageFormValues, BroadcastMessageAudienceType } from "@/types/broadcast-messages";
+import { BROADCAST_MESSAGE_STATUSES, BROADCAST_MESSAGE_AUDIENCE_TYPES } from "@/types/broadcast-messages";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from 'date-fns';
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CreateBroadcastMessageSheet } from "@/components/admin/broadcast-messages/CreateBroadcastMessageSheet"; // Updated import
+import { CreateBroadcastMessageSheet } from "@/components/admin/broadcast-messages/CreateBroadcastMessageSheet";
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -22,12 +22,12 @@ import * as XLSX from 'xlsx';
 
 const MOCK_BASE_TIMESTAMP = new Date("2024-07-25T10:00:00.000Z").getTime();
 
-const mockBroadcastMessagesData: BroadcastMessageItem[] = [ // Renamed from mockNotificationsData
+const mockBroadcastMessagesData: BroadcastMessageItem[] = [
   { id: "msg_001", title: "Platform Maintenance Alert", message: "Our platform will undergo scheduled maintenance on July 28th from 2 AM to 4 AM IST. Services might be temporarily unavailable.", audienceType: "AllUsers", status: "Sent", createdAt: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 2).toISOString(), sentAt: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 2 + 1000 * 60 * 5).toISOString() },
   { id: "msg_002", title: "New Feature: Bulk Upload for Sellers!", message: "Exciting news! Sellers can now bulk upload products using our new CSV import tool. Check your dashboard for details.", audienceType: "AllSellers", status: "Sent", createdAt: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24).toISOString(), sentAt: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 + 1000 * 60 * 10).toISOString() },
   { id: "msg_003", title: "Welcome Bonus for New Users", message: "Sign up this week and get a 10% discount on your first purchase! Use code WELCOME10.", audienceType: "UserGroup", audienceTarget: "NewSignupsJuly", status: "Draft", createdAt: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 30).toISOString() },
   { id: "msg_004", title: "KYC Update Required for SellerXYZ", message: "Dear SellerXYZ, please update your KYC documents by August 5th to continue uninterrupted service.", audienceType: "SpecificSeller", audienceTarget: "seller_xyz_123", status: "Scheduled", createdAt: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 5).toISOString(), scheduledAt: new Date(MOCK_BASE_TIMESTAMP + 1000 * 60 * 60 * 24 * 3).toISOString() },
-  { id: "msg_005", title: "Holiday Sale Announcement", message: "Get ready for our big holiday sale starting next Monday! Up to 50% off on select items.", audienceType: "AllUsers", status: "Draft", createdAt: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 15).toISOString() },
+  { id: "msg_005", title: "Holiday Sale Announcement", message: "Get ready for our big holiday sale starting next Monday! Up to 50% off on select items.", audienceType: "AllBuyers", status: "Draft", createdAt: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 15).toISOString() },
 ];
 
 const statusVariantMap: Record<BroadcastMessageStatus, "default" | "secondary" | "destructive" | "outline"> = {
@@ -45,26 +45,27 @@ const statusIconMap: Record<BroadcastMessageStatus, React.ElementType> = {
 };
 
 
-export function BroadcastMessagesClient() { // Renamed from NotificationsClient
+export function BroadcastMessagesClient() {
   const { toast } = useToast();
-  const [messages, setMessages] = useState<BroadcastMessageItem[]>(mockBroadcastMessagesData); // Renamed from notifications
+  const [messages, setMessages] = useState<BroadcastMessageItem[]>(mockBroadcastMessagesData);
   
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<BroadcastMessageStatus | "All">("All");
+  const [audienceTypeFilter, setAudienceTypeFilter] = useState<BroadcastMessageAudienceType | "All">("All"); // New filter state
   const [sortConfig, setSortConfig] = useState<{ key: SortableBroadcastMessageKeys; direction: 'ascending' | 'descending' }>({ key: 'createdAt', direction: 'descending' });
   
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   const [isCreateSheetOpen, setIsCreateSheetOpen] = useState(false);
-  const [editingMessage, setEditingMessage] = useState<BroadcastMessageItem | null>(null); // Renamed from editingNotification
+  const [editingMessage, setEditingMessage] = useState<BroadcastMessageItem | null>(null);
 
 
-  const processedMessages = useMemo(() => { // Renamed from processedNotifications
+  const processedMessages = useMemo(() => {
     let filtered = [...messages];
     if (searchTerm) {
       const lowerSearch = searchTerm.toLowerCase();
-      filtered = filtered.filter(msg => // Renamed from notif
+      filtered = filtered.filter(msg =>
         msg.title.toLowerCase().includes(lowerSearch) ||
         msg.message.toLowerCase().includes(lowerSearch) ||
         (msg.audienceTarget && msg.audienceTarget.toLowerCase().includes(lowerSearch))
@@ -72,6 +73,9 @@ export function BroadcastMessagesClient() { // Renamed from NotificationsClient
     }
     if (statusFilter !== "All") {
       filtered = filtered.filter(msg => msg.status === statusFilter);
+    }
+    if (audienceTypeFilter !== "All") { // Apply audience type filter
+      filtered = filtered.filter(msg => msg.audienceType === audienceTypeFilter);
     }
 
     if (sortConfig.key) {
@@ -93,9 +97,9 @@ export function BroadcastMessagesClient() { // Renamed from NotificationsClient
       });
     }
     return filtered;
-  }, [messages, searchTerm, statusFilter, sortConfig]);
+  }, [messages, searchTerm, statusFilter, audienceTypeFilter, sortConfig]); // Added audienceTypeFilter to dependencies
 
-  const paginatedMessages = useMemo(() => { // Renamed from paginatedNotifications
+  const paginatedMessages = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return processedMessages.slice(start, start + itemsPerPage);
   }, [processedMessages, currentPage, itemsPerPage]);
@@ -136,7 +140,7 @@ export function BroadcastMessagesClient() { // Renamed from NotificationsClient
     }
   };
 
-  const handleViewDetails = (message: BroadcastMessageItem) => { // Renamed from notification
+  const handleViewDetails = (message: BroadcastMessageItem) => {
     toast({
       title: message.title,
       description: (
@@ -153,7 +157,7 @@ export function BroadcastMessagesClient() { // Renamed from NotificationsClient
     });
   };
   
-  const handleEditMessage = (message: BroadcastMessageItem) => { // Renamed from handleEditNotification
+  const handleEditMessage = (message: BroadcastMessageItem) => {
     if (message.status === 'Draft' || message.status === 'Scheduled') {
       setEditingMessage(message);
       setIsCreateSheetOpen(true);
@@ -162,14 +166,14 @@ export function BroadcastMessagesClient() { // Renamed from NotificationsClient
     }
   };
   
-  const handleDeleteMessage = (messageId: string) => { // Renamed from handleDeleteNotification
+  const handleDeleteMessage = (messageId: string) => {
     if(window.confirm("Are you sure you want to delete this broadcast message? This action is local and cannot be undone.")) {
         setMessages(prev => prev.filter(n => n.id !== messageId));
         toast({ title: "Broadcast Message Deleted", description: `Message ${messageId} removed (locally).`, variant: "destructive" });
     }
   };
 
-  const handleCreateOrUpdateMessage = (data: CreateBroadcastMessageFormValues) => { // Renamed from handleCreateOrUpdateNotification
+  const handleCreateOrUpdateMessage = (data: CreateBroadcastMessageFormValues) => {
     if (editingMessage) { 
         setMessages(prev => prev.map(msg => msg.id === editingMessage.id ? {
             ...msg,
@@ -190,7 +194,7 @@ export function BroadcastMessagesClient() { // Renamed from NotificationsClient
     setIsCreateSheetOpen(false);
   };
   
-  const handleSendMessage = (messageId: string) => { // Renamed from handleSendNotification
+  const handleSendMessage = (messageId: string) => {
     setMessages(prev => prev.map(msg => msg.id === messageId ? {
         ...msg,
         status: "Sent",
@@ -273,6 +277,17 @@ export function BroadcastMessagesClient() { // Renamed from NotificationsClient
               />
             </div>
             <div className="flex gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+              <Select value={audienceTypeFilter} onValueChange={(value) => {setAudienceTypeFilter(value as BroadcastMessageAudienceType | "All"); setCurrentPage(1);}}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Filter by audience..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All Audiences</SelectItem>
+                  {BROADCAST_MESSAGE_AUDIENCE_TYPES.map(type => (
+                    <SelectItem key={type} value={type}>{type.replace(/([A-Z])/g, ' $1').trim()}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Select value={statusFilter} onValueChange={(value) => {setStatusFilter(value as BroadcastMessageStatus | "All"); setCurrentPage(1);}}>
                 <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Filter by status..." />
@@ -325,7 +340,10 @@ export function BroadcastMessagesClient() { // Renamed from NotificationsClient
                       <TableCell className="font-medium max-w-[200px] truncate" title={msg.title}>{msg.title}</TableCell>
                       <TableCell className="text-xs text-muted-foreground max-w-[250px] truncate" title={msg.message}>{msg.message}</TableCell>
                       <TableCell className="text-xs">
-                        {msg.audienceType}
+                        <div className="flex items-center gap-1">
+                           <Users className="h-3 w-3 text-muted-foreground" />
+                           {msg.audienceType.replace(/([A-Z])/g, ' $1').trim()}
+                        </div>
                         {msg.audienceTarget && <span className="block text-muted-foreground text-[0.7rem]">({msg.audienceTarget})</span>}
                       </TableCell>
                       <TableCell>
@@ -405,3 +423,4 @@ export function BroadcastMessagesClient() { // Renamed from NotificationsClient
     </div>
   );
 }
+
