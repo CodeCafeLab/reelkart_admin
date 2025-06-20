@@ -13,7 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, User, Store, Truck, XCircle, ShoppingCart, DollarSign as DollarSignIcon, PackageSearch, PackageCheck, CornerDownLeft, ThumbsUp, ThumbsDown, Info, Clock, CheckCircle } from "lucide-react"; // Added Clock and CheckCircle
+import { CalendarDays, User, Store, Truck, XCircle, ShoppingCart, DollarSign as DollarSignIcon, PackageSearch, PackageCheck, CornerDownLeft, ThumbsUp, ThumbsDown, Info, Clock, CheckCircle } from "lucide-react";
 import type { Order, OrderStatus, ReturnDetails } from "@/app/admin/logistics/page";
 import { format, parseISO } from 'date-fns';
 
@@ -96,6 +96,8 @@ export function OrderDetailsSheet({
       }
     }
   };
+
+  const ReturnStatusIcon = order.returnDetails ? returnStatusIconMap[order.returnDetails.status] || Info : Info;
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
@@ -183,7 +185,7 @@ export function OrderDetailsSheet({
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                   {(returnStatusIconMap[order.returnDetails.status] || Info)({className: "h-4 w-4 text-muted-foreground"})}
+                   <ReturnStatusIcon className="h-4 w-4 text-muted-foreground" />
                    <div>
                     <p className="text-xs text-muted-foreground">Return Status</p>
                     <Badge variant={returnStatusVariantMap[order.returnDetails.status]}
