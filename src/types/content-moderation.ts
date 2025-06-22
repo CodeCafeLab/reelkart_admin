@@ -1,4 +1,6 @@
 
+import type { SellerRole } from "./seller-package";
+
 export const FLAG_TYPES = [
   "Nudity or Sexual Content",
   "Hate Speech or Symbols",
@@ -27,11 +29,19 @@ export interface AdminComment {
   timestamp: string; // ISO Date string
 }
 
+export interface Bid {
+  id: string;
+  userName: string;
+  bidAmount: number;
+  timestamp: string; // ISO Date string
+}
+
 export interface ContentItem {
   id: string;
   type: "Video" | "Description";
   title: string;
   uploader: string;
+  uploaderType: SellerRole;
   date: string; // "YYYY-MM-DDTHH:mm:ssZ"
   status: ContentStatus;
   reason?: string;
@@ -46,6 +56,7 @@ export interface ContentItem {
   category?: string;
   stockQuantity?: number;
   isProductVisible?: boolean;
+  bids?: Bid[];
 }
 
 export type SortableContentKeys = keyof Pick<ContentItem, 'id' | 'title' | 'uploader' | 'date' | 'status' | 'avgWatchTimeSeconds' | 'price' | 'category' | 'stockQuantity'>;

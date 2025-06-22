@@ -25,7 +25,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { CheckCircle, XCircle, Film, FileText, User, CalendarDays, AlertTriangle, ThumbsUp, ThumbsDown, Flag, MessageSquare, Send as SendIcon, Bot, Loader2, Clock, ChevronDown, Trash2, Tag, DollarSign, Archive, Power } from "lucide-react";
+import { CheckCircle, XCircle, Film, FileText, User, CalendarDays, AlertTriangle, ThumbsUp, ThumbsDown, Flag, MessageSquare, Send as SendIcon, Bot, Loader2, Clock, ChevronDown, Trash2, Tag, DollarSign, Archive, Power, Gavel } from "lucide-react";
 import type { ContentItem, ContentStatus, AdminComment } from "@/types/content-moderation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -40,6 +40,7 @@ interface ContentDetailsSheetProps {
   onApprove: (itemId: string) => void;
   onReject: (itemId: string) => void;
   onFlag: (itemId: string) => void;
+  onViewBids: (item: ContentItem) => void;
   onToggleVisibility: (itemId: string, newVisibility: boolean) => void;
   formatWatchTime: (seconds: number | undefined) => string;
   formatCurrency: (amount: number | null | undefined) => string;
@@ -58,6 +59,7 @@ export function ContentDetailsSheet({
   onApprove,
   onReject,
   onFlag,
+  onViewBids,
   onToggleVisibility,
   formatWatchTime,
   formatCurrency,
@@ -203,7 +205,7 @@ export function ContentDetailsSheet({
                   <User className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-xs text-muted-foreground">Uploader</p>
-                    <p className="font-medium">{contentItem.uploader}</p>
+                    <p className="font-medium">{contentItem.uploader} ({contentItem.uploaderType.replace(/([A-Z])/g, ' $1').trim()})</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -268,7 +270,7 @@ export function ContentDetailsSheet({
                             <DollarSign className="h-4 w-4 text-muted-foreground" />
                             <div>
                                 <p className="text-xs text-muted-foreground">Price</p>
-                                <p className="font-medium">{formatCurrency(contentItem.price)}</p>
+                                <p className="font-medium">{contentItem.uploaderType === 'Celebrity' ? 'Auction (Bids)' : formatCurrency(contentItem.price)}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -373,6 +375,11 @@ export function ContentDetailsSheet({
         <SheetFooter className="p-6 pt-4 border-t sticky bottom-0 bg-background z-10 flex flex-col sm:flex-row sm:justify-between gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">Close</Button>
             <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+              {contentItem.uploaderType === 'Celebrity' && (
+                  <Button variant="outline" className="w-full sm:w-auto" onClick={() => onViewBids(contentItem)}>
+                      <Gavel className="mr-2 h-4 w-4" /> View Bids
+                  </Button>
+              )}
               <Button 
                 variant="outline" 
                 onClick={() => onFlag(contentItem.id)}

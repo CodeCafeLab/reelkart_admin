@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, ThumbsUp, ThumbsDown, Flag, Loader2, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown, Clock, Package, Archive, Tag, DollarSign, Power } from "lucide-react";
+import { MoreHorizontal, Eye, ThumbsUp, ThumbsDown, Flag, Loader2, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown, Clock, Package, Archive, Tag, DollarSign, Power, Gavel } from "lucide-react";
 import NextImage from "next/image"; // Renamed to avoid conflict
 import { ContentDetailsSheet } from "@/components/admin/content/ContentDetailsSheet"; // Changed import
 import { FlagContentDialog } from "@/components/admin/content/FlagContentDialog";
@@ -17,9 +17,10 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { format, parseISO } from 'date-fns';
-import type { ContentItem, FlagType, ContentStatus, SortableContentKeys, AdminComment } from "@/types/content-moderation"; // Updated import path
+import type { ContentItem, FlagType, ContentStatus, SortableContentKeys, AdminComment, Bid, SellerRole } from "@/types/content-moderation"; // Updated import path
 import { FLAG_TYPES } from "@/types/content-moderation";
 import { useAppSettings } from "@/contexts/AppSettingsContext";
+import { ViewBidsDialog } from "@/components/admin/content/ViewBidsDialog";
 
 
 import jsPDF from 'jspdf';
@@ -32,7 +33,7 @@ const MOCK_COMMENT_TIMESTAMP_2 = new Date(Date.now() - 86400000 * 1).toISOString
 
 const initialContentItems: ContentItem[] = [
   { 
-    id: "vid001", type: "Video", title: "Amazing Product Demo", uploader: "SellerStore A", date: "2024-07-18T10:30:00Z", status: "Pending", thumbnailUrl: `https://placehold.co/300x200.png?text=Vid+Demo`, videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
+    id: "vid001", type: "Video", title: "Amazing Product Demo", uploader: "SellerStore A", uploaderType: "ECommerceSeller", date: "2024-07-18T10:30:00Z", status: "Pending", thumbnailUrl: `https://placehold.co/300x200.png?text=Vid+Demo`, videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
     avgWatchTimeSeconds: 95,
     adminComments: [
       { id: "cmt001", adminName: "AdminJane", text: "Needs review for product claims.", timestamp: MOCK_COMMENT_TIMESTAMP_1 },
@@ -40,22 +41,32 @@ const initialContentItems: ContentItem[] = [
     ],
     price: 2999, category: "Electronics", stockQuantity: 150, isProductVisible: false,
   },
-  { id: "dsc001", type: "Description", title: "Handcrafted Leather Wallet", uploader: "ArtisanGoods", date: "2024-07-17T11:00:00Z", status: "Approved", descriptionText: "This premium handcrafted leather wallet offers a sleek design with multiple card slots and a durable finish. Made from 100% genuine leather.",
+  { id: "dsc001", type: "Description", title: "Handcrafted Leather Wallet", uploader: "ArtisanGoods", uploaderType: "IndividualMerchant", date: "2024-07-17T11:00:00Z", status: "Approved", descriptionText: "This premium handcrafted leather wallet offers a sleek design with multiple card slots and a durable finish. Made from 100% genuine leather.",
     price: 899, category: "Fashion", stockQuantity: 75, isProductVisible: true,
   },
   { 
-    id: "vid002", type: "Video", title: "Unboxing New Gadget", uploader: "TechGuru", date: "2024-07-16T12:15:00Z", status: "Rejected", reason: "Copyright Claim", thumbnailUrl: `https://placehold.co/300x200.png?text=Gadget+Unbox`, videoUrl: "https://www.sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4",
+    id: "vid002", type: "Video", title: "Unboxing New Gadget", uploader: "TechGuru", uploaderType: "Influencer", date: "2024-07-16T12:15:00Z", status: "Rejected", reason: "Copyright Claim", thumbnailUrl: `https://placehold.co/300x200.png?text=Gadget+Unbox`, videoUrl: "https://www.sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4",
     avgWatchTimeSeconds: 45,
     adminComments: [
       { id: "cmt003", adminName: "AdminModerator", text: "Rejected due to copyrighted music track starting at 0:35.", timestamp: MOCK_COMMENT_TIMESTAMP_1 }
     ],
     price: 15000, category: "Gadgets", stockQuantity: 0, isProductVisible: false,
   },
-  { id: "dsc002", type: "Description", title: "Organic Green Tea", uploader: "HealthyLiving", date: "2024-07-19T09:00:00Z", status: "Pending", descriptionText: "Experience the refreshing taste of our 100% organic green tea, sourced from the finest tea gardens. Rich in antioxidants.",
+  { id: "vid004", type: "Video", title: "Exclusive Signed Poster Auction", uploader: "Star Power", uploaderType: "Celebrity", date: "2024-07-20T14:00:00Z", status: "Approved", thumbnailUrl: `https://placehold.co/300x200.png?text=Signed+Poster`, videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
+    avgWatchTimeSeconds: 32,
+    price: 5000, // Starting bid price
+    category: "Memorabilia", stockQuantity: 1, isProductVisible: true,
+    bids: [
+      { id: "bid_001", userName: "SuperFan1", bidAmount: 5500, timestamp: new Date(Date.now() - 86400000 * 0.5).toISOString() },
+      { id: "bid_002", userName: "CollectorZ", bidAmount: 6000, timestamp: new Date(Date.now() - 86400000 * 0.4).toISOString() },
+      { id: "bid_003", userName: "TopBidder", bidAmount: 6250, timestamp: new Date(Date.now() - 86400000 * 0.3).toISOString() },
+    ]
+  },
+  { id: "dsc002", type: "Description", title: "Organic Green Tea", uploader: "HealthyLiving", uploaderType: "OnlineSeller", date: "2024-07-19T09:00:00Z", status: "Pending", descriptionText: "Experience the refreshing taste of our 100% organic green tea, sourced from the finest tea gardens. Rich in antioxidants.",
     price: 450, category: "Groceries", stockQuantity: 200, isProductVisible: false,
   },
   { 
-    id: "vid003", type: "Video", title: "DIY Home Decor Ideas", uploader: "CreativeHome", date: "2024-07-15T14:30:00Z", status: "Approved", thumbnailUrl: `https://placehold.co/300x200.png?text=DIY+Decor`, videoUrl: "https://download.blender.org/peach/trailer/trailer_480p.mov",
+    id: "vid003", type: "Video", title: "DIY Home Decor Ideas", uploader: "CreativeHome", uploaderType: "IndividualMerchant", date: "2024-07-15T14:30:00Z", status: "Approved", thumbnailUrl: `https://placehold.co/300x200.png?text=DIY+Decor`, videoUrl: "https://download.blender.org/peach/trailer/trailer_480p.mov",
     avgWatchTimeSeconds: 182,
     price: 1200, category: "Home Decor", stockQuantity: 40, isProductVisible: true,
   },
@@ -93,6 +104,10 @@ export default function ContentPage() {
   // State for Reject Content Dialog
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [itemToReject, setItemToReject] = useState<ContentItem | null>(null);
+
+  // State for Bids Dialog
+  const [isBidsDialogOpen, setIsBidsDialogOpen] = useState(false);
+  const [itemForBids, setItemForBids] = useState<ContentItem | null>(null);
 
 
   useEffect(() => {
@@ -185,6 +200,11 @@ export default function ContentPage() {
     toast({ title: "Content Flagged", description: `Item ${contentId} flagged as ${flagType}. Status: ${finalStatus}.` });
     setIsFlagDialogOpen(false);
     setItemToFlag(null);
+  };
+  
+  const handleViewBids = (item: ContentItem) => {
+    setItemForBids(item);
+    setIsBidsDialogOpen(true);
   };
 
 
@@ -368,6 +388,7 @@ export default function ContentPage() {
             onApprove={handleApproveContent}
             onReject={handleRejectContent} 
             onFlag={handleFlagContent}
+            onViewBids={handleViewBids}
             sortConfig={videoSortConfig}
             onSort={handleVideoSort}
             renderSortIcon={(key) => renderSortIcon(key, videoSortConfig)}
@@ -406,6 +427,7 @@ export default function ContentPage() {
           onApprove={handleApproveContent}
           onReject={handleRejectContent} 
           onFlag={handleFlagContent}
+          onViewBids={handleViewBids}
           formatWatchTime={formatWatchTime}
           formatCurrency={formatCurrency}
           onToggleVisibility={handleToggleVisibility}
@@ -425,6 +447,13 @@ export default function ContentPage() {
         contentItem={itemToReject}
         onRejectSubmit={handleConfirmReject}
       />
+
+      <ViewBidsDialog
+        isOpen={isBidsDialogOpen}
+        onOpenChange={setIsBidsDialogOpen}
+        contentItem={itemForBids}
+        formatCurrency={formatCurrency}
+      />
     </div>
   );
 }
@@ -436,6 +465,7 @@ interface VideoContentTableProps {
   onApprove: (itemId: string) => void;
   onReject: (itemId: string) => void; 
   onFlag: (itemId: string) => void; 
+  onViewBids: (item: ContentItem) => void;
   onToggleVisibility: (itemId: string, newVisibility: boolean) => void;
   sortConfig: { key: SortableContentKeys; direction: string };
   onSort: (key: SortableContentKeys) => void;
@@ -445,7 +475,7 @@ interface VideoContentTableProps {
   formatCurrency: (amount: number | null | undefined) => string;
 }
 
-function VideoContentTable({ items, onViewDetails, onApprove, onReject, onFlag, onToggleVisibility, sortConfig, onSort, renderSortIcon, formatDate, formatWatchTime, formatCurrency }: VideoContentTableProps) {
+function VideoContentTable({ items, onViewDetails, onApprove, onReject, onFlag, onViewBids, onToggleVisibility, sortConfig, onSort, renderSortIcon, formatDate, formatWatchTime, formatCurrency }: VideoContentTableProps) {
   return (
     <Table>
       <TableHeader>
@@ -487,7 +517,7 @@ function VideoContentTable({ items, onViewDetails, onApprove, onReject, onFlag, 
             </TableCell>
             <TableCell>
                 <p className="font-medium">{item.title}</p>
-                <p className="text-xs text-muted-foreground">{item.uploader}</p>
+                <p className="text-xs text-muted-foreground">{item.uploader} ({item.uploaderType.replace(/([A-Z])/g, ' $1').trim()})</p>
             </TableCell>
             <TableCell>
                 <Badge variant="secondary">{item.category || "N/A"}</Badge>
@@ -517,7 +547,7 @@ function VideoContentTable({ items, onViewDetails, onApprove, onReject, onFlag, 
                 />
             </TableCell>
             <TableCell className="text-right">
-              <ContentActions item={item} onViewDetails={() => onViewDetails(item)} onApprove={onApprove} onReject={onReject} onFlag={onFlag} />
+              <ContentActions item={item} onViewDetails={() => onViewDetails(item)} onApprove={onApprove} onReject={onReject} onFlag={onFlag} onViewBids={() => onViewBids(item)} />
             </TableCell>
           </TableRow>
         ))}
@@ -540,9 +570,10 @@ interface ContentActionsProps {
   onApprove: (itemId: string) => void;
   onReject: (itemId: string) => void; 
   onFlag: (itemId: string) => void;
+  onViewBids: (item: ContentItem) => void;
 }
 
-function ContentActions({ item, onViewDetails, onApprove, onReject, onFlag }: ContentActionsProps) {
+function ContentActions({ item, onViewDetails, onApprove, onReject, onFlag, onViewBids }: ContentActionsProps) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -555,6 +586,11 @@ function ContentActions({ item, onViewDetails, onApprove, onReject, onFlag }: Co
         <DropdownMenuItem onClick={() => onViewDetails(item)}>
           <Eye className="mr-2 h-4 w-4" /> View Content
         </DropdownMenuItem>
+        {item.uploaderType === 'Celebrity' && (
+          <DropdownMenuItem onClick={() => onViewBids(item)}>
+            <Gavel className="mr-2 h-4 w-4" /> View Bids
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem 
           className="text-green-600 focus:text-green-700 focus:bg-green-50"
           onClick={() => onApprove(item.id)}
