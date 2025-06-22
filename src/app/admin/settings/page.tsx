@@ -37,6 +37,10 @@ export default function SettingsPage() {
   const [currencyCode, setCurrencyCode] = React.useState(appSettings.currencyCode);
   const [currencySymbol, setCurrencySymbol] = React.useState(appSettings.currencySymbol);
   
+  // Referral Settings
+  const [referralProgramEnabled, setReferralProgramEnabled] = React.useState(true);
+  const [referralCoins, setReferralCoins] = React.useState("100");
+  
   // Commissions Settings
   const [defaultCommission, setDefaultCommission] = React.useState("15");
   
@@ -84,6 +88,8 @@ export default function SettingsPage() {
       };
       setAppSettings({ currencyCode, currencySymbol });
       toastMessage = "General settings (including currency & KYC approvals) saved!";
+    } else if (category === "Referrals") {
+      settingsToSave = { referralProgramEnabled, referralCoins };
     } else if (category === "Commissions") {
       settingsToSave = { defaultCommission };
     } else if (category === "Integrations") {
@@ -113,6 +119,7 @@ export default function SettingsPage() {
       <Tabs defaultValue="general" className="space-y-4">
         <TabsList className="flex items-center justify-start w-full overflow-x-auto">
           <TabsTrigger value="general"><Cog className="mr-2 h-4 w-4 sm:hidden md:inline-block" />General</TabsTrigger>
+          <TabsTrigger value="referrals"><Share2 className="mr-2 h-4 w-4 sm:hidden md:inline-block" />Referrals</TabsTrigger>
           <TabsTrigger value="commissions"><DollarSign className="mr-2 h-4 w-4 sm:hidden md:inline-block" />Commissions</TabsTrigger>
           <TabsTrigger value="integrations"><Puzzle className="mr-2 h-4 w-4 sm:hidden md:inline-block" />Integrations</TabsTrigger>
           <TabsTrigger value="delivery"><Truck className="mr-2 h-4 w-4 sm:hidden md:inline-block" />Delivery</TabsTrigger>
@@ -192,6 +199,39 @@ export default function SettingsPage() {
               </div>
               
               <Button onClick={() => handleSaveSettings("General")}><Save className="mr-2 h-4 w-4" />Save General Settings</Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="referrals">
+          <Card>
+            <CardHeader>
+              <CardTitle>Referral Program Settings</CardTitle>
+              <CardDescription>Manage the user referral program and coin rewards.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div>
+                  <Label htmlFor="referral-program-enabled" className="font-medium">Enable Referral Program</Label>
+                  <p className="text-sm text-muted-foreground">Turn the entire referral system on or off.</p>
+                </div>
+                <Switch id="referral-program-enabled" checked={referralProgramEnabled} onCheckedChange={setReferralProgramEnabled} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="referral-coins">Coins per Successful Referral</Label>
+                <Input
+                  id="referral-coins"
+                  type="number"
+                  value={referralCoins}
+                  onChange={(e) => setReferralCoins(e.target.value)}
+                  placeholder="e.g., 100"
+                  disabled={!referralProgramEnabled}
+                />
+                <p className="text-sm text-muted-foreground">
+                  The number of coins a referrer receives when their referee completes a required action.
+                </p>
+              </div>
+              <Button onClick={() => handleSaveSettings("Referrals")}><Save className="mr-2 h-4 w-4" />Save Referral Settings</Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -323,4 +363,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-

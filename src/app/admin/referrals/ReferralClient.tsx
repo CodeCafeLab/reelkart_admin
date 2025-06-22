@@ -7,14 +7,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel, DropdownMenuRadioGroup, DropdownMenuRadioItem } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown, User, Eye, CheckCircle, XCircle, Clock, UserPlus, DollarSign } from "lucide-react";
+import { MoreHorizontal, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown, User, Eye, CheckCircle, XCircle, Clock, UserPlus, DollarSign, Gem } from "lucide-react"; // Replaced DollarSign with Gem
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from 'date-fns';
 import { useAppSettings } from "@/contexts/AppSettingsContext";
-import type { Referral, ReferralStatus, CommissionStatus, SortableReferralKeys } from "@/types/referral";
-import { REFERRAL_STATUSES, COMMISSION_STATUSES } from "@/types/referral";
+import type { Referral, ReferralStatus, PayoutStatus, SortableReferralKeys } from "@/types/referral";
+import { REFERRAL_STATUSES, PAYOUT_STATUSES } from "@/types/referral";
 import { ReferralDetailsSheet } from "@/components/admin/referrals/ReferralDetailsSheet";
 
 import jsPDF from 'jspdf';
@@ -22,11 +22,11 @@ import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
 const mockReferrals: Omit<Referral, 'currency'>[] = [
-  { id: "ref_001", referrerId: "user_001", referrerName: "Aisha Sharma", referrerEmail: "aisha.sharma@example.com", refereeId: "user_101", refereeName: "Ravi Kumar", refereeEmail: "ravi.k@example.com", referralDate: "2024-07-25T10:00:00Z", status: "Completed", commissionAmount: 50, commissionStatus: "Pending" },
-  { id: "ref_002", referrerId: "seller_002", referrerName: "Anjali Desai", referrerEmail: "anjali@artistry.com", refereeId: "user_102", refereeName: "Sunita Gupta", refereeEmail: "sunita.g@example.com", referralDate: "2024-07-24T14:30:00Z", status: "Converted", commissionAmount: 150, commissionStatus: "Paid" },
-  { id: "ref_003", referrerId: "user_004", referrerName: "Karan Singh", referrerEmail: "karan.s@example.com", refereeId: "user_103", refereeName: "Amit Patel", refereeEmail: "amit.p@example.com", referralDate: "2024-07-23T09:00:00Z", status: "Pending", commissionAmount: 0, commissionStatus: "Pending" },
-  { id: "ref_004", referrerId: "user_001", referrerName: "Aisha Sharma", referrerEmail: "aisha.sharma@example.com", refereeId: "user_104", refereeName: "Meera Iyer", refereeEmail: "meera.i@example.com", referralDate: "2024-07-22T18:00:00Z", status: "Converted", commissionAmount: 200, commissionStatus: "Pending" },
-  { id: "ref_005", referrerId: "seller_003", referrerName: "Mohammed Khan", referrerEmail: "mohammed@khanspices.com", refereeId: "user_105", refereeName: "Vikram Singh", refereeEmail: "vikram.s@example.com", referralDate: "2024-07-21T11:45:00Z", status: "Completed", commissionAmount: 75, commissionStatus: "Rejected" },
+  { id: "ref_001", referrerId: "user_001", referrerName: "Aisha Sharma", referrerEmail: "aisha.sharma@example.com", refereeId: "user_101", refereeName: "Ravi Kumar", refereeEmail: "ravi.k@example.com", referralDate: "2024-07-25T10:00:00Z", status: "Completed", coinsAwarded: 50, payoutStatus: "Pending" },
+  { id: "ref_002", referrerId: "seller_002", referrerName: "Anjali Desai", referrerEmail: "anjali@artistry.com", refereeId: "user_102", refereeName: "Sunita Gupta", refereeEmail: "sunita.g@example.com", referralDate: "2024-07-24T14:30:00Z", status: "Converted", coinsAwarded: 150, payoutStatus: "Paid" },
+  { id: "ref_003", referrerId: "user_004", referrerName: "Karan Singh", referrerEmail: "karan.s@example.com", refereeId: "user_103", refereeName: "Amit Patel", refereeEmail: "amit.p@example.com", referralDate: "2024-07-23T09:00:00Z", status: "Pending", coinsAwarded: 0, payoutStatus: "Pending" },
+  { id: "ref_004", referrerId: "user_001", referrerName: "Aisha Sharma", referrerEmail: "aisha.sharma@example.com", refereeId: "user_104", refereeName: "Meera Iyer", refereeEmail: "meera.i@example.com", referralDate: "2024-07-22T18:00:00Z", status: "Converted", coinsAwarded: 200, payoutStatus: "Pending" },
+  { id: "ref_005", referrerId: "seller_003", referrerName: "Mohammed Khan", referrerEmail: "mohammed@khanspices.com", refereeId: "user_105", refereeName: "Vikram Singh", refereeEmail: "vikram.s@example.com", referralDate: "2024-07-21T11:45:00Z", status: "Completed", coinsAwarded: 75, payoutStatus: "Rejected" },
 ];
 
 const referralStatusVariantMap: Record<ReferralStatus, "default" | "secondary" | "destructive" | "outline"> = {
@@ -41,13 +41,13 @@ const referralStatusIconMap: Record<ReferralStatus, React.ElementType> = {
   Converted: CheckCircle,
 };
 
-const commissionStatusVariantMap: Record<CommissionStatus, "default" | "secondary" | "destructive" | "outline"> = {
+const payoutStatusVariantMap: Record<PayoutStatus, "default" | "secondary" | "destructive" | "outline"> = {
   Pending: "secondary",
   Paid: "default",
   Rejected: "destructive",
 };
 
-const commissionStatusIconMap: Record<CommissionStatus, React.ElementType> = {
+const payoutStatusIconMap: Record<PayoutStatus, React.ElementType> = {
   Pending: Clock,
   Paid: CheckCircle,
   Rejected: XCircle,
@@ -61,7 +61,7 @@ export function ReferralClient() {
   
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<ReferralStatus | "All">("All");
-  const [commissionStatusFilter, setCommissionStatusFilter] = useState<CommissionStatus | "All">("All");
+  const [payoutStatusFilter, setPayoutStatusFilter] = useState<PayoutStatus | "All">("All");
   const [sortConfig, setSortConfig] = useState<{ key: SortableReferralKeys; direction: 'ascending' | 'descending' }>({ key: 'referralDate', direction: 'descending' });
   
   const [currentPage, setCurrentPage] = useState(1);
@@ -69,15 +69,6 @@ export function ReferralClient() {
 
   const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false);
   const [selectedReferral, setSelectedReferral] = useState<Referral | null>(null);
-
-  const formatCurrency = useCallback((amount: number) => {
-    return new Intl.NumberFormat('en-IN', { 
-      style: 'currency', 
-      currency: appSettings.currencyCode,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(amount);
-  }, [appSettings.currencyCode]);
 
   useEffect(() => {
     setReferrals(prev => prev.map(r => ({...r, currency: appSettings.currencyCode})));
@@ -98,8 +89,8 @@ export function ReferralClient() {
     if (statusFilter !== "All") {
       filtered = filtered.filter(ref => ref.status === statusFilter);
     }
-    if (commissionStatusFilter !== "All") {
-        filtered = filtered.filter(ref => ref.commissionStatus === commissionStatusFilter);
+    if (payoutStatusFilter !== "All") {
+        filtered = filtered.filter(ref => ref.payoutStatus === payoutStatusFilter);
     }
 
     if (sortConfig.key) {
@@ -121,7 +112,7 @@ export function ReferralClient() {
       });
     }
     return filtered;
-  }, [referrals, searchTerm, statusFilter, commissionStatusFilter, sortConfig]);
+  }, [referrals, searchTerm, statusFilter, payoutStatusFilter, sortConfig]);
 
   const paginatedReferrals = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -160,10 +151,10 @@ export function ReferralClient() {
     setIsDetailsSheetOpen(true);
   };
 
-  const handleUpdateCommissionStatus = (referralId: string, newStatus: CommissionStatus) => {
-    setReferrals(prev => prev.map(r => r.id === referralId ? {...r, commissionStatus: newStatus} : r));
-    setSelectedReferral(prev => prev && prev.id === referralId ? {...prev, commissionStatus: newStatus} : prev);
-    toast({title: "Commission Status Updated", description: `Referral ${referralId} commission status changed to ${newStatus}.`});
+  const handleUpdatePayoutStatus = (referralId: string, newStatus: PayoutStatus) => {
+    setReferrals(prev => prev.map(r => r.id === referralId ? {...r, payoutStatus: newStatus} : r));
+    setSelectedReferral(prev => prev && prev.id === referralId ? {...prev, payoutStatus: newStatus} : prev);
+    toast({title: "Payout Status Updated", description: `Referral ${referralId} payout status changed to ${newStatus}.`});
   }
 
   const handleExport = (formatType: 'csv' | 'excel' | 'pdf') => {
@@ -175,7 +166,7 @@ export function ReferralClient() {
       <Card>
         <CardHeader>
           <CardTitle>Referral Log</CardTitle>
-          <CardDescription>Monitor all referral activities and commission statuses.</CardDescription>
+          <CardDescription>Monitor all referral activities and coin reward payouts.</CardDescription>
           <div className="flex flex-col sm:flex-row justify-between items-end gap-2 pt-4">
             <div className="relative w-full sm:max-w-md">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -198,13 +189,13 @@ export function ReferralClient() {
                   ))}
                 </SelectContent>
               </Select>
-              <Select value={commissionStatusFilter} onValueChange={(value) => {setCommissionStatusFilter(value as CommissionStatus | "All"); setCurrentPage(1);}}>
+              <Select value={payoutStatusFilter} onValueChange={(value) => {setPayoutStatusFilter(value as PayoutStatus | "All"); setCurrentPage(1);}}>
                 <SelectTrigger className="w-full sm:w-[180px]">
-                  <SelectValue placeholder="Filter by commission..." />
+                  <SelectValue placeholder="Filter by payout status..." />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="All">All Commission Statuses</SelectItem>
-                  {COMMISSION_STATUSES.map(status => (
+                  <SelectItem value="All">All Payout Statuses</SelectItem>
+                  {PAYOUT_STATUSES.map(status => (
                     <SelectItem key={status} value={status}>{status}</SelectItem>
                   ))}
                 </SelectContent>
@@ -230,8 +221,8 @@ export function ReferralClient() {
                 <TableHead>Referee</TableHead>
                 <TableHead onClick={() => handleSort('referralDate')} className="cursor-pointer hover:bg-muted/50 group"><div className="flex items-center gap-1">Date {renderSortIcon('referralDate')}</div></TableHead>
                 <TableHead onClick={() => handleSort('status')} className="cursor-pointer hover:bg-muted/50 group"><div className="flex items-center gap-1">Referral Status {renderSortIcon('status')}</div></TableHead>
-                <TableHead onClick={() => handleSort('commissionAmount')} className="cursor-pointer hover:bg-muted/50 group text-right"><div className="flex items-center justify-end gap-1">Commission {renderSortIcon('commissionAmount')}</div></TableHead>
-                <TableHead onClick={() => handleSort('commissionStatus')} className="cursor-pointer hover:bg-muted/50 group"><div className="flex items-center gap-1">Commission Status {renderSortIcon('commissionStatus')}</div></TableHead>
+                <TableHead onClick={() => handleSort('coinsAwarded')} className="cursor-pointer hover:bg-muted/50 group text-right"><div className="flex items-center justify-end gap-1">Coins Awarded {renderSortIcon('coinsAwarded')}</div></TableHead>
+                <TableHead onClick={() => handleSort('payoutStatus')} className="cursor-pointer hover:bg-muted/50 group"><div className="flex items-center gap-1">Payout Status {renderSortIcon('payoutStatus')}</div></TableHead>
                 <TableHead className="text-right w-[80px]">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -245,7 +236,7 @@ export function ReferralClient() {
               ) : (
                 paginatedReferrals.map((ref) => {
                   const ReferralStatusIcon = referralStatusIconMap[ref.status];
-                  const CommissionStatusIcon = commissionStatusIconMap[ref.commissionStatus];
+                  const PayoutStatusIcon = payoutStatusIconMap[ref.payoutStatus];
                   return (
                     <TableRow key={ref.id}>
                       <TableCell>
@@ -263,11 +254,16 @@ export function ReferralClient() {
                            <span className="text-xs">{ref.status}</span>
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right text-sm font-medium">{formatCurrency(ref.commissionAmount)}</TableCell>
+                      <TableCell className="text-right text-sm font-medium">
+                        <div className="flex items-center justify-end gap-1.5">
+                           {ref.coinsAwarded > 0 && <Gem className="h-3 w-3 text-blue-400"/>}
+                           <span>{ref.coinsAwarded}</span>
+                        </div>
+                      </TableCell>
                       <TableCell>
-                        <Badge variant={commissionStatusVariantMap[ref.commissionStatus]} className={ref.commissionStatus === "Paid" ? "bg-green-500 hover:bg-green-600 text-white" : ""}>
-                           <CommissionStatusIcon className="mr-1.5 h-3 w-3" />
-                           <span className="text-xs">{ref.commissionStatus}</span>
+                        <Badge variant={payoutStatusVariantMap[ref.payoutStatus]} className={ref.payoutStatus === "Paid" ? "bg-green-500 hover:bg-green-600 text-white" : ""}>
+                           <PayoutStatusIcon className="mr-1.5 h-3 w-3" />
+                           <span className="text-xs">{ref.payoutStatus}</span>
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -283,9 +279,9 @@ export function ReferralClient() {
                               <Eye className="mr-2 h-4 w-4" /> View Details
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuLabel>Update Commission</DropdownMenuLabel>
-                            <DropdownMenuRadioGroup value={ref.commissionStatus} onValueChange={(val) => handleUpdateCommissionStatus(ref.id, val as CommissionStatus)}>
-                                {COMMISSION_STATUSES.map(status => (
+                            <DropdownMenuLabel>Update Payout Status</DropdownMenuLabel>
+                            <DropdownMenuRadioGroup value={ref.payoutStatus} onValueChange={(val) => handleUpdatePayoutStatus(ref.id, val as PayoutStatus)}>
+                                {PAYOUT_STATUSES.map(status => (
                                     <DropdownMenuRadioItem key={status} value={status}>{status}</DropdownMenuRadioItem>
                                 ))}
                             </DropdownMenuRadioGroup>
@@ -325,7 +321,6 @@ export function ReferralClient() {
           isOpen={isDetailsSheetOpen}
           onOpenChange={setIsDetailsSheetOpen}
           referral={selectedReferral}
-          formatCurrency={formatCurrency}
         />
       )}
     </div>

@@ -14,15 +14,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { CalendarDays, User, Mail, DollarSign, CheckCircle, XCircle, Clock, UserPlus, Share2 } from "lucide-react";
-import type { Referral, ReferralStatus, CommissionStatus } from "@/types/referral";
+import { CalendarDays, User, Mail, DollarSign, CheckCircle, XCircle, Clock, UserPlus, Share2, Gem } from "lucide-react";
+import type { Referral, ReferralStatus, PayoutStatus } from "@/types/referral";
 import { format, parseISO } from 'date-fns';
 
 interface ReferralDetailsSheetProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   referral: Referral | null;
-  formatCurrency: (amount: number) => string;
 }
 
 const referralStatusVariantMap: Record<ReferralStatus, "default" | "secondary" | "destructive" | "outline"> = {
@@ -37,13 +36,13 @@ const referralStatusIconMap: Record<ReferralStatus, React.ElementType> = {
   Converted: CheckCircle,
 };
 
-const commissionStatusVariantMap: Record<CommissionStatus, "default" | "secondary" | "destructive" | "outline"> = {
+const payoutStatusVariantMap: Record<PayoutStatus, "default" | "secondary" | "destructive" | "outline"> = {
   Pending: "secondary",
   Paid: "default",
   Rejected: "destructive",
 };
 
-const commissionStatusIconMap: Record<CommissionStatus, React.ElementType> = {
+const payoutStatusIconMap: Record<PayoutStatus, React.ElementType> = {
   Pending: Clock,
   Paid: CheckCircle,
   Rejected: XCircle,
@@ -53,14 +52,13 @@ export function ReferralDetailsSheet({
   isOpen,
   onOpenChange,
   referral,
-  formatCurrency,
 }: ReferralDetailsSheetProps) {
   if (!referral) {
     return null;
   }
 
   const ReferralStatusIcon = referralStatusIconMap[referral.status];
-  const CommissionStatusIcon = commissionStatusIconMap[referral.commissionStatus];
+  const PayoutStatusIcon = payoutStatusIconMap[referral.payoutStatus];
 
   const formatDate = (dateString: string | null | undefined) => {
     if (!dateString) return "N/A";
@@ -106,7 +104,7 @@ export function ReferralDetailsSheet({
           </div>
 
           <div>
-            <h3 className="text-lg font-medium text-foreground mb-1">Referral Status & Commission</h3>
+            <h3 className="text-lg font-medium text-foreground mb-1">Referral Status & Reward</h3>
             <Separator className="mb-3"/>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 text-sm">
               <div className="flex items-center gap-2">
@@ -126,18 +124,18 @@ export function ReferralDetailsSheet({
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-muted-foreground" />
+                <Gem className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Commission</p>
-                  <p className="font-medium">{formatCurrency(referral.commissionAmount)}</p>
+                  <p className="text-xs text-muted-foreground">Coins Awarded</p>
+                  <p className="font-medium">{referral.coinsAwarded}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <CommissionStatusIcon className="h-4 w-4 text-muted-foreground" />
+                <PayoutStatusIcon className="h-4 w-4 text-muted-foreground" />
                 <div>
-                  <p className="text-xs text-muted-foreground">Commission Status</p>
-                  <Badge variant={commissionStatusVariantMap[referral.commissionStatus]} className={referral.commissionStatus === "Paid" ? "bg-green-500 hover:bg-green-600 text-white" : ""}>
-                    {referral.commissionStatus}
+                  <p className="text-xs text-muted-foreground">Payout Status</p>
+                  <Badge variant={payoutStatusVariantMap[referral.payoutStatus]} className={referral.payoutStatus === "Paid" ? "bg-green-500 hover:bg-green-600 text-white" : ""}>
+                    {referral.payoutStatus}
                   </Badge>
                 </div>
               </div>
