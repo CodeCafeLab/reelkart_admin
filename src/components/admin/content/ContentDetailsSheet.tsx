@@ -18,11 +18,12 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, XCircle, Film, FileText, User, CalendarDays, AlertTriangle, ThumbsUp, ThumbsDown, Flag, MessageSquare, Send as SendIcon } from "lucide-react";
+import { CheckCircle, XCircle, Film, FileText, User, CalendarDays, AlertTriangle, ThumbsUp, ThumbsDown, Flag, MessageSquare, Send as SendIcon, Bot, Loader2 } from "lucide-react";
 import type { ContentItem, ContentStatus, AdminComment } from "@/types/content-moderation"; // Updated import
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from 'date-fns';
+import { generateFakeComment, type GenerateFakeCommentInput } from '@/ai/flows/generate-fake-comment';
 
 
 interface ContentDetailsSheetProps {
@@ -50,8 +51,7 @@ export function ContentDetailsSheet({
 }: ContentDetailsSheetProps) {
   const { toast } = useToast();
   const [newComment, setNewComment] = useState("");
-  // For simplicity, comments are part of the contentItem prop and not managed with full state here yet.
-  // A real implementation would involve fetching/posting comments.
+  const [isAiCommenting, setIsAiCommenting] = useState(false);
 
   if (!contentItem) {
     return null;
@@ -69,6 +69,40 @@ export function ContentDetailsSheet({
     // In a real app, you'd update the state or refetch comments here.
     setNewComment(""); // Clear textarea
   };
+  
+  const handleAiComment = async () => {
+    if (!contentItem) return;
+    setIsAiCommenting(true);
+
+    try {
+        const sentiment = Math.random() > 0.5 ? 'positive' : 'negative';
+        const input: GenerateFakeCommentInput = {
+            contentTitle: contentItem.title,
+            contentDescription: contentItem.descriptionText || "A video about " + contentItem.title,
+            sentiment: sentiment,
+        };
+        const result = await generateFakeComment(input);
+        if (result && result.comment && result.username) {
+            setNewComment(`@${result.username}: ${result.comment}`);
+            toast({
+                title: "AI Comment Generated",
+                description: `A ${sentiment} comment has been generated and placed in the text area.`,
+            });
+        } else {
+            throw new Error("AI did not return a valid comment.");
+        }
+    } catch (error) {
+        console.error("Error generating AI comment:", error);
+        toast({
+            title: "AI Comment Failed",
+            description: "Could not generate a comment. Please try again.",
+            variant: "destructive",
+        });
+    } finally {
+        setIsAiCommenting(false);
+    }
+  };
+
 
   const formatDateForDisplay = (dateString: string) => {
     try {
@@ -203,12 +237,22 @@ export function ContentDetailsSheet({
                     id="new-comment"
                     value={newComment}
                     onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Type your comment here..."
+                    placeholder="Type your comment here or generate one with AI..."
                     className="min-h-[80px]"
                   />
-                  <Button onClick={handleAddComment} size="sm" className="mt-2">
-                    <SendIcon className="mr-2 h-4 w-4"/>Submit Comment
-                  </Button>
+                  <div className="flex items-center gap-2 mt-2">
+                    <Button onClick={handleAddComment} size="sm">
+                      <SendIcon className="mr-2 h-4 w-4"/>Submit Comment
+                    </Button>
+                    <Button onClick={handleAiComment} size="sm" variant="outline" disabled={isAiCommenting}>
+                        {isAiCommenting ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
+                        ) : (
+                            <Bot className="mr-2 h-4 w-4"/>
+                        )}
+                        AI Comment
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
