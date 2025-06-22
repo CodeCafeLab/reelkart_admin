@@ -7,38 +7,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuRadioGroup, DropdownMenuRadioItem, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, PackageCheck, PackageSearch, Truck, Edit, Loader2, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown, ShoppingCart, DollarSign as DollarSignIcon, XCircle, CornerDownLeft, ThumbsUp, ThumbsDown } from "lucide-react";
+import { MoreHorizontal, Eye, PackageCheck, PackageSearch, Truck, Edit, Loader2, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown, ShoppingCart, DollarSign as DollarSignIcon, XCircle, CornerDownLeft } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from 'date-fns'; 
 import { OrderDetailsSheet } from "@/components/admin/logistics/OrderDetailsSheet"; 
+import type { Order, OrderStatus, SortableOrderKeys } from "@/types/order";
+import { ALL_ORDER_STATUSES } from "@/types/order";
+
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 
-export interface ReturnDetails {
-  requestId: string;
-  reason: string;
-  requestedDate: string; // ISO Date
-  status: "Pending" | "Approved" | "Rejected" | "In Transit" | "Received" | "Completed";
-  adminNotes?: string;
-  rejectionReason?: string;
-}
-
-export interface Order { 
-  id: string;
-  customer: string;
-  seller: string;
-  date: string; 
-  status: OrderStatus;
-  trackingId: string | null;
-  returnDetails?: ReturnDetails | null;
-}
-
-const MOCK_RETURN_REQUEST_DATE_1 = new Date(Date.now() - 86400000 * 2).toISOString(); // 2 days ago
-const MOCK_RETURN_REQUEST_DATE_2 = new Date(Date.now() - 86400000 * 1).toISOString(); // 1 day ago
+const MOCK_RETURN_REQUEST_DATE_1 = new Date(Date.now() - 86400000 * 2).toISOString();
+const MOCK_RETURN_REQUEST_DATE_2 = new Date(Date.now() - 86400000 * 1).toISOString();
 
 
 const initialOrdersData: Order[] = [
@@ -46,33 +30,13 @@ const initialOrdersData: Order[] = [
   { id: "ord002", customer: "Rohan Verma", seller: "Anjali's Artistry", date: "2024-07-17", status: "Processing", trackingId: null },
   { id: "ord003", customer: "Priya Mehta", seller: "Khan's Spices", date: "2024-07-16", status: "Delivered", trackingId: "TRK98765432" },
   { id: "ord004", customer: "Sameer Ali", seller: "Fashion Forward", date: "2024-07-19", status: "Pending Payment", trackingId: null },
-  { id: "ord005", customer: "Deepika Nair", seller: "Patel's Organics", date: "2024-07-15", status: "Return Requested", trackingId: "TRK24681357", returnDetails: { requestId: "RET001", reason: "Item not as described", requestedDate: MOCK_RETURN_REQUEST_DATE_1, status: "Pending" } },
+  { id: "ord005", customer: "Deepika Nair", seller: "Patel's Organics", date: "2024-07-15", status: "Delivered", trackingId: "TRK24681357", returnDetails: { requestId: "RET001", reason: "Item not as described", requestedDate: MOCK_RETURN_REQUEST_DATE_1, status: "Pending" } },
   { id: "ord006", customer: "Arjun Kumar", seller: "Gadget World", date: "2024-07-20", status: "Processing", trackingId: null },
-  { id: "ord007", customer: "Sneha Reddy", seller: "Home Comforts", date: "2024-07-14", status: "Delivered", trackingId: "TRK13579246" },
+  { id: "ord007", customer: "Sneha Reddy", seller: "Home Comforts", date: "2024-07-14", status: "Returned", trackingId: "TRK13579246", returnDetails: { requestId: "RET003", reason: "Wrong item delivered", requestedDate: new Date(Date.now() - 86400000 * 5).toISOString(), status: "Completed" } },
   { id: "ord008", customer: "Vikram Singh", seller: "Book Haven", date: "2024-07-21", status: "Cancelled", trackingId: null },
-  { id: "ord009", customer: "Natasha Roy", seller: "Beauty Box", date: "2024-07-13", status: "Return Requested", trackingId: "TRK56789012", returnDetails: { requestId: "RET002", reason: "Accidental order", requestedDate: MOCK_RETURN_REQUEST_DATE_2, status: "Pending" } },
+  { id: "ord009", customer: "Natasha Roy", seller: "Beauty Box", date: "2024-07-13", status: "Delivered", trackingId: "TRK56789012", returnDetails: { requestId: "RET002", reason: "Accidental order", requestedDate: MOCK_RETURN_REQUEST_DATE_2, status: "Pending" } },
   { id: "ord010", customer: "Aditya Rao", seller: "Sports Gear", date: "2024-07-22", status: "Pending Payment", trackingId: null },
 ];
-
-export type OrderStatus = 
-  | "Pending Payment" 
-  | "Processing" 
-  | "Shipped" 
-  | "Delivered" 
-  | "Cancelled"
-  | "Return Requested"
-  | "Return Approved"
-  | "Return Rejected"
-  | "Return In Transit" // For future use
-  | "Returned";         // For future use
-
-export type SortableOrderKeys = keyof Order;
-
-const ALL_ORDER_STATUSES: OrderStatus[] = [
-    "Pending Payment", "Processing", "Shipped", "Delivered", "Cancelled",
-    "Return Requested", "Return Approved", "Return Rejected", "Return In Transit", "Returned"
-];
-
 
 const statusVariantMap: Record<OrderStatus, "default" | "secondary" | "destructive" | "outline"> = {
   "Pending Payment": "outline",
@@ -80,11 +44,7 @@ const statusVariantMap: Record<OrderStatus, "default" | "secondary" | "destructi
   Shipped: "default", 
   Delivered: "default", 
   Cancelled: "destructive",
-  "Return Requested": "secondary",
-  "Return Approved": "default",
-  "Return Rejected": "destructive",
-  "Return In Transit": "secondary",
-  "Returned": "default",
+  "Returned": "outline",
 };
 
 const statusIconMap: Record<OrderStatus, React.ElementType> = {
@@ -93,11 +53,7 @@ const statusIconMap: Record<OrderStatus, React.ElementType> = {
   Shipped: Truck,
   Delivered: PackageCheck,
   Cancelled: XCircle,
-  "Return Requested": CornerDownLeft,
-  "Return Approved": ThumbsUp,
-  "Return Rejected": ThumbsDown,
-  "Return In Transit": Truck,
-  "Returned": PackageCheck,
+  "Returned": CornerDownLeft,
 };
 
 export default function LogisticsPage() {
@@ -204,45 +160,6 @@ export default function LogisticsPage() {
     toast({ title: "Order Status Updated", description: `Order ${orderId} status changed to ${newStatus}.` });
   };
 
-  const handleApproveReturn = (orderId: string) => {
-    setOrders(prevOrders =>
-      prevOrders.map(o =>
-        o.id === orderId && o.returnDetails
-          ? {
-              ...o,
-              status: "Return Approved" as OrderStatus,
-              returnDetails: { ...o.returnDetails, status: "Approved" as ReturnDetails['status'] },
-            }
-          : o
-      )
-    );
-    setSelectedOrder(prev => prev && prev.id === orderId && prev.returnDetails ? { ...prev, status: "Return Approved", returnDetails: {...prev.returnDetails, status: "Approved"}} : prev);
-    toast({ title: "Return Approved", description: `Return request for order ${orderId} approved.` });
-    if(selectedOrder?.id === orderId && isSheetOpen) setIsSheetOpen(false);
-  };
-
-  const handleRejectReturn = (orderId: string) => {
-    const reason = window.prompt("Enter reason for rejecting the return:");
-    if (reason === null) return; // User cancelled prompt
-
-    const finalReason = reason.trim() || "Reason not specified by admin.";
-
-    setOrders(prevOrders =>
-      prevOrders.map(o =>
-        o.id === orderId && o.returnDetails
-          ? {
-              ...o,
-              status: "Return Rejected" as OrderStatus,
-              returnDetails: { ...o.returnDetails, status: "Rejected" as ReturnDetails['status'], rejectionReason: finalReason },
-            }
-          : o
-      )
-    );
-    setSelectedOrder(prev => prev && prev.id === orderId && prev.returnDetails ? { ...prev, status: "Return Rejected", returnDetails: {...prev.returnDetails, status: "Rejected", rejectionReason: finalReason}} : prev);
-    toast({ title: "Return Rejected", description: `Return for order ${orderId} rejected. Reason: ${finalReason}`, variant: "destructive" });
-    if(selectedOrder?.id === orderId && isSheetOpen) setIsSheetOpen(false);
-  };
-
 
   const handleViewDetails = (order: Order) => {
     setSelectedOrder(order);
@@ -310,8 +227,8 @@ export default function LogisticsPage() {
       
       <Card>
         <CardHeader>
-          <CardTitle>Order Tracking & Returns</CardTitle>
-          <CardDescription>Overview of all customer orders, their statuses, and any return requests.</CardDescription>
+          <CardTitle>Order Tracking</CardTitle>
+          <CardDescription>Overview of all customer orders and their fulfillment status.</CardDescription>
           <div className="flex flex-col sm:flex-row justify-between items-end gap-2 pt-4">
             <div className="relative w-full sm:max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -379,7 +296,7 @@ export default function LogisticsPage() {
                   <TableCell>{formatDateForDisplay(order.date)}</TableCell>
                   <TableCell>
                     <Badge variant={statusVariantMap[order.status]}
-                           className={`${order.status === 'Delivered' || order.status === 'Return Approved' || order.status === 'Returned' ? 'bg-green-500 hover:bg-green-600 text-white' : order.status === 'Shipped' || order.status === 'Return In Transit' ? 'bg-blue-500 hover:bg-blue-600 text-white' : ''}`}
+                           className={`${order.status === 'Delivered' ? 'bg-green-500 hover:bg-green-600 text-white' : order.status === 'Shipped' ? 'bg-blue-500 hover:bg-blue-600 text-white' : ''}`}
                     >
                       <StatusIcon className="mr-1.5 h-3 w-3" />
                       {order.status}
@@ -398,28 +315,14 @@ export default function LogisticsPage() {
                         <DropdownMenuItem onClick={() => handleViewDetails(order)}>
                           <Eye className="mr-2 h-4 w-4" /> View Details
                         </DropdownMenuItem>
-                        
-                        {order.status === "Return Requested" && (
-                          <>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuLabel>Manage Return</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => handleApproveReturn(order.id)} className="text-green-600 focus:text-green-700">
-                              <ThumbsUp className="mr-2 h-4 w-4" /> Approve Return
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleRejectReturn(order.id)} className="text-red-600 focus:text-red-700">
-                              <ThumbsDown className="mr-2 h-4 w-4" /> Reject Return
-                            </DropdownMenuItem>
-                          </>
-                        )}
-
                         <DropdownMenuSeparator />
                         <DropdownMenuLabel>Update Status</DropdownMenuLabel>
                         <DropdownMenuRadioGroup 
                             value={order.status} 
                             onValueChange={(newStatus) => handleUpdateStatus(order.id, newStatus as OrderStatus)}
                         >
-                          {ALL_ORDER_STATUSES.filter(s => s !== "Pending Payment" && !s.startsWith("Return")).map(statusOption => ( 
-                             <DropdownMenuRadioItem key={statusOption} value={statusOption} disabled={order.status.startsWith("Return")}>
+                          {ALL_ORDER_STATUSES.filter(s => !s.startsWith("Return")).map(statusOption => ( 
+                             <DropdownMenuRadioItem key={statusOption} value={statusOption}>
                                 {statusOption === "Processing" && <PackageSearch className="mr-2 h-4 w-4" />}
                                 {statusOption === "Shipped" && <Truck className="mr-2 h-4 w-4" />}
                                 {statusOption === "Delivered" && <PackageCheck className="mr-2 h-4 w-4" />}
@@ -472,8 +375,6 @@ export default function LogisticsPage() {
         isOpen={isSheetOpen}
         onOpenChange={setIsSheetOpen}
         order={selectedOrder}
-        onApproveReturn={handleApproveReturn}
-        onRejectReturn={handleRejectReturn}
       />
     </div>
   );

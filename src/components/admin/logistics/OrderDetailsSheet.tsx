@@ -14,15 +14,13 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { CalendarDays, User, Store, Truck, XCircle, ShoppingCart, DollarSign as DollarSignIcon, PackageSearch, PackageCheck, CornerDownLeft, ThumbsUp, ThumbsDown, Info, Clock, CheckCircle } from "lucide-react";
-import type { Order, OrderStatus, ReturnDetails } from "@/app/admin/logistics/page";
+import type { Order, OrderStatus, ReturnDetails, ReturnStatus } from "@/types/order";
 import { format, parseISO } from 'date-fns';
 
 interface OrderDetailsSheetProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   order: Order | null;
-  onApproveReturn?: (orderId: string) => void;
-  onRejectReturn?: (orderId: string) => void;
 }
 
 const statusVariantMap: Record<OrderStatus, "default" | "secondary" | "destructive" | "outline"> = {
@@ -31,11 +29,7 @@ const statusVariantMap: Record<OrderStatus, "default" | "secondary" | "destructi
   Shipped: "default",
   Delivered: "default",
   Cancelled: "destructive",
-  "Return Requested": "secondary",
-  "Return Approved": "default",
-  "Return Rejected": "destructive",
-  "Return In Transit": "secondary",
-  "Returned": "default",
+  "Returned": "outline",
 };
 
 const statusIconMap: Record<OrderStatus, React.ElementType> = {
@@ -44,14 +38,10 @@ const statusIconMap: Record<OrderStatus, React.ElementType> = {
   Shipped: Truck,
   Delivered: PackageCheck,
   Cancelled: XCircle,
-  "Return Requested": CornerDownLeft,
-  "Return Approved": ThumbsUp,
-  "Return Rejected": ThumbsDown,
-  "Return In Transit": Truck,
-  "Returned": PackageCheck,
+  "Returned": CornerDownLeft,
 };
 
-const returnStatusVariantMap: Record<ReturnDetails['status'], "default" | "secondary" | "destructive" | "outline"> = {
+const returnStatusVariantMap: Record<ReturnStatus, "default" | "secondary" | "destructive" | "outline"> = {
   "Pending": "secondary",
   "Approved": "default",
   "Rejected": "destructive",
@@ -60,7 +50,7 @@ const returnStatusVariantMap: Record<ReturnDetails['status'], "default" | "secon
   "Completed": "default"
 };
 
-const returnStatusIconMap: Record<ReturnDetails['status'], React.ElementType> = {
+const returnStatusIconMap: Record<ReturnStatus, React.ElementType> = {
   "Pending": Clock,
   "Approved": ThumbsUp,
   "Rejected": ThumbsDown,
@@ -74,8 +64,6 @@ export function OrderDetailsSheet({
   isOpen,
   onOpenChange,
   order,
-  onApproveReturn,
-  onRejectReturn,
 }: OrderDetailsSheetProps) {
   if (!order) {
     return null;
@@ -143,7 +131,7 @@ export function OrderDetailsSheet({
                 <div>
                   <p className="text-xs text-muted-foreground">Order Status</p>
                   <Badge variant={currentOrderStatusVariant}
-                         className={`${order.status === 'Delivered' || order.status === 'Return Approved' || order.status === 'Returned' ? 'bg-green-500 hover:bg-green-600 text-white' : order.status === 'Shipped' || order.status === 'Return In Transit' ? 'bg-blue-500 hover:bg-blue-600 text-white' : ''}`}>
+                         className={`${order.status === 'Delivered' ? 'bg-green-500 hover:bg-green-600 text-white' : order.status === 'Shipped' ? 'bg-blue-500 hover:bg-blue-600 text-white' : ''}`}>
                     {order.status}
                   </Badge>
                 </div>
@@ -233,27 +221,10 @@ export function OrderDetailsSheet({
 
         </div>
 
-        <SheetFooter className="p-6 pt-4 border-t mt-auto flex flex-col sm:flex-row sm:justify-between gap-2">
+        <SheetFooter className="p-6 pt-4 border-t mt-auto flex flex-col sm:flex-row sm:justify-end gap-2">
           <SheetClose asChild>
             <Button variant="outline" className="w-full sm:w-auto">Close</Button>
           </SheetClose>
-          {order.status === "Return Requested" && onApproveReturn && onRejectReturn && (
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-              <Button 
-                onClick={() => onRejectReturn(order.id)}
-                variant="destructive"
-                className="w-full sm:w-auto"
-              >
-                <ThumbsDown className="mr-2 h-4 w-4" /> Reject Return
-              </Button>
-              <Button 
-                onClick={() => onApproveReturn(order.id)}
-                className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white"
-              >
-                <ThumbsUp className="mr-2 h-4 w-4" /> Approve Return
-              </Button>
-            </div>
-          )}
         </SheetFooter>
       </SheetContent>
     </Sheet>
