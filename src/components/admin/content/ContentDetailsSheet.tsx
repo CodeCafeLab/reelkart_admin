@@ -1,7 +1,7 @@
 "use client";
 
 import NextImage from "next/image";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -23,7 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, XCircle, Film, FileText, User, CalendarDays, AlertTriangle, ThumbsUp, ThumbsDown, Flag, MessageSquare, Send as SendIcon, Bot, Loader2, Clock, ChevronDown } from "lucide-react";
+import { CheckCircle, XCircle, Film, FileText, User, CalendarDays, AlertTriangle, ThumbsUp, ThumbsDown, Flag, MessageSquare, Send as SendIcon, Bot, Loader2, Clock, ChevronDown, Trash2 } from "lucide-react";
 import type { ContentItem, ContentStatus, AdminComment } from "@/types/content-moderation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -59,6 +59,15 @@ export function ContentDetailsSheet({
   const { toast } = useToast();
   const [newComment, setNewComment] = useState("");
   const [isAiCommenting, setIsAiCommenting] = useState(false);
+  const [comments, setComments] = useState<AdminComment[]>([]);
+
+  useEffect(() => {
+    if (contentItem?.adminComments) {
+      setComments(contentItem.adminComments);
+    } else {
+      setComments([]);
+    }
+  }, [contentItem]);
 
   if (!contentItem) {
     return null;
@@ -71,9 +80,26 @@ export function ContentDetailsSheet({
       toast({ title: "Cannot add empty comment", variant: "destructive" });
       return;
     }
-    console.log("New Comment Added (Mock):", { contentId: contentItem.id, adminName: "CurrentAdmin", text: newComment, timestamp: new Date().toISOString() });
-    toast({ title: "Comment Added (Mock)", description: "Your comment has been logged." });
+    const newCommentObject: AdminComment = {
+      id: `cmt_${Date.now()}`,
+      adminName: "CurrentAdmin",
+      text: newComment,
+      timestamp: new Date().toISOString(),
+    };
+    setComments(prevComments => [...prevComments, newCommentObject]);
+    toast({ title: "Comment Added (Local)", description: "Your comment has been added to this view." });
     setNewComment("");
+  };
+
+  const handleDeleteComment = (commentId: string) => {
+    if (window.confirm("Are you sure you want to delete this comment? This is a local action.")) {
+      setComments(prevComments => prevComments.filter(comment => comment.id !== commentId));
+      toast({
+        title: "Comment Deleted (Local)",
+        description: `Comment ${commentId} has been removed from this view.`,
+        variant: "destructive"
+      });
+    }
   };
   
   const handleAiComment = async (sentiment: 'positive' | 'negative') => {
@@ -224,14 +250,23 @@ export function ContentDetailsSheet({
               <h3 className="text-lg font-medium text-foreground mb-1 flex items-center gap-2"><MessageSquare className="h-5 w-5"/>Admin Reviews & Comments</h3>
               <Separator className="mb-3"/>
               <div className="space-y-4">
-                {(contentItem.adminComments && contentItem.adminComments.length > 0) ? (
-                  contentItem.adminComments.map(comment => (
+                {comments.length > 0 ? (
+                  comments.map(comment => (
                     <Card key={comment.id} className="shadow-none border">
-                      <CardHeader className="p-3 pb-1">
+                      <CardHeader className="p-3 pb-1 flex flex-row items-start justify-between">
                         <CardDescription className="text-xs">
                           <span className="font-semibold text-foreground">{comment.adminName}</span>
                           <span className="text-muted-foreground"> on {formatDateForDisplay(comment.timestamp)}</span>
                         </CardDescription>
+                         <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                            onClick={() => handleDeleteComment(comment.id)}
+                            aria-label="Delete comment"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
                       </CardHeader>
                       <CardContent className="p-3 pt-0">
                         <p className="text-sm">{comment.text}</p>
