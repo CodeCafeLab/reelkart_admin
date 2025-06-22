@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, XCircle, Film, FileText, User, CalendarDays, AlertTriangle, ThumbsUp, ThumbsDown, Flag, MessageSquare, Send as SendIcon, Bot, Loader2 } from "lucide-react";
+import { CheckCircle, XCircle, Film, FileText, User, CalendarDays, AlertTriangle, ThumbsUp, ThumbsDown, Flag, MessageSquare, Send as SendIcon, Bot, Loader2, Clock } from "lucide-react";
 import type { ContentItem, ContentStatus, AdminComment } from "@/types/content-moderation"; // Updated import
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -33,6 +33,7 @@ interface ContentDetailsSheetProps {
   onApprove: (itemId: string) => void;
   onReject: (itemId: string) => void; // This will now open the reject dialog
   onFlag: (itemId: string) => void;   // This will now open the flag dialog
+  formatWatchTime: (seconds: number | undefined) => string;
 }
 
 const statusVariant: Record<ContentStatus, "default" | "secondary" | "destructive" | "outline"> = {
@@ -48,6 +49,7 @@ export function ContentDetailsSheet({
   onApprove,
   onReject,
   onFlag,
+  formatWatchTime,
 }: ContentDetailsSheetProps) {
   const { toast } = useToast();
   const [newComment, setNewComment] = useState("");
@@ -174,6 +176,13 @@ export function ContentDetailsSheet({
                   <div>
                     <p className="text-xs text-muted-foreground">Date</p>
                     <p className="font-medium">{formatDateForDisplay(contentItem.date)}</p>
+                  </div>
+                </div>
+                 <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Avg. Watch Time</p>
+                    <p className="font-medium">{formatWatchTime(contentItem.avgWatchTimeSeconds)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">

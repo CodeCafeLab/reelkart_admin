@@ -38,11 +38,12 @@ export interface ContentItem {
   thumbnailUrl?: string; // For videos
   descriptionText?: string; // For descriptions
   videoUrl?: string; // For video playback
+  avgWatchTimeSeconds?: number;
   flagDetails?: FlagDetails;
   adminComments?: AdminComment[]; // Added for admin comments
 }
 
-export type SortableContentKeys = keyof Pick<ContentItem, 'id' | 'title' | 'uploader' | 'date' | 'status'>;
+export type SortableContentKeys = keyof Pick<ContentItem, 'id' | 'title' | 'uploader' | 'date' | 'status' | 'avgWatchTimeSeconds'>;
 
 export const PREDEFINED_CONTENT_REJECTION_REASONS = [
   "Copyright Infringement",

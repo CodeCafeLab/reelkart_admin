@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, ThumbsUp, ThumbsDown, Flag, Loader2, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { MoreHorizontal, Eye, ThumbsUp, ThumbsDown, Flag, Loader2, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown, Clock } from "lucide-react";
 import NextImage from "next/image"; // Renamed to avoid conflict
 import { ContentDetailsSheet } from "@/components/admin/content/ContentDetailsSheet"; // Changed import
 import { FlagContentDialog } from "@/components/admin/content/FlagContentDialog";
@@ -31,6 +31,7 @@ const MOCK_COMMENT_TIMESTAMP_2 = new Date(Date.now() - 86400000 * 1).toISOString
 const initialContentItems: ContentItem[] = [
   { 
     id: "vid001", type: "Video", title: "Amazing Product Demo", uploader: "SellerStore A", date: "2024-07-18T10:30:00Z", status: "Pending", thumbnailUrl: `https://placehold.co/300x200.png?text=Vid+Demo`, videoUrl: "https://www.w3schools.com/html/mov_bbb.mp4",
+    avgWatchTimeSeconds: 95,
     adminComments: [
       { id: "cmt001", adminName: "AdminJane", text: "Needs review for product claims.", timestamp: MOCK_COMMENT_TIMESTAMP_1 },
       { id: "cmt002", adminName: "AdminAlex", text: "Seems okay, but let's check background music for copyright.", timestamp: MOCK_COMMENT_TIMESTAMP_2 }
@@ -39,12 +40,16 @@ const initialContentItems: ContentItem[] = [
   { id: "dsc001", type: "Description", title: "Handcrafted Leather Wallet", uploader: "ArtisanGoods", date: "2024-07-17T11:00:00Z", status: "Approved", descriptionText: "This premium handcrafted leather wallet offers a sleek design with multiple card slots and a durable finish. Made from 100% genuine leather." },
   { 
     id: "vid002", type: "Video", title: "Unboxing New Gadget", uploader: "TechGuru", date: "2024-07-16T12:15:00Z", status: "Rejected", reason: "Copyright Claim", thumbnailUrl: `https://placehold.co/300x200.png?text=Gadget+Unbox`, videoUrl: "https://www.sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4",
+    avgWatchTimeSeconds: 45,
     adminComments: [
       { id: "cmt003", adminName: "AdminModerator", text: "Rejected due to copyrighted music track starting at 0:35.", timestamp: MOCK_COMMENT_TIMESTAMP_1 }
     ]
   },
   { id: "dsc002", type: "Description", title: "Organic Green Tea", uploader: "HealthyLiving", date: "2024-07-19T09:00:00Z", status: "Pending", descriptionText: "Experience the refreshing taste of our 100% organic green tea, sourced from the finest tea gardens. Rich in antioxidants." },
-  { id: "vid003", type: "Video", title: "DIY Home Decor Ideas", uploader: "CreativeHome", date: "2024-07-15T14:30:00Z", status: "Approved", thumbnailUrl: `https://placehold.co/300x200.png?text=DIY+Decor`, videoUrl: "https://download.blender.org/peach/trailer/trailer_480p.mov" },
+  { 
+    id: "vid003", type: "Video", title: "DIY Home Decor Ideas", uploader: "CreativeHome", date: "2024-07-15T14:30:00Z", status: "Approved", thumbnailUrl: `https://placehold.co/300x200.png?text=DIY+Decor`, videoUrl: "https://download.blender.org/peach/trailer/trailer_480p.mov",
+    avgWatchTimeSeconds: 182
+  },
 ];
 
 
@@ -169,6 +174,9 @@ export default function ContentPage() {
         if (videoSortConfig.key === 'date') {
           valA = new Date(valA as string).getTime();
           valB = new Date(valB as string).getTime();
+        } else if (videoSortConfig.key === 'avgWatchTimeSeconds') {
+          valA = typeof valA === 'number' ? valA : -1;
+          valB = typeof valB === 'number' ? valB : -1;
         } else if (typeof valA === 'string' && typeof valB === 'string') {
           valA = valA.toLowerCase();
           valB = valB.toLowerCase();
@@ -206,6 +214,15 @@ export default function ContentPage() {
   const formatDateForDisplay = (dateString: string) => format(parseISO(dateString), "PPpp");
   const formatDateForExport = (dateString: string) => format(parseISO(dateString), "yyyy-MM-dd HH:mm:ss");
 
+  const formatWatchTime = (seconds: number | undefined): string => {
+    if (seconds === undefined || seconds === null || isNaN(seconds)) {
+      return "N/A";
+    }
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}m ${remainingSeconds}s`;
+  };
+
   const createExportHandler = (contentType: 'video') => {
     const dataToExport = contentType === 'video' ? processedVideoItems : [];
     const filenamePrefix = contentType === 'video' ? 'video_content' : 'description_content';
@@ -233,8 +250,7 @@ export default function ContentPage() {
                 Date: formatDateForExport(item.date), Status: item.status, Reason: item.reason || '',
                 "Flag Type": item.flagDetails?.type || '', "Flag Reason": item.flagDetails?.reason || ''
             }));
-            const ws = XLSX.utils.json_to_sheet(wsData);
-            const wb = XLSX.utils.book_new();
+            const ws = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, contentType === 'video' ? "Videos" : "Descriptions");
             XLSX.writeFile(wb, `${filenamePrefix}_export.xlsx`);
             toast({ title: "Excel Exported", description: `${contentType} data exported.` });
@@ -320,6 +336,7 @@ export default function ContentPage() {
             onSort={handleVideoSort}
             renderSortIcon={(key) => renderSortIcon(key, videoSortConfig)}
             formatDate={formatDateForDisplay}
+            formatWatchTime={formatWatchTime}
           />
           <div className="flex items-center justify-between mt-6">
             <span className="text-sm text-muted-foreground">
@@ -350,7 +367,8 @@ export default function ContentPage() {
           contentItem={selectedItemForDetails}
           onApprove={handleApproveContent}
           onReject={handleRejectContent} 
-          onFlag={handleFlagContent} 
+          onFlag={handleFlagContent}
+          formatWatchTime={formatWatchTime}
         />
       )}
 
@@ -382,9 +400,10 @@ interface VideoContentTableProps {
   onSort: (key: SortableContentKeys) => void;
   renderSortIcon: (key: SortableContentKeys) => JSX.Element;
   formatDate: (dateString: string) => string;
+  formatWatchTime: (seconds: number | undefined) => string;
 }
 
-function VideoContentTable({ items, onViewDetails, onApprove, onReject, onFlag, sortConfig, onSort, renderSortIcon, formatDate }: VideoContentTableProps) {
+function VideoContentTable({ items, onViewDetails, onApprove, onReject, onFlag, sortConfig, onSort, renderSortIcon, formatDate, formatWatchTime }: VideoContentTableProps) {
   return (
     <Table>
       <TableHeader>
@@ -398,6 +417,9 @@ function VideoContentTable({ items, onViewDetails, onApprove, onReject, onFlag, 
           </TableHead>
           <TableHead onClick={() => onSort('date')} className="cursor-pointer hover:bg-muted/50 group">
             <div className="flex items-center gap-1">Date {renderSortIcon('date')}</div>
+          </TableHead>
+          <TableHead onClick={() => onSort('avgWatchTimeSeconds')} className="cursor-pointer hover:bg-muted/50 group">
+            <div className="flex items-center gap-1">Avg. Watch Time {renderSortIcon('avgWatchTimeSeconds')}</div>
           </TableHead>
           <TableHead onClick={() => onSort('status')} className="cursor-pointer hover:bg-muted/50 group">
             <div className="flex items-center gap-1">Status {renderSortIcon('status')}</div>
@@ -423,6 +445,7 @@ function VideoContentTable({ items, onViewDetails, onApprove, onReject, onFlag, 
             <TableCell className="font-medium">{item.title}</TableCell>
             <TableCell>{item.uploader}</TableCell>
             <TableCell>{formatDate(item.date)}</TableCell>
+            <TableCell>{formatWatchTime(item.avgWatchTimeSeconds)}</TableCell>
             <TableCell>
               <div className="flex items-center gap-1">
                 <Badge variant={statusVariant[item.status as ContentStatus]} className={item.status === 'Approved' ? 'bg-green-500 hover:bg-green-600 text-white' : item.status === 'Rejected' ? 'bg-red-500 hover:bg-red-600 text-white' : ''}>
@@ -445,7 +468,7 @@ function VideoContentTable({ items, onViewDetails, onApprove, onReject, onFlag, 
         ))}
          {items.length === 0 && (
           <TableRow>
-            <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
+            <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
               No video content to display.
             </TableCell>
           </TableRow>
