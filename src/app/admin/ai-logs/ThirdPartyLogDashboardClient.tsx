@@ -7,11 +7,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown, AlertCircle, CheckCircle, Clock, DollarSign, Server, MessageSquare, Truck as LogisticsIcon, Brain, CreditCard, BarChartHorizontal, User, Eye } from "lucide-react";
+import { MoreHorizontal, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown, AlertCircle, CheckCircle, Clock, DollarSign, Server, MessageSquare, Truck as LogisticsIcon, Brain, CreditCard, BarChartHorizontal, User, Eye, CalendarIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { format, parseISO } from 'date-fns';
+import { addDays, format, parseISO } from 'date-fns';
 import { enUS } from 'date-fns/locale'; // Default to enUS
 import { useAppSettings } from "@/contexts/AppSettingsContext";
 import { StatCard } from "@/components/dashboard/StatCard";
@@ -19,6 +19,11 @@ import type { LogEntry, ThirdPartyService, LogStatus, SortableLogKeys, Dashboard
 import { THIRD_PARTY_SERVICES, LOG_STATUSES } from "@/types/logs";
 import { UserUsageDetailsSheet } from "@/components/admin/logs/UserUsageDetailsSheet";
 import { LogEntryDetailsSheet } from "@/components/admin/logs/LogEntryDetailsSheet"; // New Import
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import type { DateRange } from "react-day-picker";
+
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -95,6 +100,10 @@ export function ThirdPartyLogDashboardClient() {
   const [searchTerm, setSearchTerm] = useState("");
   const [serviceFilter, setServiceFilter] = useState<ThirdPartyService | "All">("All");
   const [statusFilter, setStatusFilter] = useState<LogStatus | "All">("All");
+  const [date, setDate] = useState<DateRange | undefined>({
+    from: addDays(new Date(), -30),
+    to: new Date(),
+  });
   const [sortConfig, setSortConfig] = useState<{ key: SortableLogKeys; direction: 'ascending' | 'descending' }>({ key: 'timestamp', direction: 'descending' });
   
   const [currentPage, setCurrentPage] = useState(1);
@@ -195,6 +204,15 @@ export function ThirdPartyLogDashboardClient() {
     if (statusFilter !== "All") {
       filtered = filtered.filter(log => log.status === statusFilter);
     }
+    
+    if (date?.from) {
+      filtered = filtered.filter(log => new Date(log.timestamp) >= date.from!);
+    }
+    if (date?.to) {
+      const toDate = new Date(date.to);
+      toDate.setHours(23, 59, 59, 999); // Include the entire 'to' day
+      filtered = filtered.filter(log => new Date(log.timestamp) <= toDate);
+    }
 
     if (sortConfig.key) {
       filtered.sort((a, b) => {
@@ -220,7 +238,7 @@ export function ThirdPartyLogDashboardClient() {
       });
     }
     return filtered;
-  }, [logEntries, searchTerm, serviceFilter, statusFilter, sortConfig]);
+  }, [logEntries, searchTerm, serviceFilter, statusFilter, sortConfig, date]);
 
   const paginatedLogEntries = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -365,6 +383,42 @@ export function ThirdPartyLogDashboardClient() {
               />
             </div>
             <div className="flex gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+               <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    id="date"
+                    variant={"outline"}
+                    className={cn(
+                      "w-full sm:w-[240px] justify-start text-left font-normal",
+                      !date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {date?.from ? (
+                      date.to ? (
+                        <>
+                          {format(date.from, "LLL dd, y")} -{" "}
+                          {format(date.to, "LLL dd, y")}
+                        </>
+                      ) : (
+                        format(date.from, "LLL dd, y")
+                      )
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <Calendar
+                    initialFocus
+                    mode="range"
+                    defaultMonth={date?.from}
+                    selected={date}
+                    onSelect={(newDate) => { setDate(newDate); setCurrentPage(1); }}
+                    numberOfMonths={2}
+                  />
+                </PopoverContent>
+              </Popover>
               <Select value={serviceFilter} onValueChange={(value) => {setServiceFilter(value as ThirdPartyService | "All"); setCurrentPage(1);}}>
                 <SelectTrigger className="w-full sm:w-[160px]">
                   <SelectValue placeholder="Filter by service..." />
@@ -536,4 +590,3 @@ export function ThirdPartyLogDashboardClient() {
     </div>
   );
 }
-
