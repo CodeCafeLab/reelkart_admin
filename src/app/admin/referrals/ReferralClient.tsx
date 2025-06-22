@@ -155,7 +155,7 @@ export function ReferralClient() {
     setReferrals(prev => prev.map(r => r.id === referralId ? {...r, payoutStatus: newStatus} : r));
     setSelectedReferral(prev => prev && prev.id === referralId ? {...prev, payoutStatus: newStatus} : prev);
     toast({title: "Payout Status Updated", description: `Referral ${referralId} payout status changed to ${newStatus}.`});
-  }
+  };
 
   const handleExport = (formatType: 'csv' | 'excel' | 'pdf') => {
     toast({ title: "Export Placeholder", description: `Export to ${formatType} is not yet implemented.`});
