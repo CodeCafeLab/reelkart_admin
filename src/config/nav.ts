@@ -1,6 +1,6 @@
 
 import type { LucideIcon } from 'lucide-react';
-import { LayoutDashboard, Users, ShieldCheck, Film, Truck, BrainCircuit, FilePieChart, Settings, LogOut, UserCircle, UserCog, Package, DollarSign, Send, CornerDownLeft } from 'lucide-react';
+import { LayoutDashboard, Users, ShieldCheck, Film, Truck, BrainCircuit, FilePieChart, Settings, LogOut, UserCircle, UserCog, Package, DollarSign, Send, CornerDownLeft, Share2 } from 'lucide-react';
 
 export interface NavItem {
   label: string;
@@ -21,6 +21,7 @@ export const navItems: NavItem[] = [
   { label: 'Subscription Management', href: '/admin/packages', icon: Package },
   { label: 'Revenue Report', href: '/admin/revenue-report', icon: DollarSign },
   { label: 'Broadcast Messages', href: '/admin/broadcast-messages', icon: Send },
+  { label: 'Referral Management', href: '/admin/referrals', icon: Share2 },
   { label: 'Third Party Usage Logs', href: '/admin/ai-logs', icon: BrainCircuit },
   { label: 'Reports & Issues', href: '/admin/reports', icon: FilePieChart },
 ];
