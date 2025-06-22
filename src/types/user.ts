@@ -1,5 +1,6 @@
 
 export type UserStatus = "Active" | "Suspended" | "PendingVerification";
+export type UserType = "Buyer" | "Normal User";
 
 export interface UserLoginLog {
   id: string;
@@ -24,6 +25,7 @@ export interface User {
   email: string;
   joinDate: string; // "YYYY-MM-DDTHH:mm:ssZ" for easier sorting
   status: UserStatus;
+  userType: UserType;
   profileImageUrl?: string;
   loginLogs?: UserLoginLog[];
   lastLogin?: string | null; // ISO string
@@ -32,4 +34,4 @@ export interface User {
   purchaseHistory?: PurchaseHistoryItem[];
 }
 
-export type SortableUserKeys = keyof Pick<User, 'id' | 'name' | 'email' | 'joinDate' | 'status' | 'lastLogin'>;
+export type SortableUserKeys = keyof Pick<User, 'id' | 'name' | 'email' | 'joinDate' | 'status' | 'lastLogin' | 'userType'>;

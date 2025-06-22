@@ -7,14 +7,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, UserX, UserCheck, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown, CheckCircle, AlertTriangle, XCircle, History } from "lucide-react";
+import { MoreHorizontal, Eye, UserX, UserCheck, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown, CheckCircle, AlertTriangle, XCircle, History, ShoppingCart } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from 'date-fns';
-import type { User, UserStatus, SortableUserKeys, UserLoginLog, PurchaseHistoryItem } from "@/types/user";
+import type { User, UserStatus, UserType, SortableUserKeys, UserLoginLog, PurchaseHistoryItem } from "@/types/user";
 import { UserProfileSheet } from "@/components/admin/users/UserProfileSheet";
-import { UserPurchaseHistorySheet } from "@/components/admin/users/UserPurchaseHistorySheet"; // New import
+import { UserPurchaseHistorySheet } from "@/components/admin/users/UserPurchaseHistorySheet"; 
 
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -24,7 +24,7 @@ const MOCK_BASE_TIMESTAMP = new Date("2024-07-26T10:00:00.000Z").getTime();
 
 const mockUsersData: User[] = [
   {
-    id: "user_001", name: "Aisha Sharma", email: "aisha.sharma@example.com", joinDate: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 10).toISOString(), status: "Active", profileImageUrl: "https://placehold.co/100x100.png?text=AS", emailVerified: true, phone: "9876543210", lastLogin: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 2).toISOString(),
+    id: "user_001", name: "Aisha Sharma", email: "aisha.sharma@example.com", joinDate: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 10).toISOString(), status: "Active", userType: "Buyer", profileImageUrl: "https://placehold.co/100x100.png?text=AS", emailVerified: true, phone: "9876543210", lastLogin: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 2).toISOString(),
     loginLogs: [
       { id: "log_a1", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 2).toISOString(), ipAddress: "192.168.1.10", status: "Success", userAgent: "Chrome/Desktop" },
       { id: "log_a2", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 3).toISOString(), ipAddress: "10.0.0.5", status: "Success", userAgent: "Safari/Mobile" },
@@ -34,9 +34,9 @@ const mockUsersData: User[] = [
       { orderId: "ORD1005", productName: "Ergonomic Mouse Pad", purchaseDate: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 2).toISOString(), amount: 799, currency: "INR", status: "Completed" },
     ]
   },
-  { id: "user_002", name: "Rohan Verma", email: "rohan.v@example.com", joinDate: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 5).toISOString(), status: "PendingVerification", emailVerified: false, lastLogin: null, loginLogs: [], purchaseHistory: [] },
+  { id: "user_002", name: "Rohan Verma", email: "rohan.v@example.com", joinDate: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 5).toISOString(), status: "PendingVerification", userType: "Normal User", emailVerified: false, lastLogin: null, loginLogs: [], purchaseHistory: [] },
   {
-    id: "user_003", name: "Priya Mehta", email: "priya.mehta@example.com", joinDate: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 20).toISOString(), status: "Suspended", profileImageUrl: "https://placehold.co/100x100.png?text=PM", emailVerified: true, phone: "9988776655", lastLogin: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 7).toISOString(),
+    id: "user_003", name: "Priya Mehta", email: "priya.mehta@example.com", joinDate: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 20).toISOString(), status: "Suspended", userType: "Buyer", profileImageUrl: "https://placehold.co/100x100.png?text=PM", emailVerified: true, phone: "9988776655", lastLogin: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 7).toISOString(),
     loginLogs: [
       { id: "log_p1", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 7).toISOString(), ipAddress: "203.0.113.45", status: "Success" },
       { id: "log_p2", timestamp: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 7 - 60000).toISOString(), ipAddress: "203.0.113.45", status: "Failed", userAgent: "Firefox/Desktop" },
@@ -45,7 +45,7 @@ const mockUsersData: User[] = [
         { orderId: "ORD0950", productName: "Designer Phone Case", purchaseDate: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 10).toISOString(), amount: 1200, currency: "INR", status: "Refunded" },
     ]
   },
-  { id: "user_004", name: "Karan Singh", email: "karan.s@example.com", joinDate: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 2).toISOString(), status: "Active", emailVerified: true, lastLogin: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 30).toISOString(), loginLogs: [{id: "log_k1", timestamp:new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 30).toISOString(), ipAddress: "172.16.0.100", status: "Success"}] },
+  { id: "user_004", name: "Karan Singh", email: "karan.s@example.com", joinDate: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 60 * 24 * 2).toISOString(), status: "Active", userType: "Normal User", emailVerified: true, lastLogin: new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 30).toISOString(), loginLogs: [{id: "log_k1", timestamp:new Date(MOCK_BASE_TIMESTAMP - 1000 * 60 * 30).toISOString(), ipAddress: "172.16.0.100", status: "Success"}], purchaseHistory: [] },
 ];
 
 const statusVariantMap: Record<UserStatus, "default" | "secondary" | "destructive" | "outline"> = {
@@ -67,7 +67,8 @@ export function UsersManagementClient() {
   
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<UserStatus | "All">("All");
-  const [sortConfig, setSortConfig] = useState<{ key: SortableUserKeys; direction: 'ascending' | 'descending' }>({ key: 'joinDate', direction: 'descending' });
+  const [userTypeFilter, setUserTypeFilter] = useState<UserType | "All">("All");
+  const [sortConfig, setSortConfig] = useState<{ key: SortableUserKeys | 'orders'; direction: 'ascending' | 'descending' }>({ key: 'joinDate', direction: 'descending' });
   
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -92,13 +93,25 @@ export function UsersManagementClient() {
     if (statusFilter !== "All") {
       filtered = filtered.filter(user => user.status === statusFilter);
     }
+    if (userTypeFilter !== "All") {
+      filtered = filtered.filter(user => user.userType === userTypeFilter);
+    }
 
     if (sortConfig.key) {
       filtered.sort((a, b) => {
-        let valA = a[sortConfig.key];
-        let valB = b[sortConfig.key];
+        if (sortConfig.key === 'orders') {
+          const valA = a.purchaseHistory?.length ?? 0;
+          const valB = b.purchaseHistory?.length ?? 0;
+          if (valA < valB) return sortConfig.direction === 'ascending' ? -1 : 1;
+          if (valA > valB) return sortConfig.direction === 'ascending' ? 1 : -1;
+          return 0;
+        }
 
-        if (sortConfig.key === 'joinDate' || sortConfig.key === 'lastLogin') {
+        const key = sortConfig.key as SortableUserKeys;
+        let valA = a[key];
+        let valB = b[key];
+
+        if (key === 'joinDate' || key === 'lastLogin') {
           valA = valA ? new Date(valA as string).getTime() : 0;
           valB = valB ? new Date(valB as string).getTime() : 0;
         } else if (typeof valA === 'string' && typeof valB === 'string') {
@@ -112,7 +125,7 @@ export function UsersManagementClient() {
       });
     }
     return filtered;
-  }, [users, searchTerm, statusFilter, sortConfig]);
+  }, [users, searchTerm, statusFilter, userTypeFilter, sortConfig]);
 
   const paginatedUsers = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -121,7 +134,7 @@ export function UsersManagementClient() {
 
   const totalPages = Math.ceil(processedUsers.length / itemsPerPage);
 
-  const handleSort = (key: SortableUserKeys) => {
+  const handleSort = (key: SortableUserKeys | 'orders') => {
     let direction: 'ascending' | 'descending' = 'ascending';
     if (sortConfig.key === key && sortConfig.direction === 'ascending') {
       direction = 'descending';
@@ -130,7 +143,7 @@ export function UsersManagementClient() {
     setCurrentPage(1);
   };
 
-  const renderSortIcon = (columnKey: SortableUserKeys) => {
+  const renderSortIcon = (columnKey: SortableUserKeys | 'orders') => {
     if (sortConfig.key !== columnKey) {
       return <ArrowUpDown className="h-3 w-3 opacity-30 group-hover:opacity-100" />;
     }
@@ -176,11 +189,11 @@ export function UsersManagementClient() {
     const filenamePrefix = 'app_users_export';
 
     if (formatType === 'csv') {
-      const headers = ["ID", "Name", "Email", "Phone", "Join Date", "Last Login", "Status", "Email Verified"];
+      const headers = ["ID", "Name", "Email", "Phone", "Join Date", "Last Login", "Status", "Email Verified", "User Type", "Orders Placed"];
       const csvRows = [
         headers.join(','),
         ...dataToExport.map(u => [
-          u.id, u.name, u.email, u.phone || '', formatDateForExport(u.joinDate), formatDateForExport(u.lastLogin), u.status, u.emailVerified
+          u.id, u.name, u.email, u.phone || '', formatDateForExport(u.joinDate), formatDateForExport(u.lastLogin), u.status, u.emailVerified, u.userType, u.purchaseHistory?.length ?? 0
         ].map(value => `"${String(value).replace(/"/g, '""')}"`).join(','))
       ];
       const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
@@ -194,7 +207,7 @@ export function UsersManagementClient() {
       const wsData = dataToExport.map(u => ({
         ID: u.id, Name: u.name, Email: u.email, Phone: u.phone || '', 
         "Join Date": formatDateForExport(u.joinDate), "Last Login": formatDateForExport(u.lastLogin), 
-        Status: u.status, "Email Verified": u.emailVerified
+        Status: u.status, "Email Verified": u.emailVerified, "User Type": u.userType, "Orders Placed": u.purchaseHistory?.length ?? 0
       }));
       const ws = XLSX.utils.json_to_sheet(wsData);
       const wb = XLSX.utils.book_new(); 
@@ -203,10 +216,10 @@ export function UsersManagementClient() {
       toast({ title: "Excel Exported", description: "User data exported." });
     } else if (formatType === 'pdf') {
       const doc = new jsPDF({orientation: "landscape"});
-      const tableColumn = ["ID", "Name", "Email", "Joined", "Status"];
+      const tableColumn = ["ID", "Name", "Email", "Joined", "Status", "Type", "Orders"];
       const tableRows = dataToExport.map(u => [
         u.id.substring(0,10), u.name.substring(0,20), u.email.substring(0,25), 
-        formatDateForDisplay(u.joinDate, false), u.status
+        formatDateForDisplay(u.joinDate, false), u.status, u.userType, u.purchaseHistory?.length ?? 0
       ]);
       autoTable(doc, { head: [tableColumn], body: tableRows, startY: 20, styles: { fontSize: 8, cellPadding: 1.5 } });
       doc.text("App Users Report", 14, 15);
@@ -233,6 +246,16 @@ export function UsersManagementClient() {
               />
             </div>
             <div className="flex gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+              <Select value={userTypeFilter} onValueChange={(value) => {setUserTypeFilter(value as UserType | "All"); setCurrentPage(1);}}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Filter by user type..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="All">All User Types</SelectItem>
+                  <SelectItem value="Buyer">Buyer</SelectItem>
+                  <SelectItem value="Normal User">Normal User</SelectItem>
+                </SelectContent>
+              </Select>
               <Select value={statusFilter} onValueChange={(value) => {setStatusFilter(value as UserStatus | "All"); setCurrentPage(1);}}>
                 <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Filter by status..." />
@@ -264,8 +287,8 @@ export function UsersManagementClient() {
                 <TableHead onClick={() => handleSort('id')} className="cursor-pointer hover:bg-muted/50 group w-[120px]"><div className="flex items-center gap-1">User ID {renderSortIcon('id')}</div></TableHead>
                 <TableHead onClick={() => handleSort('name')} className="cursor-pointer hover:bg-muted/50 group"><div className="flex items-center gap-1">Name {renderSortIcon('name')}</div></TableHead>
                 <TableHead onClick={() => handleSort('email')} className="cursor-pointer hover:bg-muted/50 group"><div className="flex items-center gap-1">Email {renderSortIcon('email')}</div></TableHead>
-                <TableHead onClick={() => handleSort('joinDate')} className="cursor-pointer hover:bg-muted/50 group w-[160px]"><div className="flex items-center gap-1">Join Date {renderSortIcon('joinDate')}</div></TableHead>
-                <TableHead onClick={() => handleSort('lastLogin')} className="cursor-pointer hover:bg-muted/50 group w-[160px]"><div className="flex items-center gap-1">Last Login {renderSortIcon('lastLogin')}</div></TableHead>
+                <TableHead onClick={() => handleSort('userType')} className="cursor-pointer hover:bg-muted/50 group w-[140px]"><div className="flex items-center gap-1">User Type {renderSortIcon('userType')}</div></TableHead>
+                <TableHead onClick={() => handleSort('orders')} className="cursor-pointer hover:bg-muted/50 group w-[140px] text-center"><div className="flex items-center justify-center gap-1"><ShoppingCart className="h-4 w-4 text-muted-foreground mr-1"/>Orders {renderSortIcon('orders')}</div></TableHead>
                 <TableHead onClick={() => handleSort('status')} className="cursor-pointer hover:bg-muted/50 group w-[140px]"><div className="flex items-center gap-1">Status {renderSortIcon('status')}</div></TableHead>
                 <TableHead className="text-right w-[80px]">Actions</TableHead>
               </TableRow>
@@ -289,8 +312,10 @@ export function UsersManagementClient() {
                       </TableCell>
                       <TableCell className="text-sm">{user.name}</TableCell>
                       <TableCell className="text-xs">{user.email}</TableCell>
-                      <TableCell className="text-xs">{formatDateForDisplay(user.joinDate, false)}</TableCell>
-                      <TableCell className="text-xs">{formatDateForDisplay(user.lastLogin, true)}</TableCell>
+                      <TableCell>
+                        <Badge variant={user.userType === "Buyer" ? "secondary" : "outline"}>{user.userType}</Badge>
+                      </TableCell>
+                      <TableCell className="text-center font-medium">{user.purchaseHistory?.length ?? 0}</TableCell>
                       <TableCell>
                         <Badge variant={statusVariantMap[user.status]} className={user.status === "Active" ? "bg-green-500 hover:bg-green-600 text-white" : ""}>
                            <StatusIcon className="mr-1.5 h-3 w-3" />
