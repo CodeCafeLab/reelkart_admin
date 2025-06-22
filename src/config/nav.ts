@@ -17,7 +17,7 @@ export const navItems: NavItem[] = [
   { label: 'Sellers Management', href: '/admin/sellers', icon: Users },
   { label: 'Content Management', href: '/admin/content', icon: Film },
   { label: 'Orders Management', href: '/admin/logistics', icon: Truck },
-  { label: 'Package Management', href: '/admin/packages', icon: Package },
+  { label: 'Subscription Management', href: '/admin/packages', icon: Package },
   { label: 'Revenue Report', href: '/admin/revenue-report', icon: DollarSign },
   { label: 'Broadcast Messages', href: '/admin/broadcast-messages', icon: Send },
   { label: 'Third Party Usage Logs', href: '/admin/ai-logs', icon: BrainCircuit },

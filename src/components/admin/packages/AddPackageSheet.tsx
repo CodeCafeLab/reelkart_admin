@@ -29,7 +29,7 @@ import { PlusCircle, Save } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 const addPackageSchema = z.object({
-  name: z.string().min(3, "Package name must be at least 3 characters."),
+  name: z.string().min(3, "Plan name must be at least 3 characters."),
   description: z.string().optional(),
   price: z.coerce.number().min(0, "Price cannot be negative."),
   billing_interval: z.enum(["monthly", "annually", "one-time"]),
@@ -89,10 +89,10 @@ export function AddPackageSheet({ isOpen, onOpenChange, onPackageAdded }: AddPac
             <SheetHeader className="p-6 pb-4 border-b">
               <SheetTitle className="text-2xl font-semibold flex items-center gap-2">
                 <PlusCircle className="h-6 w-6 text-primary" />
-                Add New Seller Package
+                Add New Subscription Plan
               </SheetTitle>
               <SheetDescription>
-                Fill in the details to create a new package for sellers.
+                Fill in the details to create a new subscription plan for sellers.
               </SheetDescription>
             </SheetHeader>
 
@@ -102,7 +102,7 @@ export function AddPackageSheet({ isOpen, onOpenChange, onPackageAdded }: AddPac
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Package Name</FormLabel>
+                    <FormLabel>Plan Name</FormLabel>
                     <FormControl>
                       <Input placeholder="e.g., Premium Seller Plan" {...field} />
                     </FormControl>
@@ -117,7 +117,7 @@ export function AddPackageSheet({ isOpen, onOpenChange, onPackageAdded }: AddPac
                   <FormItem>
                     <FormLabel>Description (Optional)</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Briefly describe the package and its benefits." {...field} />
+                      <Textarea placeholder="Briefly describe the plan and its benefits." {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -170,7 +170,7 @@ export function AddPackageSheet({ isOpen, onOpenChange, onPackageAdded }: AddPac
                       <Textarea placeholder="Enter features, comma-separated (e.g., Feature 1, Another Feature, Max 5 Products)" {...field} />
                     </FormControl>
                     <FormDescription>
-                      List all features included in this package, separated by commas.
+                      List all features included in this plan, separated by commas.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -182,7 +182,7 @@ export function AddPackageSheet({ isOpen, onOpenChange, onPackageAdded }: AddPac
                 render={() => (
                   <FormItem>
                     <FormLabel>Applicable Seller Roles</FormLabel>
-                    <FormDescription>Select the seller types this package applies to.</FormDescription>
+                    <FormDescription>Select the seller types this plan applies to.</FormDescription>
                     <div className="grid grid-cols-2 gap-x-4 gap-y-2 max-h-48 overflow-y-auto border p-3 rounded-md mt-2">
                       {SELLER_ROLES.map((role) => (
                         <FormField
@@ -223,9 +223,9 @@ export function AddPackageSheet({ isOpen, onOpenChange, onPackageAdded }: AddPac
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                     <div className="space-y-0.5">
-                      <FormLabel>Activate Package</FormLabel>
+                      <FormLabel>Activate Plan</FormLabel>
                       <FormDescription>
-                        Make this package available for selection upon creation.
+                        Make this plan available for selection upon creation.
                       </FormDescription>
                     </div>
                     <FormControl>
@@ -244,7 +244,7 @@ export function AddPackageSheet({ isOpen, onOpenChange, onPackageAdded }: AddPac
                 <Button type="button" variant="outline">Cancel</Button>
               </SheetClose>
               <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Saving..." : <><Save className="mr-2 h-4 w-4" /> Save Package</>}
+                {form.formState.isSubmitting ? "Saving..." : <><Save className="mr-2 h-4 w-4" /> Save Plan</>}
               </Button>
             </SheetFooter>
           </form>

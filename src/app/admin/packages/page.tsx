@@ -218,9 +218,9 @@ export default function PackagesPage() {
 
   const handleDelete = (packageId: string) => {
     // Confirm before deleting (optional but good practice)
-    if (window.confirm("Are you sure you want to delete this package? This action cannot be undone.")) {
+    if (window.confirm("Are you sure you want to delete this plan? This action cannot be undone.")) {
         setPackagesState(prevPackages => prevPackages.filter(pkg => pkg.id !== packageId));
-        toast({ title: "Package Deleted", description: `Package ID: ${packageId} has been deleted.`, variant: "destructive" });
+        toast({ title: "Plan Deleted", description: `Plan ID: ${packageId} has been deleted.`, variant: "destructive" });
     }
   };
   
@@ -239,8 +239,8 @@ export default function PackagesPage() {
     setPackagesState(prevPackages => [newPackage, ...prevPackages]);
     setIsAddSheetOpen(false); 
     toast({
-      title: "Package Created",
-      description: `Package "${newPackage.name}" has been successfully created.`,
+      title: "Plan Created",
+      description: `Plan "${newPackage.name}" has been successfully created.`,
     });
   };
 
@@ -255,8 +255,8 @@ export default function PackagesPage() {
     setIsEditSheetOpen(false);
     setEditingPackage(null);
     toast({
-      title: "Package Updated",
-      description: `Package "${updatedData.name}" has been successfully updated.`,
+      title: "Plan Updated",
+      description: `Plan "${updatedData.name}" has been successfully updated.`,
     });
   };
 
@@ -264,7 +264,7 @@ export default function PackagesPage() {
 
   const handleExport = (formatType: 'csv' | 'excel' | 'pdf') => {
     const dataToExport = processedPackages;
-    const filenamePrefix = 'seller_packages_export';
+    const filenamePrefix = 'subscription_plans_export';
 
     if (formatType === 'csv') {
       const headers = ["ID", "Name", "Description", "Price", "Currency", "Billing Interval", "Features", "Applicable Seller Roles", "Is Active", "Created At", "Updated At"];
@@ -282,7 +282,7 @@ export default function PackagesPage() {
       link.download = `${filenamePrefix}.csv`;
       link.click();
       URL.revokeObjectURL(link.href);
-      toast({ title: "CSV Exported", description: "Seller packages data exported." });
+      toast({ title: "CSV Exported", description: "Subscription plans data exported." });
     } else if (formatType === 'excel') {
       const wsData = dataToExport.map(pkg => ({
         ID: pkg.id, Name: pkg.name, Description: pkg.description || '', Price: pkg.price, Currency: pkg.currency,
@@ -292,9 +292,9 @@ export default function PackagesPage() {
       }));
       const ws = XLSX.utils.json_to_sheet(wsData);
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "SellerPackages");
+      XLSX.utils.book_append_sheet(wb, ws, "SubscriptionPlans");
       XLSX.writeFile(wb, `${filenamePrefix}.xlsx`);
-      toast({ title: "Excel Exported", description: "Seller packages data exported." });
+      toast({ title: "Excel Exported", description: "Subscription plans data exported." });
     } else if (formatType === 'pdf') {
       const doc = new jsPDF({ orientation: 'landscape' });
       const tableColumn = ["ID", "Name", "Price ("+appSettings.currencySymbol+")", "Billing", "Status", "Roles", "Created At"];
@@ -304,9 +304,9 @@ export default function PackagesPage() {
         format(parseISO(pkg.created_at), "PP")
       ]);
       autoTable(doc, { head: [tableColumn], body: tableRows, startY: 20, styles: { fontSize: 8 } });
-      doc.text("Seller Packages Report", 14, 15);
+      doc.text("Subscription Plans Report", 14, 15);
       doc.save(`${filenamePrefix}.pdf`);
-      toast({ title: "PDF Exported", description: "Seller packages data exported." });
+      toast({ title: "PDF Exported", description: "Subscription plans data exported." });
     }
   };
 
@@ -316,20 +316,20 @@ export default function PackagesPage() {
         <div>
           <h1 className="text-3xl font-bold font-headline flex items-center">
             <Package className="mr-3 h-8 w-8" />
-            Package Management
+            Subscription Management
           </h1>
           <p className="text-muted-foreground">
-            Create and manage service packages for different types of seller roles.
+            Create and manage subscription plans for different types of seller roles.
           </p>
         </div>
         <Button onClick={handleAddNewPackage}>
-          <PlusCircle className="mr-2 h-4 w-4" /> Add New Package
+          <PlusCircle className="mr-2 h-4 w-4" /> Add New Plan
         </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Available Seller Packages</CardTitle>
+          <CardTitle>Available Subscription Plans</CardTitle>
           <CardDescription>
             Define features, pricing, and target roles. Prices shown in: {appSettings.currencySymbol} ({appSettings.currencyCode})
           </CardDescription>
@@ -337,7 +337,7 @@ export default function PackagesPage() {
             <div className="relative w-full sm:max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search packages (Name, Desc)..."
+                placeholder="Search plans (Name, Desc)..."
                 value={searchTerm}
                 onChange={(e) => {setSearchTerm(e.target.value); setCurrentPage(1);}}
                 className="pl-10"
@@ -356,7 +356,7 @@ export default function PackagesPage() {
               </Select>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="outline"><Download className="mr-2 h-4 w-4" /> Export Packages</Button>
+                    <Button variant="outline"><Download className="mr-2 h-4 w-4" /> Export Plans</Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => handleExport('csv')}><ExportFileText className="mr-2 h-4 w-4" />Export CSV</DropdownMenuItem>
@@ -372,7 +372,7 @@ export default function PackagesPage() {
             <TableHeader>
               <TableRow>
                 <TableHead onClick={() => handleSort('name')} className="cursor-pointer hover:bg-muted/50 group">
-                    <div className="flex items-center gap-1">Package Name {renderSortIcon('name')}</div>
+                    <div className="flex items-center gap-1">Plan Name {renderSortIcon('name')}</div>
                 </TableHead>
                 <TableHead onClick={() => handleSort('price')} className="cursor-pointer hover:bg-muted/50 group">
                     <div className="flex items-center gap-1">Price {renderSortIcon('price')}</div>
@@ -391,7 +391,7 @@ export default function PackagesPage() {
               {paginatedPackages.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
-                    No packages found matching your criteria.
+                    No plans found matching your criteria.
                   </TableCell>
                 </TableRow>
               ) : (
@@ -439,7 +439,7 @@ export default function PackagesPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem onClick={() => handleEditClick(pkg)}>
-                            <Edit className="mr-2 h-4 w-4" /> Edit Package
+                            <Edit className="mr-2 h-4 w-4" /> Edit Plan
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleToggleActive(pkg.id)}>
                             {pkg.is_active ? <ToggleLeft className="mr-2 h-4 w-4" /> : <ToggleRight className="mr-2 h-4 w-4" />}
@@ -450,7 +450,7 @@ export default function PackagesPage() {
                             onClick={() => handleDelete(pkg.id)}
                             className="text-destructive focus:text-destructive focus:bg-destructive/10"
                           >
-                            <Trash2 className="mr-2 h-4 w-4" /> Delete Package
+                            <Trash2 className="mr-2 h-4 w-4" /> Delete Plan
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -462,7 +462,7 @@ export default function PackagesPage() {
           </Table>
           <div className="flex items-center justify-between mt-6">
             <span className="text-sm text-muted-foreground">
-              Page {currentPage} of {totalPages > 0 ? totalPages : 1} ({processedPackages.length} total packages)
+              Page {currentPage} of {totalPages > 0 ? totalPages : 1} ({processedPackages.length} total plans)
             </span>
             <div className="flex items-center gap-2">
                 <Select
