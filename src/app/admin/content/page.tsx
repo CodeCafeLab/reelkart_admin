@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreHorizontal, Eye, ThumbsUp, ThumbsDown, Flag, Loader2, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown, Clock } from "lucide-react";
+import { MoreHorizontal, Eye, ThumbsUp, ThumbsDown, Flag, Loader2, Search, Download, FileText as ExportFileText, FileSpreadsheet, Printer, ArrowUpDown, ArrowUp, ArrowDown, Clock, Package, Archive, Tag, DollarSign, Power } from "lucide-react";
 import NextImage from "next/image"; // Renamed to avoid conflict
 import { ContentDetailsSheet } from "@/components/admin/content/ContentDetailsSheet"; // Changed import
 import { FlagContentDialog } from "@/components/admin/content/FlagContentDialog";
@@ -15,9 +15,11 @@ import { RejectContentDialog } from "@/components/admin/content/RejectContentDia
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { format, parseISO } from 'date-fns';
 import type { ContentItem, FlagType, ContentStatus, SortableContentKeys, AdminComment } from "@/types/content-moderation"; // Updated import path
 import { FLAG_TYPES } from "@/types/content-moderation";
+import { useAppSettings } from "@/contexts/AppSettingsContext";
 
 
 import jsPDF from 'jspdf';
@@ -35,20 +37,27 @@ const initialContentItems: ContentItem[] = [
     adminComments: [
       { id: "cmt001", adminName: "AdminJane", text: "Needs review for product claims.", timestamp: MOCK_COMMENT_TIMESTAMP_1 },
       { id: "cmt002", adminName: "AdminAlex", text: "Seems okay, but let's check background music for copyright.", timestamp: MOCK_COMMENT_TIMESTAMP_2 }
-    ]
+    ],
+    price: 2999, category: "Electronics", stockQuantity: 150, isProductVisible: false,
   },
-  { id: "dsc001", type: "Description", title: "Handcrafted Leather Wallet", uploader: "ArtisanGoods", date: "2024-07-17T11:00:00Z", status: "Approved", descriptionText: "This premium handcrafted leather wallet offers a sleek design with multiple card slots and a durable finish. Made from 100% genuine leather." },
+  { id: "dsc001", type: "Description", title: "Handcrafted Leather Wallet", uploader: "ArtisanGoods", date: "2024-07-17T11:00:00Z", status: "Approved", descriptionText: "This premium handcrafted leather wallet offers a sleek design with multiple card slots and a durable finish. Made from 100% genuine leather.",
+    price: 899, category: "Fashion", stockQuantity: 75, isProductVisible: true,
+  },
   { 
     id: "vid002", type: "Video", title: "Unboxing New Gadget", uploader: "TechGuru", date: "2024-07-16T12:15:00Z", status: "Rejected", reason: "Copyright Claim", thumbnailUrl: `https://placehold.co/300x200.png?text=Gadget+Unbox`, videoUrl: "https://www.sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4",
     avgWatchTimeSeconds: 45,
     adminComments: [
       { id: "cmt003", adminName: "AdminModerator", text: "Rejected due to copyrighted music track starting at 0:35.", timestamp: MOCK_COMMENT_TIMESTAMP_1 }
-    ]
+    ],
+    price: 15000, category: "Gadgets", stockQuantity: 0, isProductVisible: false,
   },
-  { id: "dsc002", type: "Description", title: "Organic Green Tea", uploader: "HealthyLiving", date: "2024-07-19T09:00:00Z", status: "Pending", descriptionText: "Experience the refreshing taste of our 100% organic green tea, sourced from the finest tea gardens. Rich in antioxidants." },
+  { id: "dsc002", type: "Description", title: "Organic Green Tea", uploader: "HealthyLiving", date: "2024-07-19T09:00:00Z", status: "Pending", descriptionText: "Experience the refreshing taste of our 100% organic green tea, sourced from the finest tea gardens. Rich in antioxidants.",
+    price: 450, category: "Groceries", stockQuantity: 200, isProductVisible: false,
+  },
   { 
     id: "vid003", type: "Video", title: "DIY Home Decor Ideas", uploader: "CreativeHome", date: "2024-07-15T14:30:00Z", status: "Approved", thumbnailUrl: `https://placehold.co/300x200.png?text=DIY+Decor`, videoUrl: "https://download.blender.org/peach/trailer/trailer_480p.mov",
-    avgWatchTimeSeconds: 182
+    avgWatchTimeSeconds: 182,
+    price: 1200, category: "Home Decor", stockQuantity: 40, isProductVisible: true,
   },
 ];
 
@@ -61,6 +70,8 @@ const statusVariant: Record<ContentStatus, "default" | "secondary" | "destructiv
 
 export default function ContentPage() {
   const { toast } = useToast();
+  const { settings: appSettings } = useAppSettings();
+
   const [contentItems, setContentItems] = useState<ContentItem[]>(initialContentItems);
   
   const [isDetailsSheetOpen, setIsDetailsSheetOpen] = useState(false); // Renamed state
@@ -88,15 +99,39 @@ export default function ContentPage() {
     setHasMounted(true);
   }, []);
 
+  const formatCurrency = useCallback((amount: number | null | undefined) => {
+    if (amount == null) return "N/A";
+    const localeForFormatting = appSettings.currencyCode === 'INR' ? 'en-IN' : 'en-US';
+    return new Intl.NumberFormat(localeForFormatting, { 
+      style: 'currency',
+      currency: appSettings.currencyCode,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2, 
+    }).format(amount);
+  }, [appSettings.currencyCode]);
+
   const handleViewDetails = (item: ContentItem) => { // Renamed function
     setSelectedItemForDetails(item);
     setIsDetailsSheetOpen(true);
   };
 
+  const handleToggleVisibility = (itemId: string, newVisibility: boolean) => {
+    setContentItems(prev =>
+      prev.map(item =>
+        item.id === itemId ? { ...item, isProductVisible: newVisibility } : item
+      )
+    );
+    setSelectedItemForDetails(prev => prev && prev.id === itemId ? { ...prev, isProductVisible: newVisibility } : prev);
+    toast({
+      title: "Visibility Updated",
+      description: `Product visibility for ${itemId} set to ${newVisibility ? 'Visible' : 'Hidden'}.`,
+    });
+  };
+
   const handleApproveContent = (itemId: string) => {
-    setContentItems(prev => prev.map(item => item.id === itemId ? { ...item, status: "Approved" as ContentStatus, reason: undefined, flagDetails: undefined } : item));
-    setSelectedItemForDetails(prev => prev && prev.id === itemId ? { ...prev, status: "Approved" as ContentStatus, reason: undefined, flagDetails: undefined } : prev);
-    toast({ title: "Content Approved", description: `Content item ${itemId} has been approved.` });
+    setContentItems(prev => prev.map(item => item.id === itemId ? { ...item, status: "Approved" as ContentStatus, reason: undefined, flagDetails: undefined, isProductVisible: true } : item));
+    setSelectedItemForDetails(prev => prev && prev.id === itemId ? { ...prev, status: "Approved" as ContentStatus, reason: undefined, flagDetails: undefined, isProductVisible: true } : prev);
+    toast({ title: "Content Approved", description: `Content item ${itemId} has been approved and product is now visible.` });
     if (selectedItemForDetails?.id === itemId) setIsDetailsSheetOpen(false);
     if (itemToReject?.id === itemId) setIsRejectDialogOpen(false);
   };
@@ -113,9 +148,9 @@ export default function ContentPage() {
 
   const handleConfirmReject = (contentId: string, reason: string) => {
     const finalReason = reason?.trim() === "" || !reason ? "Violation of guidelines" : reason;
-    setContentItems(prev => prev.map(item => item.id === contentId ? { ...item, status: "Rejected" as ContentStatus, reason: finalReason, flagDetails: undefined } : item));
-    setSelectedItemForDetails(prev => prev && prev.id === contentId ? { ...prev, status: "Rejected"as ContentStatus, reason: finalReason, flagDetails: undefined } : prev);
-    toast({ title: "Content Rejected", description: `Content item ${contentId} has been rejected. Reason: ${finalReason}`, variant: "destructive" });
+    setContentItems(prev => prev.map(item => item.id === contentId ? { ...item, status: "Rejected" as ContentStatus, reason: finalReason, flagDetails: undefined, isProductVisible: false } : item));
+    setSelectedItemForDetails(prev => prev && prev.id === contentId ? { ...prev, status: "Rejected"as ContentStatus, reason: finalReason, flagDetails: undefined, isProductVisible: false } : prev);
+    toast({ title: "Content Rejected", description: `Content item ${contentId} has been rejected. Product is hidden.`, variant: "destructive" });
     if (selectedItemForDetails?.id === contentId) setIsDetailsSheetOpen(false);
     setIsRejectDialogOpen(false);
     setItemToReject(null);
@@ -161,7 +196,8 @@ export default function ContentPage() {
       filtered = filtered.filter(item =>
         item.id.toLowerCase().includes(lowerSearch) ||
         item.title.toLowerCase().includes(lowerSearch) ||
-        item.uploader.toLowerCase().includes(lowerSearch)
+        item.uploader.toLowerCase().includes(lowerSearch) ||
+        (item.category && item.category.toLowerCase().includes(lowerSearch))
       );
     }
     if (videoStatusFilter !== "All") {
@@ -174,7 +210,7 @@ export default function ContentPage() {
         if (videoSortConfig.key === 'date') {
           valA = new Date(valA as string).getTime();
           valB = new Date(valB as string).getTime();
-        } else if (videoSortConfig.key === 'avgWatchTimeSeconds') {
+        } else if (['avgWatchTimeSeconds', 'price', 'stockQuantity'].includes(videoSortConfig.key)) {
           valA = typeof valA === 'number' ? valA : -1;
           valB = typeof valB === 'number' ? valB : -1;
         } else if (typeof valA === 'string' && typeof valB === 'string') {
@@ -289,7 +325,7 @@ export default function ContentPage() {
       <Card>
         <CardHeader>
           <CardTitle>Video Moderation Queue</CardTitle>
-          <CardDescription>Review videos uploaded by sellers.</CardDescription>
+          <CardDescription>Review videos uploaded by sellers and manage associated product details.</CardDescription>
           <div className="flex flex-col sm:flex-row justify-between items-end gap-2 pt-4">
             <div className="relative w-full sm:max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -337,6 +373,8 @@ export default function ContentPage() {
             renderSortIcon={(key) => renderSortIcon(key, videoSortConfig)}
             formatDate={formatDateForDisplay}
             formatWatchTime={formatWatchTime}
+            formatCurrency={formatCurrency}
+            onToggleVisibility={handleToggleVisibility}
           />
           <div className="flex items-center justify-between mt-6">
             <span className="text-sm text-muted-foreground">
@@ -369,6 +407,8 @@ export default function ContentPage() {
           onReject={handleRejectContent} 
           onFlag={handleFlagContent}
           formatWatchTime={formatWatchTime}
+          formatCurrency={formatCurrency}
+          onToggleVisibility={handleToggleVisibility}
         />
       )}
 
@@ -392,18 +432,20 @@ export default function ContentPage() {
 
 interface VideoContentTableProps {
   items: ContentItem[];
-  onViewDetails: (item: ContentItem) => void; // Changed prop name
+  onViewDetails: (item: ContentItem) => void;
   onApprove: (itemId: string) => void;
   onReject: (itemId: string) => void; 
   onFlag: (itemId: string) => void; 
+  onToggleVisibility: (itemId: string, newVisibility: boolean) => void;
   sortConfig: { key: SortableContentKeys; direction: string };
   onSort: (key: SortableContentKeys) => void;
   renderSortIcon: (key: SortableContentKeys) => JSX.Element;
   formatDate: (dateString: string) => string;
   formatWatchTime: (seconds: number | undefined) => string;
+  formatCurrency: (amount: number | null | undefined) => string;
 }
 
-function VideoContentTable({ items, onViewDetails, onApprove, onReject, onFlag, sortConfig, onSort, renderSortIcon, formatDate, formatWatchTime }: VideoContentTableProps) {
+function VideoContentTable({ items, onViewDetails, onApprove, onReject, onFlag, onToggleVisibility, sortConfig, onSort, renderSortIcon, formatDate, formatWatchTime, formatCurrency }: VideoContentTableProps) {
   return (
     <Table>
       <TableHeader>
@@ -412,18 +454,19 @@ function VideoContentTable({ items, onViewDetails, onApprove, onReject, onFlag, 
           <TableHead onClick={() => onSort('title')} className="cursor-pointer hover:bg-muted/50 group">
             <div className="flex items-center gap-1">Title {renderSortIcon('title')}</div>
           </TableHead>
-          <TableHead onClick={() => onSort('uploader')} className="cursor-pointer hover:bg-muted/50 group">
-            <div className="flex items-center gap-1">Uploader {renderSortIcon('uploader')}</div>
+          <TableHead onClick={() => onSort('category')} className="cursor-pointer hover:bg-muted/50 group">
+             <div className="flex items-center gap-1">Category {renderSortIcon('category')}</div>
           </TableHead>
-          <TableHead onClick={() => onSort('date')} className="cursor-pointer hover:bg-muted/50 group">
-            <div className="flex items-center gap-1">Date {renderSortIcon('date')}</div>
+          <TableHead onClick={() => onSort('price')} className="cursor-pointer hover:bg-muted/50 group text-right">
+             <div className="flex items-center justify-end gap-1">Price {renderSortIcon('price')}</div>
           </TableHead>
-          <TableHead onClick={() => onSort('avgWatchTimeSeconds')} className="cursor-pointer hover:bg-muted/50 group">
-            <div className="flex items-center gap-1">Avg. Watch Time {renderSortIcon('avgWatchTimeSeconds')}</div>
+           <TableHead onClick={() => onSort('stockQuantity')} className="cursor-pointer hover:bg-muted/50 group text-right">
+             <div className="flex items-center justify-end gap-1">Stock {renderSortIcon('stockQuantity')}</div>
           </TableHead>
           <TableHead onClick={() => onSort('status')} className="cursor-pointer hover:bg-muted/50 group">
             <div className="flex items-center gap-1">Status {renderSortIcon('status')}</div>
           </TableHead>
+          <TableHead>Visibility</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
@@ -442,10 +485,15 @@ function VideoContentTable({ items, onViewDetails, onApprove, onReject, onFlag, 
                 />
               </div>
             </TableCell>
-            <TableCell className="font-medium">{item.title}</TableCell>
-            <TableCell>{item.uploader}</TableCell>
-            <TableCell>{formatDate(item.date)}</TableCell>
-            <TableCell>{formatWatchTime(item.avgWatchTimeSeconds)}</TableCell>
+            <TableCell>
+                <p className="font-medium">{item.title}</p>
+                <p className="text-xs text-muted-foreground">{item.uploader}</p>
+            </TableCell>
+            <TableCell>
+                <Badge variant="secondary">{item.category || "N/A"}</Badge>
+            </TableCell>
+            <TableCell className="text-right font-mono text-sm">{formatCurrency(item.price)}</TableCell>
+            <TableCell className="text-right font-mono text-sm">{item.stockQuantity ?? "N/A"}</TableCell>
             <TableCell>
               <div className="flex items-center gap-1">
                 <Badge variant={statusVariant[item.status as ContentStatus]} className={item.status === 'Approved' ? 'bg-green-500 hover:bg-green-600 text-white' : item.status === 'Rejected' ? 'bg-red-500 hover:bg-red-600 text-white' : ''}>
@@ -461,6 +509,13 @@ function VideoContentTable({ items, onViewDetails, onApprove, onReject, onFlag, 
                 <p className="text-xs text-muted-foreground mt-1">{item.reason}</p>
               )}
             </TableCell>
+            <TableCell>
+                <Switch
+                    checked={item.isProductVisible}
+                    onCheckedChange={(checked) => onToggleVisibility(item.id, checked)}
+                    aria-label="Toggle product visibility"
+                />
+            </TableCell>
             <TableCell className="text-right">
               <ContentActions item={item} onViewDetails={() => onViewDetails(item)} onApprove={onApprove} onReject={onReject} onFlag={onFlag} />
             </TableCell>
@@ -468,7 +523,7 @@ function VideoContentTable({ items, onViewDetails, onApprove, onReject, onFlag, 
         ))}
          {items.length === 0 && (
           <TableRow>
-            <TableCell colSpan={7} className="text-center h-24 text-muted-foreground">
+            <TableCell colSpan={8} className="text-center h-24 text-muted-foreground">
               No video content to display.
             </TableCell>
           </TableRow>

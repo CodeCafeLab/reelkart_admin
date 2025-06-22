@@ -40,10 +40,16 @@ export interface ContentItem {
   videoUrl?: string; // For video playback
   avgWatchTimeSeconds?: number;
   flagDetails?: FlagDetails;
-  adminComments?: AdminComment[]; // Added for admin comments
+  adminComments?: AdminComment[];
+  // New product fields
+  price?: number;
+  category?: string;
+  stockQuantity?: number;
+  isProductVisible?: boolean;
 }
 
-export type SortableContentKeys = keyof Pick<ContentItem, 'id' | 'title' | 'uploader' | 'date' | 'status' | 'avgWatchTimeSeconds'>;
+export type SortableContentKeys = keyof Pick<ContentItem, 'id' | 'title' | 'uploader' | 'date' | 'status' | 'avgWatchTimeSeconds' | 'price' | 'category' | 'stockQuantity'>;
+
 
 export const PREDEFINED_CONTENT_REJECTION_REASONS = [
   "Copyright Infringement",

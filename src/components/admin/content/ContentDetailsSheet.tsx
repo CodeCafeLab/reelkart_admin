@@ -1,3 +1,4 @@
+
 "use client";
 
 import NextImage from "next/image";
@@ -23,7 +24,8 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, XCircle, Film, FileText, User, CalendarDays, AlertTriangle, ThumbsUp, ThumbsDown, Flag, MessageSquare, Send as SendIcon, Bot, Loader2, Clock, ChevronDown, Trash2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { CheckCircle, XCircle, Film, FileText, User, CalendarDays, AlertTriangle, ThumbsUp, ThumbsDown, Flag, MessageSquare, Send as SendIcon, Bot, Loader2, Clock, ChevronDown, Trash2, Tag, DollarSign, Archive, Power } from "lucide-react";
 import type { ContentItem, ContentStatus, AdminComment } from "@/types/content-moderation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
@@ -38,7 +40,9 @@ interface ContentDetailsSheetProps {
   onApprove: (itemId: string) => void;
   onReject: (itemId: string) => void;
   onFlag: (itemId: string) => void;
+  onToggleVisibility: (itemId: string, newVisibility: boolean) => void;
   formatWatchTime: (seconds: number | undefined) => string;
+  formatCurrency: (amount: number | null | undefined) => string;
 }
 
 const statusVariant: Record<ContentStatus, "default" | "secondary" | "destructive" | "outline"> = {
@@ -54,7 +58,9 @@ export function ContentDetailsSheet({
   onApprove,
   onReject,
   onFlag,
+  onToggleVisibility,
   formatWatchTime,
+  formatCurrency,
 }: ContentDetailsSheetProps) {
   const { toast } = useToast();
   const [newComment, setNewComment] = useState("");
@@ -190,7 +196,7 @@ export function ContentDetailsSheet({
             )}
             
             <div>
-              <h3 className="text-lg font-medium text-foreground mb-1">Details</h3>
+              <h3 className="text-lg font-medium text-foreground mb-1">Content Details</h3>
               <Separator className="mb-3"/>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 text-sm">
                 <div className="flex items-center gap-2">
@@ -244,6 +250,49 @@ export function ContentDetailsSheet({
                   </div>
                 )}
               </div>
+            </div>
+
+            <div>
+                <h3 className="text-lg font-medium text-foreground mb-1">Product Details</h3>
+                <Separator className="mb-3"/>
+                <Card className="bg-muted/30 border-dashed">
+                    <CardContent className="pt-6 grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-4 text-sm">
+                        <div className="flex items-center gap-2">
+                            <Tag className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                                <p className="text-xs text-muted-foreground">Category</p>
+                                <p className="font-medium">{contentItem.category || "N/A"}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <DollarSign className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                                <p className="text-xs text-muted-foreground">Price</p>
+                                <p className="font-medium">{formatCurrency(contentItem.price)}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Archive className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                                <p className="text-xs text-muted-foreground">Stock Quantity</p>
+                                <p className="font-medium">{contentItem.stockQuantity ?? "N/A"}</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                            <Power className="h-4 w-4 text-muted-foreground" />
+                             <div className="flex items-center space-x-2">
+                                <Switch
+                                    id="visibility-toggle-sheet"
+                                    checked={contentItem.isProductVisible}
+                                    onCheckedChange={(checked) => onToggleVisibility(contentItem.id, checked)}
+                                />
+                                <Label htmlFor="visibility-toggle-sheet" className="font-medium">
+                                    {contentItem.isProductVisible ? 'Visible' : 'Hidden'}
+                                </Label>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
             </div>
 
             <div>
