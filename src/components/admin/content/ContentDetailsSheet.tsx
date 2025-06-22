@@ -1,4 +1,3 @@
-
 "use client";
 
 import NextImage from "next/image";
@@ -13,13 +12,19 @@ import {
   SheetFooter,
   SheetClose,
 } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { CheckCircle, XCircle, Film, FileText, User, CalendarDays, AlertTriangle, ThumbsUp, ThumbsDown, Flag, MessageSquare, Send as SendIcon, Bot, Loader2, Clock } from "lucide-react";
-import type { ContentItem, ContentStatus, AdminComment } from "@/types/content-moderation"; // Updated import
+import { CheckCircle, XCircle, Film, FileText, User, CalendarDays, AlertTriangle, ThumbsUp, ThumbsDown, Flag, MessageSquare, Send as SendIcon, Bot, Loader2, Clock, ChevronDown } from "lucide-react";
+import type { ContentItem, ContentStatus, AdminComment } from "@/types/content-moderation";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from 'date-fns';
@@ -31,8 +36,8 @@ interface ContentDetailsSheetProps {
   onOpenChange: (isOpen: boolean) => void;
   contentItem: ContentItem | null;
   onApprove: (itemId: string) => void;
-  onReject: (itemId: string) => void; // This will now open the reject dialog
-  onFlag: (itemId: string) => void;   // This will now open the flag dialog
+  onReject: (itemId: string) => void;
+  onFlag: (itemId: string) => void;
   formatWatchTime: (seconds: number | undefined) => string;
 }
 
@@ -68,16 +73,14 @@ export function ContentDetailsSheet({
     }
     console.log("New Comment Added (Mock):", { contentId: contentItem.id, adminName: "CurrentAdmin", text: newComment, timestamp: new Date().toISOString() });
     toast({ title: "Comment Added (Mock)", description: "Your comment has been logged." });
-    // In a real app, you'd update the state or refetch comments here.
-    setNewComment(""); // Clear textarea
+    setNewComment("");
   };
   
-  const handleAiComment = async () => {
+  const handleAiComment = async (sentiment: 'positive' | 'negative') => {
     if (!contentItem) return;
     setIsAiCommenting(true);
 
     try {
-        const sentiment = Math.random() > 0.5 ? 'positive' : 'negative';
         const input: GenerateFakeCommentInput = {
             contentTitle: contentItem.title,
             contentDescription: contentItem.descriptionText || "A video about " + contentItem.title,
@@ -110,7 +113,7 @@ export function ContentDetailsSheet({
     try {
         return format(parseISO(dateString), "PPpp");
     } catch(e) {
-        return dateString; // Fallback
+        return dateString;
     }
   };
 
@@ -232,7 +235,6 @@ export function ContentDetailsSheet({
                       </CardHeader>
                       <CardContent className="p-3 pt-0">
                         <p className="text-sm">{comment.text}</p>
-                        {/* Add Edit/Delete buttons here if implementing full CRUD later */}
                       </CardContent>
                     </Card>
                   ))
@@ -253,14 +255,29 @@ export function ContentDetailsSheet({
                     <Button onClick={handleAddComment} size="sm">
                       <SendIcon className="mr-2 h-4 w-4"/>Submit Comment
                     </Button>
-                    <Button onClick={handleAiComment} size="sm" variant="outline" disabled={isAiCommenting}>
-                        {isAiCommenting ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="sm" variant="outline" disabled={isAiCommenting}>
+                          {isAiCommenting ? (
                             <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
-                        ) : (
+                          ) : (
                             <Bot className="mr-2 h-4 w-4"/>
-                        )}
-                        AI Comment
-                    </Button>
+                          )}
+                          <span>AI Comment</span>
+                          <ChevronDown className="ml-2 h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent>
+                        <DropdownMenuItem onSelect={() => handleAiComment('positive')} className="cursor-pointer">
+                          <ThumbsUp className="mr-2 h-4 w-4 text-green-500" />
+                          <span>Generate Positive</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onSelect={() => handleAiComment('negative')} className="cursor-pointer">
+                          <ThumbsDown className="mr-2 h-4 w-4 text-red-500" />
+                          <span>Generate Negative</span>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
               </div>
